@@ -120,8 +120,13 @@ settlements; block confirmations only apply to deposits/withdrawals or a DEX ven
 - A synthetic-ratio builder turns two USDC legs into a coin/coin OHLCV-like frame
   (e.g. ETH/BTC) so the ratio thesis is testable from day one.
 - Pure-function indicators (`ema`, `rsi` with Wilder smoothing).
-- `Strategy` ABC with two example strategies (EMA crossover, RSI mean-reversion); signals
-  must use only data up to the current bar (no lookahead).
+- `Strategy` ABC (single-bar push `on_bar(candle) -> int`, strategy owns its rolling state,
+  no lookahead by construction) with two examples (EMA crossover, RSI mean-reversion).
+  Strategies are **cost-aware**: a `CostModel` is injected (fees from config in backtest, the
+  live adapter live) and each applies a **no-trade band** — switch only when the expected
+  move clears the round-trip taker cost, so they don't churn fees on noise. The strategy
+  *decides* on estimated cost; the portfolio *charges* realized cost (never let realized
+  slippage feed the decision — that's lookahead).
 - Backtest engine: bar-by-bar replay through an injectable `ExecutionModel` (default
   `IdealExecution` = fill at **next bar's open**, no slippage) and a `Portfolio`
   interface. Phase 1 ships one `SpotPortfolio` (long/flat). A spot rotation is **two

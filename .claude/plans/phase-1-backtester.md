@@ -37,6 +37,20 @@ fail (leaving a half position in USDC). The order API models a rotation as **two
 fills**; baseline = same bar / zero gap, **Phase 1.5** adds inter-leg latency, per-leg
 slippage, and partial/failed-leg risk.
 
+**The strategy must be cost-aware — switching costs money, not just time.** A rotation pays
+**two taker fees** (+ spread/slippage), so a signal whose expected edge is smaller than the
+round-trip cost is a *losing* trade even when the direction is right — fees eat
+mean-reversion alive. The black box therefore exposes its **cost model** to the strategy
+(fee schedule always; an estimated spread once Phase 1.5 adds slippage) — exactly what a
+live exchange tells you — and the strategy applies a **no-trade band**: only change target
+when expected move > estimated round-trip cost. Two rules keep this honest:
+- **Decision vs accounting are separate.** The strategy decides using *estimable-at-now*
+  cost (fees are known exactly; slippage only estimated); the `Portfolio`/`ExecutionModel`
+  charges the *realized* cost after the fill. Never let realized slippage feed the decision
+  (that's lookahead).
+- This also matters for the GA north star: exposing cost via the API lets evolved
+  strategies learn hurdles, and churners get selected out by fees in the fitness function.
+
 ---
 
 ## Proposed repo layout
@@ -58,7 +72,8 @@ CoinMonitorSuite/
     indicators/
       __init__.py           # ema(), rsi(), ... pure fns over a DataFrame (ported from prototype)
     strategies/
-      base.py               # Strategy ABC: generate_signals(candles) -> signal series
+      base.py               # Strategy ABC: on_bar(candle) -> int target position;
+                            #   owns its state; cost-aware via injected CostModel
       ema_crossover.py
       rsi_meanreversion.py
     backtest/
@@ -109,10 +124,17 @@ CoinMonitorSuite/
    the prototype's logic; use Wilder smoothing for RSI to be correct).
    *Verify:* unit tests on hand-computed known inputs.
 
-5. **Strategy interface + 2 examples** — `Strategy` ABC; `EMACrossover` and
-   `RSIMeanReversion`. Signals use only data ≤ current bar (no lookahead).
-   *Verify:* each emits a sensible signal series on sample candles; a lookahead
-   guard test passes.
+5. **Strategy interface + 2 examples** — `Strategy` ABC (`on_bar(candle) -> int`, single-bar
+   push, strategy owns its rolling state, no lookahead by construction); `EMACrossover` and
+   `RSIMeanReversion`. Strategies are **cost-aware**: a `CostModel` is injected (fee rates
+   from `config`; the same abstraction the live exchange adapter provides), and each example
+   applies a **no-trade band** — change target only when the expected move clears the
+   round-trip taker cost (so they don't churn fees on noise). Decision uses estimated cost
+   only; realized cost is charged later by the portfolio (step 6).
+   *(Open sub-decision: pure-fn `ema/rsi` recomputed on the buffer vs O(1) stateful
+   indicator classes — settle here.)*
+   *Verify:* each emits sensible targets on sample candles; a lookahead guard test passes;
+   a churn test confirms tiny sub-cost wiggles do **not** trigger rotations.
 
 6. **Backtest engine** — bar-by-bar replay: strategy → orders → `ExecutionModel` →
    `portfolio` → equity curve. `metrics` computes total return, win rate, max drawdown,

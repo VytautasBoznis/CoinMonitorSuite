@@ -1,7 +1,11 @@
+import pytest
+
 from coinmon.data.models import Candle
 from coinmon.feed import BarView, CostModel
+from coinmon.strategies.base import Strategy
 from coinmon.strategies.ema_crossover import EMACrossover
 from coinmon.strategies.rsi_meanreversion import RSIMeanReversion
+from coinmon.strategies.stop_loss import StopLoss
 
 ZERO_COST = CostModel(taker_fee=0.0)
 
@@ -52,6 +56,71 @@ def test_no_lookahead_a_target_depends_only_on_past():
     for t in (10, 20, 30, len(closes) - 1):
         prefix = _run(RSIMeanReversion(period=5), _views(closes[: t + 1]))
         assert prefix[-1] == full[t]
+
+
+class _ScriptedInner(Strategy):
+    """Inner strategy that replays fixed targets and counts how often it's consulted."""
+
+    def __init__(self, targets):
+        self.targets = list(targets)
+        self.i = -1
+        self.calls = 0
+
+    def on_bar(self, view):
+        self.i += 1
+        self.calls += 1
+        return self.targets[self.i]
+
+
+def _bar(close, low=None):
+    low = close if low is None else low
+    candle = Candle(open_time=0, open=close, high=close, low=low, close=close, volume=1.0)
+    return BarView(candle=candle)
+
+
+def test_stop_loss_exits_when_low_breaches_threshold():
+    sl = StopLoss(_ScriptedInner([1, 1, 1]), stop_pct=0.05)  # entry 100 -> stop at 95
+    assert sl.on_bar(_bar(100.0)) == 1  # enter long
+    assert sl.on_bar(_bar(98.0, low=96.0)) == 1  # low 96 > 95, hold
+    assert sl.on_bar(_bar(97.0, low=94.0)) == 0  # low 94 <= 95, stopped out
+
+
+def test_stop_loss_does_not_self_trigger_on_entry_bar():
+    # The entry bar's own low (already past) must not stop the position it just opened.
+    sl = StopLoss(_ScriptedInner([1, 1]), stop_pct=0.05)
+    assert sl.on_bar(_bar(100.0, low=80.0)) == 1  # enters despite a low far below the stop
+    assert sl.on_bar(_bar(100.0, low=100.0)) == 1  # still long next bar
+
+
+def test_stop_loss_suppresses_reentry_until_inner_resets():
+    inner = _ScriptedInner([1, 1, 1, 0, 1])  # keeps wanting long across the stop, then resets
+    sl = StopLoss(inner, stop_pct=0.05)
+    assert sl.on_bar(_bar(100.0)) == 1  # enter
+    assert sl.on_bar(_bar(97.0, low=94.0)) == 0  # stop out
+    assert sl.on_bar(_bar(97.0)) == 0  # inner still long -> suppressed
+    assert sl.on_bar(_bar(97.0)) == 0  # inner flat -> resets the suppression
+    assert sl.on_bar(_bar(97.0)) == 1  # inner long again -> fresh entry allowed
+
+
+def test_stop_loss_passes_through_inner_exit():
+    sl = StopLoss(_ScriptedInner([1, 1, 0]), stop_pct=0.5)
+    assert sl.on_bar(_bar(100.0)) == 1
+    assert sl.on_bar(_bar(101.0)) == 1
+    assert sl.on_bar(_bar(101.0)) == 0  # no breach, but inner went flat
+
+
+def test_stop_loss_always_feeds_inner():
+    inner = _ScriptedInner([1, 1, 1, 1])
+    sl = StopLoss(inner, stop_pct=0.05)
+    for bar in (_bar(100.0), _bar(97.0, low=94.0), _bar(97.0), _bar(97.0)):
+        sl.on_bar(bar)
+    assert inner.calls == 4  # consulted every bar, even while overriding its signal
+
+
+def test_stop_loss_rejects_out_of_range_pct():
+    for bad in (0.0, 1.0, -0.1, 1.5):
+        with pytest.raises(ValueError):
+            StopLoss(_ScriptedInner([0]), stop_pct=bad)
 
 
 def test_precomputed_features_bypass_internal_compute():

@@ -8,6 +8,7 @@ import pandas as pd
 from coinmon.backtest.engine import BacktestEngine
 from coinmon.backtest.portfolio import SpotPortfolio
 from coinmon.backtest.result import BacktestResult
+from coinmon.backtest.stress import run_monte_carlo
 from coinmon.config import settings
 from coinmon.data import db
 from coinmon.data.ratio import build_ratio
@@ -15,6 +16,7 @@ from coinmon.feed import BarView, CostModel
 from coinmon.strategies.base import Strategy
 from coinmon.strategies.ema_crossover import EMACrossover
 from coinmon.strategies.rsi_meanreversion import RSIMeanReversion
+from coinmon.strategies.stop_loss import StopLoss
 
 # Notional the backtest starts with. Metrics are scale-invariant ratios, so the value only
 # affects the readability of absolute equity, not the results.
@@ -54,9 +56,12 @@ def _load_candles(read: Callable[[str], pd.DataFrame], symbol: str) -> pd.DataFr
     return build_ratio(base_leg, quote_leg)
 
 
+def _make_portfolio() -> SpotPortfolio:
+    return SpotPortfolio(cash=INITIAL_CAPITAL, taker_fee=settings.taker_fee)
+
+
 def _run(strategy: Strategy, candles: pd.DataFrame) -> BacktestResult:
-    portfolio = SpotPortfolio(cash=INITIAL_CAPITAL, taker_fee=settings.taker_fee)
-    return BacktestEngine(strategy, portfolio).run(candles)
+    return BacktestEngine(strategy, _make_portfolio()).run(candles)
 
 
 def _backtest(args: argparse.Namespace) -> None:
@@ -72,13 +77,31 @@ def _backtest(args: argparse.Namespace) -> None:
             f"no candles stored for {args.symbol} {args.timeframe} — run the scraper first"
         )
 
-    result = _run(STRATEGIES[args.strategy](), candles)
+    def make_strategy() -> Strategy:
+        strategy = STRATEGIES[args.strategy]()
+        if args.stop_loss:
+            strategy = StopLoss(strategy, args.stop_loss)
+        return strategy
+
+    result = _run(make_strategy(), candles)
     benchmark = _run(_BuyAndHold(), candles)
 
-    print(f"{args.strategy} on {args.symbol} {args.timeframe} ({len(candles)} bars)\n")
+    label = args.strategy + (f" +{args.stop_loss:.0%} stop" if args.stop_loss else "")
+    print(f"{label} on {args.symbol} {args.timeframe} ({len(candles)} bars)\n")
     print(result.summary())
     print("\nbuy & hold:")
     print(benchmark.summary())
+
+    if args.stress:
+        mc = run_monte_carlo(
+            make_strategy,
+            _make_portfolio,
+            candles,
+            runs=args.stress,
+            benchmark_return=benchmark.metrics["total_return"],
+        )
+        print(f"\nfragility stress ({args.stress} runs, slippage+fill-failure):")
+        print(mc.summary())
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -97,6 +120,20 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_bt.add_argument("--symbol", required=True, help="e.g. BTC/USDC, or ETH/BTC (synthetic ratio)")
     p_bt.add_argument("--timeframe", default="1h")
+    p_bt.add_argument(
+        "--stress",
+        type=int,
+        default=0,
+        metavar="N",
+        help="also run the Phase 1.5 fragility kill-filter over N perturbed runs (off by default)",
+    )
+    p_bt.add_argument(
+        "--stop-loss",
+        type=float,
+        default=0.0,
+        metavar="PCT",
+        help="wrap the strategy in a stop-loss exit at PCT drawdown from entry, e.g. 0.05 (off)",
+    )
     p_bt.set_defaults(func=_backtest)
 
     return parser

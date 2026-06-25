@@ -43,10 +43,12 @@ class BacktestEngine:
         bars_in_market = 0
         pending: int | None = None  # target decided last bar, to fill at this bar's open
         for row in candles.itertuples(index=False):
-            if pending is not None:
-                fill = self.execution.fill_price(row.open)
-                self.portfolio.rebalance(pending, fill)
-                position = pending
+            if pending is not None and pending != position:
+                side = 1 if pending == 1 else -1
+                fill = self.execution.fill_price(side, row.open)
+                if fill is not None:  # a None fill = order didn't execute; position unchanged
+                    self.portfolio.rebalance(pending, fill)
+                    position = pending
             equity.append(self.portfolio.equity(row.close))
             bars_in_market += position  # position is 1 long / 0 flat
 

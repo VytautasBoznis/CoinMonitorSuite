@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 
 
@@ -43,12 +44,12 @@ def _wilder_smooth(values: pd.Series, period: int) -> pd.Series:
     """
     arr = values.to_numpy(dtype="float64")
     n = len(arr)
-    out = pd.Series(float("nan"), index=values.index)
+    out = np.full(n, np.nan)
     if n <= period:
-        return out
+        return pd.Series(out, index=values.index)
     prev = arr[1 : period + 1].mean()
-    out.iloc[period] = prev
+    out[period] = prev
     for i in range(period + 1, n):
         prev = (prev * (period - 1) + arr[i]) / period
-        out.iloc[i] = prev
-    return out
+        out[i] = prev
+    return pd.Series(out, index=values.index)

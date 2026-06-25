@@ -88,9 +88,12 @@ ruff check .
 
 ## Known limitations / follow-ups
 
-- **Step 6 is still stubs** — `BacktestEngine.run`, `SpotPortfolio`, `metrics.summarize`,
-  `result.summary`, and the `coinmon backtest` CLI all raise `NotImplementedError`. Nothing
-  runs end-to-end vs buy-and-hold yet.
+- **Step 6 is built** — `BacktestEngine.run` (next-open fills, no-lookahead), `SpotPortfolio`
+  (two-taker-fee round trip), `metrics.summarize` and `result.summary` are implemented, and
+  `coinmon backtest` wires strategy + buy-and-hold benchmark through the same engine, loading
+  candles from **TimescaleDB** via `db.read_candles` (where the scraper stores them; the
+  Parquet `store.py` path is retired). A real run just needs the scraper stack up to populate
+  the DB. The engine is covered offline in [tests/test_backtest.py](../tests/test_backtest.py).
 - **`BarView.features` is never populated yet** — no indicator engine exists, so Phase 1
   always takes the recompute path. The feature path is exercised only by a unit test.
 - **RSI is not cost-aware** (see above) — fine for now, flagged for the GA phase.

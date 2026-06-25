@@ -10,3 +10,4 @@ This file indexes all memory files for the CoinMonitorSuite project.
 - [blackbox-evolutionary-vision](blackbox-evolutionary-vision.md) — north star: engine = live-compatible black-box exchange; sequential non-atomic legs; evolutionary/GA search is the long-term path to alpha
 - [user-quant-background](user-quant-background.md) — user has limited quant math; relies on the eval rig + search, not hand-derived strategies
 - [deployment-target-k8s](deployment-target-k8s.md) — runs in a Kubernetes cluster; every component must ship as a Docker image; config via env/ConfigMaps
+- [feature-store-seam](feature-store-seam.md) — BarView point-in-time feature-snapshot contract; future post-scraper indicator engine (compute-sharing for many bots), kept as cache not contract; engine itself deferred

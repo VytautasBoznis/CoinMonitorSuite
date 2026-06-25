@@ -1,0 +1,52 @@
+# Local end-to-end run of the scraper against a TimescaleDB instance.
+#   docker compose up --build
+services:
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    environment:
+      POSTGRES_USER: coinmon
+      POSTGRES_PASSWORD: coinmon
+      POSTGRES_DB: coinmon
+    ports:
+      # LOCAL-DEV ONLY: host 5432 is taken by a native Postgres on this machine, so we
+      # publish on 5433. Revert to "5432:5432" (or drop the mapping) for the prod cluster.
+      - "5433:5432"
+    volumes:
+      - timescale-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U coinmon"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  scraper:
+    build:
+      context: .
+      dockerfile: Dockerfile.scraper
+    environment:
+      COINMON_DB_DSN: postgresql://coinmon:coinmon@timescaledb:5432/coinmon
+      COINMON_SYMBOLS: '["BTC/USDC", "ETH/USDC"]'
+      COINMON_TIMEFRAMES: '["1h"]'
+      # Short window = fast first run. Only applies to an empty series; for full history
+      # set an early date (e.g. "2018-01-01") BEFORE the first run, bounded by Bybit's data.
+      COINMON_BACKFILL_START: "2025-06-01"
+      COINMON_POLL_INTERVAL_SECONDS: "60"
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+
+  viewer:
+    build:
+      context: .
+      dockerfile: Dockerfile.viewer
+    environment:
+      # In-network DSN (host 5433 remap does NOT apply here — that's only for host clients).
+      COINMON_DB_DSN: postgresql://coinmon:coinmon@timescaledb:5432/coinmon
+    ports:
+      - "8501:8501"
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+
+volumes:
+  timescale-data:

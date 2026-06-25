@@ -22,5 +22,16 @@ class Settings(BaseSettings):
     # Root of the local Parquet candle store.
     data_dir: Path = Path("data")
 
+    # --- Scraper (TimescaleDB-backed candle ingest) ---
+    # Postgres/Timescale DSN. Secret in k8s; override via COINMON_DB_DSN.
+    db_dsn: str = "postgresql://coinmon:coinmon@localhost:5432/coinmon"
+    # Series the scraper backfills + polls. JSON lists via env, e.g. COINMON_SYMBOLS='["BTC/USDC"]'.
+    symbols: list[str] = ["BTC/USDC", "ETH/USDC"]
+    timeframes: list[str] = ["1h"]
+    # Seconds between poll cycles once backfill completes.
+    poll_interval_seconds: int = 60
+    # Earliest bar to backfill (ISO date) when a series has no stored history yet.
+    backfill_start: str = "2020-01-01"
+
 
 settings = Settings()

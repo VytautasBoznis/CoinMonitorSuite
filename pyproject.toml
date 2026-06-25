@@ -9,11 +9,13 @@ dependencies = [
     "numpy",
     "pyarrow",
     "pydantic-settings",
+    "psycopg[binary]",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest", "ruff"]
 plots = ["matplotlib"]
+viewer = ["streamlit", "plotly"]
 
 [project.scripts]
 coinmon = "coinmon.cli:main"

@@ -9,6 +9,7 @@ from coinmon.backtest.engine import BacktestEngine
 from coinmon.backtest.portfolio import SpotPortfolio
 from coinmon.backtest.result import BacktestResult
 from coinmon.backtest.stress import run_monte_carlo
+from coinmon.backtest.walkforward import walk_forward
 from coinmon.config import settings
 from coinmon.data import db
 from coinmon.data.ratio import build_ratio
@@ -104,6 +105,34 @@ def _backtest(args: argparse.Namespace) -> None:
         print(mc.summary())
 
 
+def _walk_forward(args: argparse.Namespace) -> None:
+    conn = db.connect()
+    try:
+        candles = _load_candles(
+            lambda s: db.read_candles(conn, settings.exchange, s, args.timeframe), args.symbol
+        )
+    finally:
+        conn.close()
+    if candles.empty:
+        raise SystemExit(
+            f"no candles stored for {args.symbol} {args.timeframe} — run the scraper first"
+        )
+
+    result = walk_forward(
+        candles,
+        settings.taker_fee,
+        train_bars=args.train,
+        test_bars=args.test,
+        initial_capital=INITIAL_CAPITAL,
+        objective=args.objective,
+    )
+    print(
+        f"walk-forward RSI on {args.symbol} {args.timeframe} ({len(candles)} bars, "
+        f"train={args.train}/test={args.test}, select by {args.objective})\n"
+    )
+    print(result.summary())
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="coinmon", description="CoinMonitorSuite backtester")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -135,6 +164,22 @@ def build_parser() -> argparse.ArgumentParser:
         help="wrap the strategy in a stop-loss exit at PCT drawdown from entry, e.g. 0.05 (off)",
     )
     p_bt.set_defaults(func=_backtest)
+
+    p_wf = sub.add_parser(
+        "walk-forward",
+        help="Out-of-sample RSI param search: fit a grid per train window, score on the next",
+    )
+    p_wf.add_argument("--symbol", required=True, help="e.g. ETH/BTC (synthetic ratio)")
+    p_wf.add_argument("--timeframe", default="1d")
+    p_wf.add_argument("--train", type=int, default=365, metavar="BARS", help="train window size")
+    p_wf.add_argument("--test", type=int, default=180, metavar="BARS", help="test window size")
+    p_wf.add_argument(
+        "--objective",
+        default="total_return",
+        choices=["total_return", "calmar", "profit_factor", "sharpe"],
+        help="metric the search maximizes on each train window",
+    )
+    p_wf.set_defaults(func=_walk_forward)
 
     return parser
 

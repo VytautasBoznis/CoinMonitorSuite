@@ -9,11 +9,21 @@ implements — so going live later means swapping the simulator for the real Byb
 with the strategy unchanged. See [.claude/plans/phase-1-backtester.md](.claude/plans/phase-1-backtester.md)
 and [PROJECT_BRIEF.md](PROJECT_BRIEF.md).
 
+**Docs:** [PROJECT_BRIEF.md](PROJECT_BRIEF.md) (what & why) · [docs/strategies.md](docs/strategies.md)
+(signal layer) · [docs/lessons-learned.md](docs/lessons-learned.md) (findings from running the
+rig) · [LEARNING.md](LEARNING.md) (study roadmap).
+
 ## Status
 
-Phase 1 (backtester) — **scaffolded**. The package layout, config, the core interfaces
-(`ExchangeAdapter`, `Strategy`, `Portfolio`, `ExecutionModel`) and a CLI exist; concrete
-implementations raise `NotImplementedError` tagged with their build step (steps 2–6).
+Phase 1 (backtester) + Phase 1.5 (fragility harness) — **built and runnable**. `coinmon
+backtest` loads candles from TimescaleDB, replays a strategy vs a buy-and-hold benchmark, and
+reports trade-level metrics; an optional stop-loss overlay (`--stop-loss`) and Monte Carlo
+fragility kill-filter (`--stress`) layer on top. What the runs have shown so far —
+including why no strategy beats buy-and-hold yet — is written up in
+[docs/lessons-learned.md](docs/lessons-learned.md).
+
+> Note: the **Layout** and **CLI** sections below are partly stale (they still mention the
+> retired Parquet store / `fetch-data`); candles now come from the scraper's TimescaleDB.
 
 ## Layout
 

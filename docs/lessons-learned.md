@@ -80,6 +80,62 @@ over the same out-of-sample span. Over the identical OOS span (2022-12 → 2026-
   of the time and dodge the crash" (risk avoidance), not proven directional alpha. Needs other
   pairs and a non-downtrend regime before it's more than a robust *risk* result.
 
+### Multi-pair + purged real-data run — chunk A (8 daily series, fitness + fragility)
+
+The first run with the DB live, the purged walk-forward, and the OOS fitness function all
+together — and the first time the thesis was tested across *more than one* ratio pair. Backfilled
+SOL/BNB/XRP USDC legs (daily) and scored the **fixed** default genome (14/30/50) out-of-sample
+with `evaluate_fitness` (4 folds, embargo 5):
+
+| Series | B&H | mean OOS | return std | trades | fitness | per-fold |
+|---|---|---|---|---|---|---|
+| **XRP/ETH** | +181.1% | **+34.15%** | 25.1% | 17 | **−0.060** | +74 / +36 / +18 / +8 — **all positive** |
+| **XRP/BTC** | −9.0% | **+29.33%** | 27.8% | 19 | **−0.034** | −1 / +73 / +32 / +14 |
+| BTC/USDC | +23.1% | +18.30% | 21.8% | 12 | −0.44 | +40 / +23 / +27 / −18 |
+| SOL/ETH | −8.3% | +6.25% | 31.9% | 15 | −0.51 | −31 / +10 / +56 / −10 |
+| ETH/BTC | −69.7% | −1.83% | 8.8% | 16 | −0.31 | −12 / +0 / −7 / +12 |
+| SOL/BTC | −70.2% | −2.76% | 28.2% | 16 | −0.51 | −51 / +14 / +19 / +7 |
+| ETH/USDC | −62.7% | −16.41% | 18.5% | 10 | −0.85 | −40 / +9 / −8 / −27 |
+| BNB/BTC† | +37.5% | −3.38% | 6.4% | 5 | −0.85 | short series, undertraded |
+
+†BNB/USDC only lists on Bybit from 2024-08 (674 daily bars), so BNB/BTC is too short to score.
+
+- **Pair selection is the dominant lever — bigger than any parameter.** The *same untuned*
+  genome ranges from garbage (ETH/USDC −16%, SOL/BTC −2.8%) to a strong, fold-consistent edge
+  (XRP/ETH +34% mean, **positive in every fold**; XRP/BTC +29%, 3/4). The ETH/BTC pulse that
+  started this whole thread is actually one of the *weaker* pairs. **Implication for the GA: the
+  genome must encode the pair/universe, not just strategy params** — choosing *what* to trade
+  carries more signal here than choosing *how*.
+- **XRP/ETH survives the fragility kill-filter cleanly.** Full-series fixed genome: **+127.3%**
+  return at **−37.5% max DD** (vs B&H +176% at −69% DD) — Calmar **3.40 beats B&H's 2.55** with
+  half the drawdown, PF 1.94, 59% win rate, 25% exposure. Fragility (80 perturbed runs,
+  slippage + fill-failure): p5/p50/p95 = **+121% / +125% / +128%, 100% of runs positive**. It
+  gives up raw upside (0% of runs beat the roaring B&H) in exchange for far lower risk — a
+  robust *risk-adjusted* result, not a return-maximizer.
+- **The fitness function's instability penalty is miscalibrated — this is the headline
+  engineering finding.** XRP/ETH is positive in **all four** OOS folds, averages +34%, and is
+  fragility-robust, yet `evaluate_fitness` scores it **−0.06 (below zero)** purely because the
+  symmetric `return_std` (25%) is docked at `instability_weight = 1.0`. A symmetric standard
+  deviation **cannot tell "always wins, by varying amounts" from "swings negative"** — so the
+  current penalty would have the GA *reject a genuine edge*. Fix before the GA runs: penalize
+  **downside / negative-fold dispersion** (e.g. count/magnitude of losing folds, or downside
+  deviation), not symmetric spread. A genome green in every fold should never score negative.
+- **Purged walk-forward reconfirms the search overfits on fresh real data.** ETH/BTC, embargo 5,
+  total_return objective: in-sample ceiling **+19.4%** → stitched **OOS −15.6%**, 1/7 folds
+  positive, **6/7 distinct** param choices. calmar objective only looks "safer" because it
+  selects no-trade params (OOS −2.8%). [search-overfits] holds with the purge in place.
+- **The O(n²) recompute is now the binding constraint on the GA.** A 300-run fragility stress on
+  one daily pair did **not finish in >11 min** (had to drop to 80 runs); the multi-pair fitness
+  sweep is only tolerable because it's the single fixed genome, not a search. Activating the
+  feature-store (lesson #8) is a hard prerequisite for any real evolutionary search, not a
+  nice-to-have.
+- **Verdict on "is there a pulse worth scaling?"** Yes — but conditional and modest: RSI-MR has
+  **no universal edge** (most pairs rejected, correctly), yet on XRP ratios the fixed genome is a
+  real, fold-consistent, fragility-robust *risk-adjusted* pulse. The rig did its job in both
+  directions: it rejected the weak pairs and flagged a survivor. The two concrete carry-forwards
+  are **(a) make pair/universe a gene** and **(b) fix the downside-vs-symmetric penalty** so the
+  GA can actually keep a winner like XRP/ETH.
+
 ### The baseline runs (ETH/BTC 1h, ~9,350 bars)
 
 | Strategy | Return | Max DD | Trades | Exposure | Win rate (per-trade) | Profit factor |
@@ -182,19 +238,21 @@ over the same out-of-sample span. Over the identical OOS span (2022-12 → 2026-
 - **Inter-leg gap** is unmodelled: the engine treats the synthetic ratio as one instrument,
   not two sequential ETH/USDC + BTC/USDC orders. Modelling the real two-leg rotation is the
   "sequential non-atomic legs" north-star item.
-- **Thesis probes:** daily timeframe + wider history — *done* (see the daily-timeframe probe
-  above; the pulse not only survived but went net-positive). Still worth running: **more ratio
-  pairs** (is the effect ETH/BTC-specific or general?) and a non-downtrend window (the 4.5y
-  daily sample is a structural ETH/BTC decline, which flatters a mostly-flat strategy).
+- **Thesis probes:** daily + wider history, **more ratio pairs**, and non-downtrend regimes —
+  *done* (see the multi-pair chunk A run). Verdict: the effect is **pair-specific, not general** —
+  RSI-MR is weak/garbage on most pairs but a real fragility-robust pulse on XRP ratios
+  (XRP/ETH, which is itself an uptrend, +181% B&H — so the edge is not merely "dodge a downtrend").
 - **Walk-forward / out-of-sample on the daily result** — *done* (see the walk-forward section
   above). Verdict: the fixed params survive OOS (+12.24%), the grid *search* overfits to −22.89%.
   Open from here: more pairs and a non-downtrend regime.
-- **Purged walk-forward** — *built* (`walk_forward(..., embargo_bars=N)`, CLI `--embargo`): drops
-  N bars between each train window and its test so a fit can't ride serial correlation across the
-  adjacent boundary; test segments stay back-to-back. **Not yet run on real data** (DB was down) —
-  the open question is whether the +12.24% fixed-param OOS survival holds once purged.
-- **OOS-gated fitness for the GA** — *built* (`backtest/fitness.py`: `evaluate_fitness`). Scores a
-  single fixed genome across out-of-sample folds and docks the mean return by return instability
-  (std across folds) and a low-trade-count floor — the three guards [search-overfits] demands so
-  the search can't repeat the grid overfit at scale. This is the scalar the GA will maximize; the
-  GA loop itself is the next build.
+- **Purged walk-forward** — *built and run* (`walk_forward(..., embargo_bars=N)`, CLI `--embargo`).
+  Chunk A ran it on real data with embargo 5: the search still overfits (ETH/BTC in-sample +19.4%
+  → OOS −15.6% total_return). The purge didn't rescue the *search*; fixed params remain the robust path.
+- **OOS-gated fitness for the GA** — *built and run* (`backtest/fitness.py`: `evaluate_fitness`).
+  Chunk A surfaced a calibration bug: the **symmetric `return_std` instability penalty
+  (weight 1.0) scores an all-folds-positive genome (XRP/ETH) below zero**, so the GA would reject
+  a real edge. **Fix before the GA loop:** replace symmetric std with a downside / negative-fold
+  penalty. This is now the first task feeding the genome + GA chunks.
+- **Make pair/universe a gene.** Chunk A showed pair selection dominates parameter selection
+  (same genome: garbage on ETH/USDC, strong on XRP/ETH). The genome representation (next chunk)
+  should encode *what* to trade, not only *how*.

@@ -27,14 +27,19 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
 
 ## Chunks (in order)
 
-- [ ] **A — Real-data validation run.** DB up (needs user to start Docker). Run purged
-  walk-forward + `evaluate_fitness` on ETH/BTC daily; add 2–3 more ratio pairs + a
-  non-downtrend window. Verdict: is there a pulse worth scaling? Write a findings memory.
-  *Blocked on: Docker up; which pairs/backfill range.* Verify: numbers reproduced, doc updated.
+- [x] **A — Real-data validation run.** (2026-06-28) Backfilled SOL/BNB/XRP daily; scored fixed
+  genome OOS across 8 daily series + purged WF + fragility. **Verdict: pulse is pair-specific** —
+  garbage on most pairs, real fragility-robust risk-adjusted edge on XRP ratios (XRP/ETH +34% mean
+  OOS, all 4 folds positive, fragility 100% positive, Calmar 3.40 > B&H 2.55). Two carry-forwards:
+  **(1) make pair/universe a gene; (2) the fitness symmetric-std penalty is miscalibrated** (scores
+  all-folds-positive XRP/ETH below zero) — switch to downside/negative-fold penalty before the GA.
+  See [[chunk-a-findings]] and docs/lessons-learned.md. (O(n²) engine is the binding GA constraint.)
 
 - [ ] **B — Genome representation.** A `Genome` (param vector) ↔ Strategy decode + a registry of
-  strategy families with param ranges, so `evaluate_fitness` can score any genome. Verify: round-trip
-  decode tests; existing RSI/EMA expressible as genomes.
+  strategy families with param ranges, so `evaluate_fitness` can score any genome. **Chunk A finding:
+  the pair/universe must be a gene** (pair selection dominated param selection). Also fold in the
+  **fitness penalty fix** (downside/negative-fold instead of symmetric std — see [[chunk-a-findings]])
+  before/with the GA. Verify: round-trip decode tests; existing RSI/EMA expressible as genomes.
 
 - [ ] **C — Evolutionary search loop.** GA over genomes: population, selection, crossover,
   mutation, generations; fitness = `evaluate_fitness` (OOS + penalties), **fragility as a gate**

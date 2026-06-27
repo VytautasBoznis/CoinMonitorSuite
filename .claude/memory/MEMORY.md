@@ -15,6 +15,7 @@ This file indexes all memory files for the CoinMonitorSuite project.
 - [stop-loss-hurts-mean-reversion](stop-loss-hurts-mean-reversion.md) — empirical: fixed stop-loss made RSI mean-reversion worse on every metric (stops suit trend, not mean-reversion); scope stop-loss genes away from MR in the GA
 - [daily-meanreversion-goes-positive](daily-meanreversion-goes-positive.md) — RSI MR positive on ETH/BTC daily (fixed params +12% OOS, PF 1.51) vs −6% on 1h; fee-domination confirmed; downtrend-flattered risk result; 1d data now in the DB
 - [search-overfits-not-strategy](search-overfits-not-strategy.md) — the param SEARCH overfits (−23% OOS) while fixed params survive (+12%); GA fitness must be OOS/walk-forward with instability + trade-count penalties
+- [chunk-a-findings](chunk-a-findings.md) — chunk A validation: pulse is pair-specific (XRP ratios survive fragility), pair must be a gene, and the fitness symmetric-std penalty wrongly rejects all-folds-positive genomes
 - [build-roadmap](build-roadmap.md) — the chunked plan to finish the project (one chunk ≈ one session); source of truth for what's next
 - [session-build-loop](session-build-loop.md) — how each session runs: read memory → do next roadmap chunk → ask blockers → deliver a commit message
 - [user-commits-themselves](user-commits-themselves.md) — never run git commit; hand over a commit message and stop

@@ -188,6 +188,13 @@ over the same out-of-sample span. Over the identical OOS span (2022-12 → 2026-
   daily sample is a structural ETH/BTC decline, which flatters a mostly-flat strategy).
 - **Walk-forward / out-of-sample on the daily result** — *done* (see the walk-forward section
   above). Verdict: the fixed params survive OOS (+12.24%), the grid *search* overfits to −22.89%.
-  Open from here: **purged** walk-forward (a gap between train/test), more pairs, and a
-  non-downtrend regime — and, before the GA, an OOS-gated fitness with instability/trade-count
-  penalties so the search can't repeat this overfit at scale.
+  Open from here: more pairs and a non-downtrend regime.
+- **Purged walk-forward** — *built* (`walk_forward(..., embargo_bars=N)`, CLI `--embargo`): drops
+  N bars between each train window and its test so a fit can't ride serial correlation across the
+  adjacent boundary; test segments stay back-to-back. **Not yet run on real data** (DB was down) —
+  the open question is whether the +12.24% fixed-param OOS survival holds once purged.
+- **OOS-gated fitness for the GA** — *built* (`backtest/fitness.py`: `evaluate_fitness`). Scores a
+  single fixed genome across out-of-sample folds and docks the mean return by return instability
+  (std across folds) and a low-trade-count floor — the three guards [search-overfits] demands so
+  the search can't repeat the grid overfit at scale. This is the scalar the GA will maximize; the
+  GA loop itself is the next build.

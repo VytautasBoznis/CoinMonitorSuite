@@ -123,12 +123,13 @@ def _walk_forward(args: argparse.Namespace) -> None:
         settings.taker_fee,
         train_bars=args.train,
         test_bars=args.test,
+        embargo_bars=args.embargo,
         initial_capital=INITIAL_CAPITAL,
         objective=args.objective,
     )
     print(
         f"walk-forward RSI on {args.symbol} {args.timeframe} ({len(candles)} bars, "
-        f"train={args.train}/test={args.test}, select by {args.objective})\n"
+        f"train={args.train}/test={args.test}/embargo={args.embargo}, select by {args.objective})\n"
     )
     print(result.summary())
 
@@ -173,6 +174,13 @@ def build_parser() -> argparse.ArgumentParser:
     p_wf.add_argument("--timeframe", default="1d")
     p_wf.add_argument("--train", type=int, default=365, metavar="BARS", help="train window size")
     p_wf.add_argument("--test", type=int, default=180, metavar="BARS", help="test window size")
+    p_wf.add_argument(
+        "--embargo",
+        type=int,
+        default=0,
+        metavar="BARS",
+        help="purge: bars dropped between each train window and its test (default 0)",
+    )
     p_wf.add_argument(
         "--objective",
         default="total_return",

@@ -40,6 +40,26 @@ def test_walk_forward_folds_are_contiguous_and_back_to_back():
         assert f.test_end == f.test_start + 2  # test_bars=3 -> last open_time is start+2
 
 
+def test_embargo_rejects_when_train_embargo_test_exceeds_series():
+    # train+embargo+test = 5+4+3 = 12 > 11 bars available.
+    with pytest.raises(ValueError):
+        walk_forward(
+            _oscillating_candles(11), taker_fee=0.0, train_bars=5, test_bars=3, embargo_bars=4
+        )
+
+
+def test_embargo_gaps_train_from_test_but_keeps_test_segments_back_to_back():
+    candles = _oscillating_candles(14)
+    result = walk_forward(candles, taker_fee=0.0, train_bars=5, test_bars=3, embargo_bars=2)
+
+    # s = 7, 10 -> two folds (the embargo eats into the usable start, dropping the third).
+    starts = [f.test_start for f in result.folds]
+    assert starts == [7, 10]  # test segments still back-to-back (10 == 7 + 3)
+    # Each fold's train window ends embargo_bars (=2) before its test starts:
+    # fold 1 train [0:5] (last open_time 4), test starts at 7 -> bars 5,6 purged.
+    assert result.folds[0].train_start == 0
+
+
 def test_walk_forward_stitches_oos_by_compounding(monkeypatch):
     # A tiny low-period grid so RSI warms up inside short windows and produces real trades.
     monkeypatch.setattr(

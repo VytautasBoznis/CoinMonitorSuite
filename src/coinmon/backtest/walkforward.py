@@ -109,6 +109,7 @@ def walk_forward(
     *,
     train_bars: int = 365,
     test_bars: int = 180,
+    embargo_bars: int = 0,
     initial_capital: float = 10_000.0,
     objective: str = "total_return",
 ) -> WalkForwardResult:
@@ -116,18 +117,27 @@ def walk_forward(
     score the chosen params on the next, unseen ``test_bars`` window. The test segments are
     contiguous and back-to-back, so compounding their returns is one continuous out-of-sample
     equity curve, re-fit at every boundary — the honest read on whether the search generalizes.
+
+    ``embargo_bars`` purges the walk-forward: it drops that many bars between each train
+    window's end and its test window's start, so the train fit can't ride serial correlation
+    bleeding across the immediately-adjacent boundary into the first test bars. The test
+    segments stay back-to-back with each other (the embargo sits *before* each test, carved
+    out of the prior train tail), so the stitched OOS curve is still continuous.
     """
     n = len(candles)
-    if n < train_bars + test_bars:
+    span = train_bars + embargo_bars + test_bars
+    if n < span:
         raise ValueError(
-            f"need at least train+test = {train_bars + test_bars} bars, got {n}"
+            f"need at least train+embargo+test = {span} bars, got {n}"
         )
 
     folds: list[Fold] = []
     oos_factor = 1.0
     bh_factor = 1.0
-    for s in range(train_bars, n - test_bars + 1, test_bars):
-        train = candles.iloc[s - train_bars : s].reset_index(drop=True)
+    for s in range(train_bars + embargo_bars, n - test_bars + 1, test_bars):
+        train = candles.iloc[s - embargo_bars - train_bars : s - embargo_bars].reset_index(
+            drop=True
+        )
         test = candles.iloc[s : s + test_bars].reset_index(drop=True)
 
         params = _best_params(train, initial_capital, taker_fee, objective)

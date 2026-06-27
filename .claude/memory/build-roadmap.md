@@ -35,16 +35,26 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
   all-folds-positive XRP/ETH below zero) — switch to downside/negative-fold penalty before the GA.
   See [[chunk-a-findings]] and docs/lessons-learned.md. (O(n²) engine is the binding GA constraint.)
 
-- [ ] **B — Genome representation.** A `Genome` (param vector) ↔ Strategy decode + a registry of
-  strategy families with param ranges, so `evaluate_fitness` can score any genome. **Chunk A finding:
-  the pair/universe must be a gene** (pair selection dominated param selection). Also fold in the
-  **fitness penalty fix** (downside/negative-fold instead of symmetric std — see [[chunk-a-findings]])
-  before/with the GA. Verify: round-trip decode tests; existing RSI/EMA expressible as genomes.
+- [x] **B — Genome representation.** (2026-06-28) `coinmon/search/genome.py`: `Genome(family, pair,
+  params)` + `FAMILIES` registry (rsi_meanreversion, ema_crossover) with `ParamSpec` ranges +
+  `UNIVERSE` pair pool + `decode()` → `make_strategy` factory the fitness rig already accepts. Pair is
+  a gene (chunk-A). **Fitness penalty fix landed**: `evaluate_fitness` now docks `downside_dev =
+  sqrt(mean(min(0,foldₜ)²))` instead of symmetric std, so an all-folds-positive genome pays zero
+  instability (XRP/ETH no longer scored below zero). 63 tests green. Next: chunk C wires `decode` +
+  pair→candles (extract CLI `_load_candles`) into the GA loop.
 
-- [ ] **C — Evolutionary search loop.** GA over genomes: population, selection, crossover,
-  mutation, generations; fitness = `evaluate_fitness` (OOS + penalties), **fragility as a gate**
-  (post-filter or into fitness). CLI `coinmon search`. Verify: GA improves fitness on a seed; a
-  deliberately-overfit genome is rejected by OOS/fragility (the brief's "reject garbage" proof).
+- [x] **C — Evolutionary search loop.** (2026-06-28) `search/ga.py` = pure, seed-deterministic GA
+  mechanics (`random_genome`/`mutate`/`crossover`/`tournament_select`/`evolve`, elitism + fitness
+  memoization), I/O-free and taking a caller-supplied `fitness(genome)->float`. `search/runner.py`
+  wires it to real data: `CandleCache` (per-pair, resolves ratios via the extracted
+  `data/candles.load_candles`), scores each genome with OOS `evaluate_fitness`, then runs the
+  fragility kill-filter on the **winner only** as a post-filter gate (`fragility_verdict`,
+  `fraction_positive >= min`) — fragility stays OUT of per-genome fitness because the O(n²) engine
+  is the binding constraint. Bad/short pairs score `-inf` and are discarded. CLI `coinmon search`
+  (pop/gens/seed/folds/embargo/min-trades/stress). 78 tests green. Verified in unit tests: GA climbs
+  a synthetic objective; fragility gate thresholds correctly. **Not yet run against the live DB** —
+  the "reject garbage on real data" proof is a user run (`coinmon search --timeframe 1d --stress N`,
+  Docker DB up). Next: chunk D graduation gate (untouched holdout + full fragility → go/no-go).
 
 - [ ] **D — Graduation gate.** Pipeline that takes the GA winner, runs it on a never-touched final
   holdout span + full fragility kill-filter, emits a go/no-go report. Verify: garbage genome fails

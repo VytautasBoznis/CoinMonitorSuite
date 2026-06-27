@@ -12,8 +12,10 @@ from coinmon.backtest.stress import run_monte_carlo
 from coinmon.backtest.walkforward import walk_forward
 from coinmon.config import settings
 from coinmon.data import db
-from coinmon.data.ratio import build_ratio
+from coinmon.data.candles import load_candles
 from coinmon.feed import BarView, CostModel
+from coinmon.search.ga import GAConfig
+from coinmon.search.runner import FitnessParams, run_search
 from coinmon.strategies.base import Strategy
 from coinmon.strategies.ema_crossover import EMACrossover
 from coinmon.strategies.rsi_meanreversion import RSIMeanReversion
@@ -45,18 +47,6 @@ def _fetch_data(args: argparse.Namespace) -> None:
     )
 
 
-def _load_candles(read: Callable[[str], pd.DataFrame], symbol: str) -> pd.DataFrame:
-    """Resolve ``symbol`` to a candle frame via ``read`` (a ``symbol -> frame`` loader). A
-    USDC-quoted pair loads directly; any other pair (e.g. ETH/BTC) is synthesized from its
-    two USDC legs via ``build_ratio``."""
-    base, quote = symbol.split("/")
-    if quote == settings.quote_currency:
-        return read(symbol)
-    base_leg = read(f"{base}/{settings.quote_currency}")
-    quote_leg = read(f"{quote}/{settings.quote_currency}")
-    return build_ratio(base_leg, quote_leg)
-
-
 def _make_portfolio() -> SpotPortfolio:
     return SpotPortfolio(cash=INITIAL_CAPITAL, taker_fee=settings.taker_fee)
 
@@ -68,7 +58,7 @@ def _run(strategy: Strategy, candles: pd.DataFrame) -> BacktestResult:
 def _backtest(args: argparse.Namespace) -> None:
     conn = db.connect()
     try:
-        candles = _load_candles(
+        candles = load_candles(
             lambda s: db.read_candles(conn, settings.exchange, s, args.timeframe), args.symbol
         )
     finally:
@@ -108,7 +98,7 @@ def _backtest(args: argparse.Namespace) -> None:
 def _walk_forward(args: argparse.Namespace) -> None:
     conn = db.connect()
     try:
-        candles = _load_candles(
+        candles = load_candles(
             lambda s: db.read_candles(conn, settings.exchange, s, args.timeframe), args.symbol
         )
     finally:
@@ -132,6 +122,33 @@ def _walk_forward(args: argparse.Namespace) -> None:
         f"train={args.train}/test={args.test}/embargo={args.embargo}, select by {args.objective})\n"
     )
     print(result.summary())
+
+
+def _search(args: argparse.Namespace) -> None:
+    conn = db.connect()
+    try:
+        # The connection stays open for the whole run: CandleCache reads each pair lazily.
+        report = run_search(
+            lambda s: db.read_candles(conn, settings.exchange, s, args.timeframe),
+            settings.taker_fee,
+            GAConfig(
+                population=args.population,
+                generations=args.generations,
+                seed=args.seed,
+            ),
+            fitness_params=FitnessParams(
+                folds=args.folds, embargo_bars=args.embargo, min_trades=args.min_trades
+            ),
+            fragility_runs=args.stress,
+        )
+    finally:
+        conn.close()
+
+    print(
+        f"GA search over {args.timeframe} candles "
+        f"(pop={args.population}, gens={args.generations}, seed={args.seed})\n"
+    )
+    print(report.summary())
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -188,6 +205,34 @@ def build_parser() -> argparse.ArgumentParser:
         help="metric the search maximizes on each train window",
     )
     p_wf.set_defaults(func=_walk_forward)
+
+    p_search = sub.add_parser(
+        "search",
+        help="Evolutionary search over genomes (family+pair+params), scored OOS + fragility-gated",
+    )
+    p_search.add_argument("--timeframe", default="1d")
+    p_search.add_argument("--population", type=int, default=30, metavar="N")
+    p_search.add_argument("--generations", type=int, default=12, metavar="N")
+    p_search.add_argument("--seed", type=int, default=0)
+    p_search.add_argument("--folds", type=int, default=4, metavar="N", help="OOS scoring folds")
+    p_search.add_argument(
+        "--embargo", type=int, default=5, metavar="BARS", help="purge between folds"
+    )
+    p_search.add_argument(
+        "--min-trades",
+        type=int,
+        default=20,
+        metavar="N",
+        help="trade-count floor below which a genome is penalized",
+    )
+    p_search.add_argument(
+        "--stress",
+        type=int,
+        default=0,
+        metavar="N",
+        help="fragility kill-filter runs on the winner (0 = skip the gate)",
+    )
+    p_search.set_defaults(func=_search)
 
     return parser
 

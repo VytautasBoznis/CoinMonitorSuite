@@ -26,6 +26,9 @@ docs/lessons-learned.md ("Multi-pair + purged real-data run — chunk A").
    penalty. A symmetric std can't distinguish "always wins, varying amounts" from "swings
    negative," so the GA would **reject a real edge.** → **Replace with a downside / negative-fold
    penalty before the GA loop.** Relates to [[search-overfits-not-strategy]].
+   **RESOLVED (chunk B, 2026-06-28):** `evaluate_fitness` now penalizes `downside_dev =
+   sqrt(mean(min(0, foldₜ)²))` (zero when every fold ≥ 0) instead of symmetric std. Finding #1 (pair
+   gene) is also addressed — `coinmon/search/genome.py` makes `pair` a gene with a `UNIVERSE` pool.
 
 **Supporting results:**
 - XRP/ETH fixed genome, full series: +127% return, −37% max DD (vs B&H +176% / −69%), Calmar

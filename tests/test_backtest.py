@@ -6,7 +6,7 @@ import pytest
 from coinmon.backtest.engine import BacktestEngine
 from coinmon.backtest.metrics import summarize
 from coinmon.backtest.portfolio import SpotPortfolio
-from coinmon.cli import _load_candles
+from coinmon.data.candles import load_candles
 from coinmon.feed import BarView
 from coinmon.strategies.base import Strategy
 
@@ -140,7 +140,7 @@ def test_load_candles_usdc_pair_reads_directly():
         seen.append(symbol)
         return _candles([(10.0, 11.0)])
 
-    _load_candles(read, "BTC/USDC")
+    load_candles(read, "BTC/USDC")
     assert seen == ["BTC/USDC"]  # one direct read, no ratio synthesis
 
 
@@ -155,6 +155,6 @@ def test_load_candles_synthetic_ratio_reads_both_usdc_legs():
         seen.append(symbol)
         return legs[symbol]
 
-    out = _load_candles(read, "ETH/BTC")
+    out = load_candles(read, "ETH/BTC")
     assert seen == ["ETH/USDC", "BTC/USDC"]  # both legs loaded vs USDC
     assert out["close"].iloc[0] == pytest.approx(110.0 / 110.0 * 2.0)  # 220/110 = 2.0

@@ -1,9 +1,10 @@
+import math
 import statistics
 
 import pandas as pd
 import pytest
 
-from coinmon.backtest.fitness import _fold_bounds, evaluate_fitness
+from coinmon.backtest.fitness import _downside_dev, _fold_bounds, evaluate_fitness
 from coinmon.strategies.rsi_meanreversion import RSIMeanReversion
 
 
@@ -43,7 +44,8 @@ def test_fitness_arithmetic_matches_its_components():
     assert r.total_trades == sum(r.fold_trades)
     assert r.mean_oos_return == pytest.approx(statistics.fmean(r.fold_returns))
     assert r.return_std == pytest.approx(statistics.pstdev(r.fold_returns))
-    assert r.instability_penalty == pytest.approx(r.return_std)  # weight 1.0
+    assert r.downside_dev == pytest.approx(_downside_dev(r.fold_returns))
+    assert r.instability_penalty == pytest.approx(r.downside_dev)  # weight 1.0
     expected_trade_pen = max(0.0, 1.0 - r.total_trades / 20)
     assert r.trade_penalty == pytest.approx(expected_trade_pen)
     assert r.fitness == pytest.approx(
@@ -63,21 +65,25 @@ def test_low_trade_count_is_penalized_high_count_is_not():
     assert satisfied.trade_penalty == pytest.approx(0.0)
 
 
-def test_single_fold_has_no_instability_penalty():
-    candles = _oscillating_candles(40)
-    r = evaluate_fitness(candles, _make_rsi, taker_fee=0.0, folds=1, min_trades=0)
-    assert r.return_std == 0.0
-    assert r.instability_penalty == 0.0
+def test_downside_dev_ignores_upside_but_bites_losses():
+    # The chunk-A fix: all-positive folds pay nothing even when they vary a lot in size, while
+    # negative folds drive the penalty by their depth. A symmetric std would penalize the first.
+    assert _downside_dev([0.1, 0.2, 0.3]) == 0.0
+    assert _downside_dev([0.0, 0.0]) == 0.0
+    assert _downside_dev([-0.1, -0.1]) == pytest.approx(0.1)
+    assert _downside_dev([0.3, -0.2]) == pytest.approx(math.sqrt((0.2**2) / 2))
 
 
-def test_instability_weight_docks_inconsistent_genomes_more():
+def test_instability_weight_docks_downside_genomes_more():
     candles = _oscillating_candles(40)
     light = evaluate_fitness(candles, _make_rsi, taker_fee=0.0, folds=4, instability_weight=0.0)
     heavy = evaluate_fitness(candles, _make_rsi, taker_fee=0.0, folds=4, instability_weight=5.0)
-    # Same genome/data: only the instability weight differs. If returns vary across folds at
-    # all, the heavier weight must produce the lower fitness.
-    if heavy.return_std > 0:
+    # Same genome/data: only the instability weight differs. If any fold loses money at all, the
+    # heavier weight must produce the lower fitness; if every fold is green it must NOT (the fix).
+    if heavy.downside_dev > 0:
         assert heavy.fitness < light.fitness
+    else:
+        assert heavy.fitness == pytest.approx(light.fitness)
 
 
 def test_embargo_too_large_for_fold_size_raises():

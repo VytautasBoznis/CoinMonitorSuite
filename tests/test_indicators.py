@@ -5,6 +5,7 @@ import pytest
 
 from coinmon.indicators import (
     StreamingAD,
+    StreamingADX,
     StreamingATR,
     StreamingDEMA,
     StreamingElderRay,
@@ -12,12 +13,15 @@ from coinmon.indicators import (
     StreamingForceIndex,
     StreamingMACD,
     StreamingOBV,
+    StreamingParabolicSAR,
     StreamingPVT,
     StreamingRSI,
+    StreamingSuperTrend,
     StreamingTEMA,
     StreamingTRIX,
     StreamingTSI,
     ad,
+    adx,
     atr,
     dema,
     elder_ray,
@@ -25,8 +29,10 @@ from coinmon.indicators import (
     force_index,
     macd,
     obv,
+    parabolic_sar,
     pvt,
     rsi,
+    supertrend,
     tema,
     trix,
     tsi,
@@ -257,3 +263,115 @@ def test_pvt_known_values():
     assert out.iloc[0] == 0.0
     assert out.iloc[1] == pytest.approx(10.0)
     assert out.iloc[2] == pytest.approx(10.0 + 100.0 * 1.0 / 11.0)
+
+
+# --- N5b stateful trio: bit-parity (streaming == reference, float-for-float) -------
+
+
+@pytest.mark.parametrize("period", [2, 3, 14, 40])
+def test_streaming_adx_bit_parity(period):
+    highs, lows, closes = _ohlc(120)
+    stream = StreamingADX(period)
+    streamed = [
+        stream.update(h, low, c) for h, low, c in zip(highs, lows, closes, strict=True)
+    ]
+    ref_adx, ref_plus, ref_minus = adx(
+        pd.Series(highs), pd.Series(lows), pd.Series(closes), period
+    )
+    _assert_bit_equal([s[0] for s in streamed], ref_adx)
+    _assert_bit_equal([s[1] for s in streamed], ref_plus)
+    _assert_bit_equal([s[2] for s in streamed], ref_minus)
+
+
+@pytest.mark.parametrize("af_start,af_step,af_max", [(0.02, 0.02, 0.20), (0.01, 0.05, 0.30)])
+def test_streaming_parabolic_sar_bit_parity(af_start, af_step, af_max):
+    highs, lows, _ = _ohlc(120)
+    stream = StreamingParabolicSAR(af_start, af_step, af_max)
+    streamed = [stream.update(h, low) for h, low in zip(highs, lows, strict=True)]
+    _assert_bit_equal(
+        streamed,
+        parabolic_sar(pd.Series(highs), pd.Series(lows), af_start, af_step, af_max),
+    )
+
+
+@pytest.mark.parametrize("period,mult", [(2, 1.0), (10, 3.0), (14, 2.5)])
+def test_streaming_supertrend_bit_parity(period, mult):
+    highs, lows, closes = _ohlc(120)
+    stream = StreamingSuperTrend(period, mult)
+    streamed = [
+        stream.update(h, low, c) for h, low, c in zip(highs, lows, closes, strict=True)
+    ]
+    ref_line, ref_dir = supertrend(
+        pd.Series(highs), pd.Series(lows), pd.Series(closes), period, mult
+    )
+    _assert_bit_equal([s[0] for s in streamed], ref_line)
+    _assert_bit_equal([s[1] for s in streamed], ref_dir)
+
+
+def test_adx_known_values():
+    # period=2 on a 2-up-then-1-down series (hand-computed in the docstring derivation):
+    #   +DM = [-,2,2,0], -DM = [-,0,0,1], TR = [-,3,3,3]
+    #   Wilder seed @2: sTR=3, s+DM=2, s-DM=0 -> +DI=66.66.., -DI=0, DX[2]=100
+    #   @3: sTR=3, s+DM=1, s-DM=0.5 -> +DI=33.33.., -DI=16.66.., DX[3]=33.33..
+    #   ADX seeds on the 2 DX values @3: mean(100, 33.33..) = 66.66..
+    high = pd.Series([10.0, 12.0, 14.0, 13.0])
+    low = pd.Series([8.0, 9.0, 11.0, 10.0])
+    close = pd.Series([9.0, 11.0, 13.0, 11.0])
+    adx_line, plus_di, minus_di = adx(high, low, close, period=2)
+    assert plus_di.iloc[2] == pytest.approx(200.0 / 3.0)
+    assert minus_di.iloc[2] == pytest.approx(0.0)
+    assert plus_di.iloc[3] == pytest.approx(100.0 / 3.0)
+    assert minus_di.iloc[3] == pytest.approx(50.0 / 3.0)
+    assert math.isnan(adx_line.iloc[2])
+    assert adx_line.iloc[3] == pytest.approx((100.0 + 100.0 / 3.0) / 2.0)
+
+
+def test_parabolic_sar_known_values():
+    # Clean uptrend; init @bar1 up (h1=11>h0=10): SAR=l0=8, EP=h1=11, AF=0.02.
+    #   bar2: 8+0.02*(11-8)=8.06 -> clamp min(8.06, l1=9, l0=8)=8.0 ; EP->12, AF->0.04
+    #   bar3: 8+0.04*(12-8)=8.16 -> min(8.16, 10, 9)=8.16 ; EP->13, AF->0.06
+    #   bar4: 8.16+0.06*(13-8.16)=8.4504 -> min(.,11,10)=8.4504 ; EP->14, AF->0.08
+    high = pd.Series([10.0, 11.0, 12.0, 13.0, 14.0])
+    low = pd.Series([8.0, 9.0, 10.0, 11.0, 12.0])
+    out = parabolic_sar(high, low)
+    assert math.isnan(out.iloc[0])
+    assert out.iloc[1] == pytest.approx(8.0)
+    assert out.iloc[2] == pytest.approx(8.0)
+    assert out.iloc[3] == pytest.approx(8.16)
+    assert out.iloc[4] == pytest.approx(8.4504)
+
+
+def test_supertrend_known_values():
+    # period=1 ATR = TR each bar (Wilder p=1 collapses to the raw TR), so hand-computable.
+    #   TR = 2 every bar; hl2 = [9,10,11,12]; bands ±1*2.
+    #   init @1: fu=12, fl=8, trend=up -> line=fl=8
+    #   bar2: fl=9 (rises), close 11 in band -> trend stays up -> line=9
+    #   bar3: fl=10, close 12 in band -> up -> line=10
+    high = pd.Series([10.0, 11.0, 12.0, 13.0])
+    low = pd.Series([8.0, 9.0, 10.0, 11.0])
+    close = pd.Series([9.0, 10.0, 11.0, 12.0])
+    line, direction = supertrend(high, low, close, period=1, multiplier=1.0)
+    assert math.isnan(line.iloc[0])
+    assert line.iloc[1:].tolist() == pytest.approx([8.0, 9.0, 10.0])
+    assert direction.iloc[1:].tolist() == [1.0, 1.0, 1.0]
+
+
+def test_supertrend_uptrend_direction():
+    # A steady uptrend: SuperTrend should latch and stay long, line below price.
+    closes = [100.0 + 2.0 * i for i in range(60)]
+    highs = [c + 1.0 for c in closes]
+    lows = [c - 1.0 for c in closes]
+    line, direction = supertrend(
+        pd.Series(highs), pd.Series(lows), pd.Series(closes), period=10, multiplier=3.0
+    )
+    valid = direction.dropna()
+    assert (valid == 1.0).all()
+    tail = line.dropna()
+    assert (tail.to_numpy() < pd.Series(closes).to_numpy()[-len(tail):]).all()
+
+
+def test_n5b_period_must_be_positive():
+    with pytest.raises(ValueError):
+        adx(pd.Series([1.0]), pd.Series([1.0]), pd.Series([1.0]), period=0)
+    with pytest.raises(ValueError):
+        supertrend(pd.Series([1.0]), pd.Series([1.0]), pd.Series([1.0]), period=0)

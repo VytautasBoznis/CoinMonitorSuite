@@ -242,11 +242,22 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
       `volume*(c-prev)/prev`, to match pandas op order). 197 tests green (+27: bit-parity across periods, multi-output
       component checks, OBV/PVT known-values), ruff clean. Consumers still use only the streaming forms (strategies
       import them; the pandas fns are test oracles). Library only — no strategy/genome wiring (that's P).
-    - [ ] **N5b — Stateful trio (ADX/DMI, Parabolic SAR, SuperTrend).** The deferred fiddly ones: ADX needs a
-      second-stage Wilder seed over the first `period` valid DX values (the leading-NaN `_wilder_smooth` won't fit
-      as-is); Parabolic SAR is an AF/EP trend-flip state machine clamped to the prior two bars' extremes; SuperTrend
-      is ATR-band trend-direction carry-over. Each is its own loop reference + streaming class with hand-computed
-      known-value tests (no independent pandas oracle for the stateful recurrences). Do before/with P if P wants them.
+    - [x] **N5b — Stateful trio (ADX/DMI, Parabolic SAR, SuperTrend).** (2026-06-28) Added the 3 deferred
+      path-dependent indicators to `indicators/__init__.py`, same two-form contract as N5a — a full-series reference
+      (the bit-parity ORACLE, since none has an independent pandas oracle) + a `Streaming…` O(1)/bar class that
+      matches it float-for-float. **ADX/DMI** (`adx`→`(adx, plus_di, minus_di)`): +DM/-DM/TR Wilder-smoothed (first
+      stage, via the existing `_wilder_smooth`) → DIs from index `period`; DX itself Wilder-smoothed (SECOND stage)
+      → ADX from `2*period-1`. Solved the "won't fit `_wilder_smooth`" note by feeding the second stage through the
+      same `_WilderStream` PRIMITIVE the streaming form uses (seeds on the first `period` valid DX values, not a fixed
+      index) → guaranteed parity; `+DI+-DI==0` ⇒ DX=0 guard avoids 0/0. **Parabolic SAR** (`parabolic_sar`): the AF/EP
+      stop-and-reverse state machine — init on bar 1 (up if `high[1]>high[0]`), `SAR+=AF*(EP-SAR)` clamped to the prior
+      two bars' extremes, flip→SAR=EP/AF reset, new-extreme bumps AF by `af_step`≤`af_max`; bar 0 NaN. **SuperTrend**
+      (`supertrend`→`(line, direction)`): ATR bands `hl2±mult*ATR` ratcheted into final bands that only move against
+      price, direction flips on a close piercing the prior final band, line=lower(up)/upper(down); NaN until ATR valid
+      (index `period`), inits up. Streaming SAR holds the last two bars' extremes; streaming SuperTrend reuses
+      `StreamingATR` (inherits its proven parity). 236 tests green (+bit-parity across periods/AF triples + HAND-
+      computed known values: ADX p=2 derivation, SAR clean-uptrend SAR=[8,8,8.16,8.4504], SuperTrend p=1 ATR=TR
+      collapse, uptrend-latch property), ruff clean. Library only — no strategy/genome wiring (Q consumes them).
   - [x] **N6 — Bigger multi-seed sweep (the payoff test).** (2026-06-28) Built `coinmon sweep` — runs the SAME
     graduation search across `--seeds N` (shared DB conn + `CandleCache`, so candles read once not once/seed) and
     aggregates GO/NO-GO with the lottery-vs-edge diagnosis (GO count + DISTINCT pairs the GOs land on). Pure

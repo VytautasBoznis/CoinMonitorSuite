@@ -3,7 +3,7 @@ from __future__ import annotations
 import pandas as pd
 
 from coinmon.feed import BarView
-from coinmon.indicators import rsi
+from coinmon.indicators import StreamingRSI
 from coinmon.strategies.base import Strategy
 
 
@@ -21,14 +21,14 @@ class RSIMeanReversion(Strategy):
         self.period = period
         self.oversold = oversold
         self.exit_level = exit_level
-        self._closes: list[float] = []
+        self._rsi = StreamingRSI(period)
         self._target = 0
 
     def on_bar(self, view: BarView) -> int:
-        self._closes.append(view.candle.close)
+        streamed = self._rsi.update(view.candle.close)
         value = view.feature(f"rsi_{self.period}")
         if value is None:
-            value = rsi(pd.Series(self._closes), self.period).iloc[-1]
+            value = streamed
         if pd.isna(value):
             return self._target  # warmup: not enough history for RSI yet
 

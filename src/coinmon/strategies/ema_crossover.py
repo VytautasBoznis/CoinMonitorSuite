@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import pandas as pd
-
 from coinmon.feed import BarView, CostModel
-from coinmon.indicators import ema
+from coinmon.indicators import StreamingEMA
 from coinmon.strategies.base import Strategy
 
 
@@ -21,19 +19,22 @@ class EMACrossover(Strategy):
         self.cost = cost
         self.fast = fast
         self.slow = slow
-        self._closes: list[float] = []
+        self._fast_ema = StreamingEMA(fast)
+        self._slow_ema = StreamingEMA(slow)
         self._target = 0
 
     def on_bar(self, view: BarView) -> int:
-        self._closes.append(view.candle.close)
+        close = view.candle.close
+        fast_streamed = self._fast_ema.update(close)
+        slow_streamed = self._slow_ema.update(close)
         fast = view.feature(f"ema_{self.fast}")
         slow = view.feature(f"ema_{self.slow}")
-        if fast is None or slow is None:
-            closes = pd.Series(self._closes)
-            fast = ema(closes, self.fast).iloc[-1]
-            slow = ema(closes, self.slow).iloc[-1]
+        if fast is None:
+            fast = fast_streamed
+        if slow is None:
+            slow = slow_streamed
 
-        spread = (fast - slow) / view.candle.close
+        spread = (fast - slow) / close
         band = self.cost.round_trip_cost()
         if self._target == 0 and spread > band:
             self._target = 1

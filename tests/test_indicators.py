@@ -3,7 +3,14 @@ import math
 import pandas as pd
 import pytest
 
-from coinmon.indicators import atr, ema, rsi
+from coinmon.indicators import (
+    StreamingATR,
+    StreamingEMA,
+    StreamingRSI,
+    atr,
+    ema,
+    rsi,
+)
 
 
 def test_ema_known_values():
@@ -49,3 +56,67 @@ def test_period_must_be_positive():
         rsi(pd.Series([1.0, 2.0]), period=0)
     with pytest.raises(ValueError):
         atr(pd.Series([1.0]), pd.Series([1.0]), pd.Series([1.0]), period=0)
+
+
+# --- Streaming bit-parity -----------------------------------------------------
+# The streaming O(1)/bar forms must match the full-series recompute float-for-float,
+# bar by bar (the N1 perf rewrite preserves the exact numbers, not just close ones).
+
+
+def _ohlc(n: int) -> tuple[list[float], list[float], list[float]]:
+    """A deterministic, jagged price walk (varied gains/losses, no NaNs)."""
+    closes, highs, lows = [], [], []
+    price = 100.0
+    for i in range(n):
+        price *= 1.0 + 0.05 * math.sin(i * 1.3) - 0.03 * math.cos(i * 0.7)
+        closes.append(price)
+        highs.append(price * (1.0 + 0.01 * abs(math.sin(i * 2.1))))
+        lows.append(price * (1.0 - 0.01 * abs(math.cos(i * 1.7))))
+    return highs, lows, closes
+
+
+def _assert_bit_equal(streamed: list[float], reference) -> None:
+    ref = reference.tolist()
+    assert len(streamed) == len(ref)
+    for s, r in zip(streamed, ref, strict=True):
+        if math.isnan(r):
+            assert math.isnan(s)
+        else:
+            assert s == r  # exact, not approx
+
+
+@pytest.mark.parametrize("period", [2, 3, 5, 14, 40])
+def test_streaming_ema_bit_parity(period):
+    _, _, closes = _ohlc(120)
+    stream = StreamingEMA(period)
+    streamed = [stream.update(c) for c in closes]
+    _assert_bit_equal(streamed, ema(pd.Series(closes), period))
+
+
+@pytest.mark.parametrize("period", [2, 3, 14, 40])
+def test_streaming_rsi_bit_parity(period):
+    _, _, closes = _ohlc(120)
+    stream = StreamingRSI(period)
+    streamed = [stream.update(c) for c in closes]
+    _assert_bit_equal(streamed, rsi(pd.Series(closes), period))
+
+
+def test_streaming_rsi_no_loss_window_is_100():
+    closes = [1.0, 2.0, 3.0, 4.0, 5.0]
+    stream = StreamingRSI(3)
+    streamed = [stream.update(c) for c in closes]
+    _assert_bit_equal(streamed, rsi(pd.Series(closes), 3))
+    assert streamed[-1] == 100.0
+
+
+@pytest.mark.parametrize("period", [2, 3, 14, 40])
+def test_streaming_atr_bit_parity(period):
+    highs, lows, closes = _ohlc(120)
+    stream = StreamingATR(period)
+    streamed = [
+        stream.update(h, low, c)
+        for h, low, c in zip(highs, lows, closes, strict=True)
+    ]
+    _assert_bit_equal(
+        streamed, atr(pd.Series(highs), pd.Series(lows), pd.Series(closes), period)
+    )

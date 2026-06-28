@@ -174,11 +174,16 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
   proved the gate is a trustworthy judge but alpha is unproven on a tiny search. User's call: make the search
   fast + strict + bigger, IN THIS ORDER (speed → strictness → surface, so the stricter judge is already in place
   before the surface is flooded — adding surface first just manufactures false GOs). **Done one part per session.**
-  - **N1 — Incremental indicators (O(n²)→O(n)).** THE perf win: strategies recompute each indicator over the
-    whole `_closes` buffer every bar (`rsi(pd.Series(self._closes),…).iloc[-1]`, same in atr_channel) → O(n²)
-    with pandas-alloc overhead, the binding constraint since chunk A. Make EMA/RSI/ATR stateful streaming
-    (O(1)/bar; Wilder smoothing IS an EMA, so RSI/ATR are genuinely recursive once warm). Verify: bit-parity test
-    vs the current pandas output, then ~50–300× faster. Preserves live-parity (still the same Strategy object).
+  - [x] **N1 — Incremental indicators (O(n²)→O(n)).** (2026-06-28) THE perf win: strategies recomputed each
+    indicator over the whole `_closes` buffer every bar (`rsi(pd.Series(self._closes),…).iloc[-1]`) → O(n²), the
+    binding constraint since chunk A. Added `StreamingEMA`/`StreamingRSI`/`StreamingATR` (+ `_WilderStream`) to
+    `indicators/__init__.py`: O(1)/bar, **bit-identical** to the pandas functions' `.iloc[-1]` per bar — each
+    replicates the exact arithmetic (ewm adjust=False recurrence `old*prev+new*x` ÷ `(old+new)`; Wilder = numpy-mean
+    SMA seed then recursive). The 3 strategies (rsi_meanreversion/ema_crossover/atr_channel) now drive the streaming
+    objects instead of recomputing; the `view.feature()` fast path is kept and live-parity is preserved (same
+    Strategy object). 145 tests green (+14: bit-parity vs full-series recompute, exact `==`, periods 2–40).
+    **Measured: 5380× faster at n=4000** (gap widens with n; O(n²)→O(n)), bit-parity confirmed. Changed files
+    ruff-clean (pre-existing walkforward B905 + walkforward/viewer E501 untouched). Next: N2 (CPU multiprocessing).
   - **N2 — CPU multiprocessing.** Population/folds/fragility/seeds are embarrassingly parallel. Fan the per-genome
     fitness map across cores (the Ryzen). MUST stay deterministic: parallelize the pure `genome→float`, never the
     RNG stream. Windows = spawn (picklable workers / reload candles from DB). Verify: identical results to serial,

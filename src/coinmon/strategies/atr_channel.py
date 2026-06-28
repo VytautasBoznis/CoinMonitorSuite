@@ -3,7 +3,7 @@ from __future__ import annotations
 import pandas as pd
 
 from coinmon.feed import BarView
-from coinmon.indicators import atr, ema
+from coinmon.indicators import StreamingATR, StreamingEMA
 from coinmon.strategies.base import Strategy
 
 
@@ -22,25 +22,21 @@ class ATRChannelBreakout(Strategy):
     def __init__(self, period: int = 14, mult: float = 1.5) -> None:
         self.period = period
         self.mult = mult
-        self._highs: list[float] = []
-        self._lows: list[float] = []
-        self._closes: list[float] = []
+        self._atr = StreamingATR(period)
+        self._ema = StreamingEMA(period)
         self._target = 0
 
     def on_bar(self, view: BarView) -> int:
         candle = view.candle
-        self._highs.append(candle.high)
-        self._lows.append(candle.low)
-        self._closes.append(candle.close)
+        atr_streamed = self._atr.update(candle.high, candle.low, candle.close)
+        mid_streamed = self._ema.update(candle.close)
 
         atr_value = view.feature(f"atr_{self.period}")
         mid = view.feature(f"ema_{self.period}")
-        if atr_value is None or mid is None:
-            closes = pd.Series(self._closes)
-            atr_value = atr(
-                pd.Series(self._highs), pd.Series(self._lows), closes, self.period
-            ).iloc[-1]
-            mid = ema(closes, self.period).iloc[-1]
+        if atr_value is None:
+            atr_value = atr_streamed
+        if mid is None:
+            mid = mid_streamed
         if pd.isna(atr_value) or pd.isna(mid):
             return self._target  # warmup: not enough history for ATR yet
 

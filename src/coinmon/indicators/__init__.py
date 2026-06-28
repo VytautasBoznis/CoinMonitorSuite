@@ -73,3 +73,109 @@ def _wilder_smooth(values: pd.Series, period: int) -> pd.Series:
         prev = (prev * (period - 1) + arr[i]) / period
         out[i] = prev
     return pd.Series(out, index=values.index)
+
+
+# --- Streaming O(1)/bar forms -------------------------------------------------
+# The functions above recompute the whole series; a strategy that called them every
+# bar was O(n^2) (the binding GA constraint since chunk A). The classes below update
+# one bar at a time and are BIT-IDENTICAL to the functions' ``.iloc[-1]`` per bar:
+# each replicates the exact arithmetic above so a streamed run matches a full recompute
+# float-for-float (see test_indicators bit-parity tests). The same object drives backtest
+# and live, so live-parity is preserved.
+
+_NAN = float("nan")
+
+
+class _WilderStream:
+    """Streaming counterpart of ``_wilder_smooth``: SMA seed over the first ``period``
+    fed values (numpy mean, matching the function), then the recursive update. Callers
+    feed it from the first non-NaN input onward, so it warms up after ``period`` updates.
+    """
+
+    def __init__(self, period: int) -> None:
+        self._period = period
+        self._seed: list[float] = []
+        self._value: float | None = None
+
+    def update(self, x: float) -> float:
+        if self._value is None:
+            self._seed.append(x)
+            if len(self._seed) < self._period:
+                return _NAN
+            self._value = float(np.asarray(self._seed, dtype="float64").mean())
+            return self._value
+        self._value = (self._value * (self._period - 1) + x) / self._period
+        return self._value
+
+
+class StreamingEMA:
+    """Streaming ``ema``: ``ewm(span=period, adjust=False).mean()`` one value at a time.
+
+    Replicates pandas' adjust=False recurrence exactly — seed on the first value, then
+    ``weighted = old*prev + new*x; weighted /= (old + new)`` with ``old = 1-alpha``,
+    ``new = alpha`` — so the streamed series is float-identical. Never NaN (like ``ema``).
+    """
+
+    def __init__(self, period: int) -> None:
+        if period < 1:
+            raise ValueError("period must be >= 1")
+        alpha = 2.0 / (period + 1)
+        self._old = 1.0 - alpha
+        self._new = alpha
+        self._value: float | None = None
+
+    def update(self, x: float) -> float:
+        if self._value is None:
+            self._value = x
+        else:
+            self._value = self._old * self._value + self._new * x
+            self._value /= self._old + self._new
+        return self._value
+
+
+class StreamingRSI:
+    """Streaming ``rsi`` with Wilder smoothing. Returns NaN for the first ``period`` bars
+    (warmup) and 100.0 over a no-loss window, matching ``rsi``."""
+
+    def __init__(self, period: int = 14) -> None:
+        if period < 1:
+            raise ValueError("period must be >= 1")
+        self._gain = _WilderStream(period)
+        self._loss = _WilderStream(period)
+        self._prev_close: float | None = None
+
+    def update(self, close: float) -> float:
+        if self._prev_close is None:
+            self._prev_close = close
+            return _NAN  # no prior close -> diff is NaN at bar 0
+        delta = close - self._prev_close
+        self._prev_close = close
+        avg_gain = self._gain.update(max(delta, 0.0))
+        avg_loss = self._loss.update(max(-delta, 0.0))
+        if avg_gain != avg_gain:  # NaN during warmup
+            return _NAN
+        if avg_loss == 0.0:
+            return 100.0  # no losses over the window
+        rs = avg_gain / avg_loss
+        return 100.0 - 100.0 / (1.0 + rs)
+
+
+class StreamingATR:
+    """Streaming ``atr`` with Wilder smoothing. The first bar has no prior close so its
+    true range is skipped (NaN), and the first ``period`` outputs are NaN, matching ``atr``."""
+
+    def __init__(self, period: int = 14) -> None:
+        if period < 1:
+            raise ValueError("period must be >= 1")
+        self._tr = _WilderStream(period)
+        self._prev_close: float | None = None
+
+    def update(self, high: float, low: float, close: float) -> float:
+        if self._prev_close is None:
+            self._prev_close = close
+            return _NAN  # no prior close for the first bar
+        true_range = max(
+            high - low, abs(high - self._prev_close), abs(low - self._prev_close)
+        )
+        self._prev_close = close
+        return self._tr.update(true_range)

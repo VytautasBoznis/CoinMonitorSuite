@@ -325,6 +325,26 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
   --cross-pair 5`): does the O-hardened gate hold its false-GO rate against this bigger-but-bounded surface? If yes →
   earned the right to go unbounded (Q). If no → the judge needs more work, discovered cheaply. See [[chunk-p-bounded-combo]].
 
+- [x] **S — Walk-forward parameter stability.** (2026-06-28) The validation chunk the nested-holdout
+  refutation demanded ([[nested-holdout-refutes-golden]]): turn that one-shot finding into a rolling
+  diagnostic. `search/stability.py`: `run_stability` re-runs the ENTIRE selection process (the
+  unchanged `run_search` — GA → graduation, parity by construction) on a sequence of rolling
+  fractional windows (`window_bounds(size, step, n)`, default 60% windows advancing 20% → ~3 panes;
+  each window sliced from every series via a windowed read, `run_search` carves that window's own
+  holdout tail), then measures the two things an overfit search betrays: **(1) selection agreement**
+  — distinct families/pairs/directions + modal recurrence + normalized `param_drift` between
+  consecutive same-family winners (a curve-fit hops, an edge recurs); **(2) forward persistence** —
+  each window's frozen winner re-graduated (`graduate()`) on the NEXT window's holdout (genuinely
+  later, unseen bars): does passing the gate on window i buy a GO on window i+1, or is it the 0/2 the
+  nested holdout found? Adds NO new gate and changes no verdict — a diagnostic on the validated judge.
+  CLI `coinmon stability --timeframe 1d --holdout 0.2 --window 0.6 --step 0.2 [--windows N] [--stress
+  N]`. 231 tests green (+9: window geometry, param_drift normalization, end-to-end window↔forward
+  linkage, determinism, summary), ruff clean. **Not yet run live** — the real read (is there ANY
+  stable/persistent winner across windows, or does everything hop + decay?) is a user run on the DB.
+  Defaults: 60%/20% windows, 0.2 holdout. Caveat: fraction-of-series windows are a coarse probe (like
+  the old RSI walk-forward) and the current 5-base DB gives only ~3 windows on one broad regime — a
+  cleaner read needs more scraped bases ([[nested-holdout-refutes-golden]] prerequisite still holds).
+
 - [ ] **Q — Full tree-GP (the endpoint).** Genomes = typed expression trees over the indicator pool + operators /
   constants / price-fields; a strongly-typed grammar so crossover can't make `RSI(close > 30)` garbage; subtree
   crossover + subtree/point mutation; **bloat control** (depth/size caps + parsimony pressure in fitness — the

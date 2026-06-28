@@ -27,6 +27,7 @@ from coinmon.search.runner import (
     summarize_sweep,
     sweep_row,
 )
+from coinmon.search.stability import run_stability
 from coinmon.strategies.atr_channel import ATRChannelBreakout
 from coinmon.strategies.base import Strategy
 from coinmon.strategies.ema_crossover import EMACrossover
@@ -282,6 +283,52 @@ def _sweep(args: argparse.Namespace) -> None:
     print(summarize_sweep(rows))
 
 
+def _stability(args: argparse.Namespace) -> None:
+    # Walk-forward parameter stability: re-run the full graduation search on each rolling window and
+    # measure whether the winners recur (selection agreement) and whether a window's winner still
+    # graduates on the next window's later, unseen bars (forward persistence). The honest read on
+    # whether 'passed the gate' is a stable edge or a holdout-luck artifact (nested-holdout lesson).
+    if args.holdout <= 0:
+        raise SystemExit("stability needs --holdout > 0: each window graduates on its own tail")
+    conn = db.connect()
+    try:
+        universe = discover_universe(
+            db.list_series(conn),
+            exchange=settings.exchange,
+            quote=settings.quote_currency,
+            timeframe=args.timeframe,
+        )
+        print(f"universe: {len(universe)} pairs auto-built from stored {args.timeframe} candles\n")
+        report = run_stability(
+            lambda s: db.read_candles(conn, settings.exchange, s, args.timeframe),
+            settings.taker_fee,
+            GAConfig(
+                population=args.population,
+                generations=args.generations,
+                seed=args.seed,
+                universe=universe,
+            ),
+            holdout_fraction=args.holdout,
+            window_size=args.window,
+            step=args.step,
+            n_windows=args.windows,
+            fitness_params=FitnessParams(
+                folds=args.folds, embargo_bars=args.embargo, min_trades=args.min_trades
+            ),
+            fragility_runs=args.stress,
+            graduate_min_trades=args.graduate_min_trades,
+            workers=args.workers,
+        )
+    finally:
+        conn.close()
+
+    print(
+        f"walk-forward stability over {args.timeframe} candles "
+        f"(window={args.window}, step={args.step}, seed={args.seed})\n"
+    )
+    print(report.summary())
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="coinmon", description="CoinMonitorSuite backtester")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -496,6 +543,77 @@ def build_parser() -> argparse.ArgumentParser:
         help="CPU processes for the per-genome fitness map (0 = all cores; 1 = serial, default)",
     )
     p_sweep.set_defaults(func=_sweep)
+
+    p_stab = sub.add_parser(
+        "stability",
+        help="Walk-forward parameter stability: re-run the search per rolling window, measure "
+        "selection agreement + forward persistence (does a GO survive the next regime?)",
+    )
+    p_stab.add_argument("--timeframe", default="1d")
+    p_stab.add_argument("--population", type=int, default=30, metavar="N")
+    p_stab.add_argument("--generations", type=int, default=12, metavar="N")
+    p_stab.add_argument("--seed", type=int, default=0)
+    p_stab.add_argument(
+        "--window",
+        type=float,
+        default=0.6,
+        metavar="FRAC",
+        help="window width as a fraction of each series (default 0.6)",
+    )
+    p_stab.add_argument(
+        "--step",
+        type=float,
+        default=0.2,
+        metavar="FRAC",
+        help="how far each window advances, fraction of the series (<= --window, default 0.2)",
+    )
+    p_stab.add_argument(
+        "--windows",
+        type=int,
+        default=None,
+        metavar="N",
+        help="cap the number of windows (default: as many as fit in [0, 1])",
+    )
+    p_stab.add_argument("--folds", type=int, default=4, metavar="N", help="OOS scoring folds")
+    p_stab.add_argument(
+        "--embargo", type=int, default=5, metavar="BARS", help="purge between folds"
+    )
+    p_stab.add_argument(
+        "--min-trades",
+        type=int,
+        default=20,
+        metavar="N",
+        help="trade-count floor below which a genome is penalized",
+    )
+    p_stab.add_argument(
+        "--stress",
+        type=int,
+        default=0,
+        metavar="N",
+        help="fragility kill-filter runs per winner (0 = default 200 under the holdout gate)",
+    )
+    p_stab.add_argument(
+        "--holdout",
+        type=float,
+        default=0.2,
+        metavar="FRACTION",
+        help="each window's never-searched holdout fraction the graduation gate runs on (def 0.2)",
+    )
+    p_stab.add_argument(
+        "--graduate-min-trades",
+        type=int,
+        default=15,
+        metavar="N",
+        help="minimum holdout trades for a window's winner to graduate GO",
+    )
+    p_stab.add_argument(
+        "--workers",
+        type=int,
+        default=1,
+        metavar="N",
+        help="CPU processes for the per-genome fitness map (0 = all cores; 1 = serial, default)",
+    )
+    p_stab.set_defaults(func=_stability)
 
     return parser
 

@@ -70,3 +70,10 @@ seed-sensitive, [[first-live-search-graduation]]); (2) it TRAILS buy&hold (+2.92
 runs beat B&H) — a legitimate absolute-return GO, but a flat-prone mean-reverter lags a strong rally,
 not market-beating; (3) the **choppy-crash case is still UNPROVEN** — the winner landed on an
 up-regime pair, so the whipsaw caveat above was not exercised this run.
+
+**Then the 10-seed sweep — see [[regime-adaptive-multiseed-sweep]] for the full read.** 4 GO / 6 NO-GO:
+the direction fix holds across seeds (every GO is correct-direction adaptive, every long-into-crash
+NO-GO'd) and the gate is a validated judge (it NO-GO'd a +159% thin-trade winner AND a whipsawed
+adaptive short — so the whipsaw caveat WAS exercised and caught). But all GOs are thin-trade leveraged
+crash-shorts on one down-regime → durable alpha still unproven. The DIRECTION-OVERFIT this memory is
+about is closed; the remaining open question is evidence/regime-robustness, not direction.

@@ -165,7 +165,10 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
   regime-adaptive (MA47), 38% stop` graduated **GO** (holdout +2.92%/134 bars, 13 trades, fragility 100%) on
   the SAME +13.65% up-regime where the fixed-short gene NO-GO'd by shorting the rise. Direction now reads the
   holdout's own trend. Caveats: one seed (0); trails B&H; choppy-crash case still unproven (winner was up-regime).
-  See [[direction-gene-overfits-regime]] (RESOLVED).
+  See [[direction-gene-overfits-regime]] (RESOLVED). **10-seed sweep then run** → 4 GO / 6 NO-GO: the GATE is a
+  validated trustworthy judge (discriminates direction/evidence/robustness) but durable ALPHA is unproven (all
+  GOs are thin-trade leveraged crash-shorts on one down-regime). Next: raise `--graduate-min-trades` to ~15–20,
+  test across regimes, forward-test. See [[regime-adaptive-multiseed-sweep]].
 
 - [ ] **G — Phase 2: suggestions service.** Service runs the graduated strategy live (paper) and
   emits trade suggestions; no execution. Dockerized; FastAPI control-plane begins.

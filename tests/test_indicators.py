@@ -3,7 +3,7 @@ import math
 import pandas as pd
 import pytest
 
-from coinmon.indicators import ema, rsi
+from coinmon.indicators import atr, ema, rsi
 
 
 def test_ema_known_values():
@@ -28,8 +28,24 @@ def test_rsi_all_gains_is_100():
     assert out.iloc[-1] == pytest.approx(100.0)
 
 
+def test_atr_wilder_known_values():
+    # TR (first bar NaN: no prior close); prev_close = [-, 9, 11, 10]:
+    #   idx1 max(12-9, |12-9|, |9-9|)=3, idx2 max(11-10, |11-11|, |10-11|)=1,
+    #   idx3 max(13-11, |13-10|, |11-10|)=3
+    # period=2 Wilder: seed @ idx2 = (3+1)/2 = 2.0, idx3 = (2.0*1 + 3)/2 = 2.5
+    high = pd.Series([10.0, 12.0, 11.0, 13.0])
+    low = pd.Series([8.0, 9.0, 10.0, 11.0])
+    close = pd.Series([9.0, 11.0, 10.0, 12.0])
+    out = atr(high, low, close, period=2)
+    assert [math.isnan(v) for v in out[:2]] == [True, True]
+    assert out.iloc[2] == pytest.approx(2.0)
+    assert out.iloc[3] == pytest.approx(2.5)
+
+
 def test_period_must_be_positive():
     with pytest.raises(ValueError):
         ema(pd.Series([1.0, 2.0]), period=0)
     with pytest.raises(ValueError):
         rsi(pd.Series([1.0, 2.0]), period=0)
+    with pytest.raises(ValueError):
+        atr(pd.Series([1.0]), pd.Series([1.0]), pd.Series([1.0]), period=0)

@@ -36,6 +36,26 @@ def rsi(series: pd.Series, period: int = 14) -> pd.Series:
     return out
 
 
+def atr(
+    high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14
+) -> pd.Series:
+    """Average True Range with Wilder smoothing.
+
+    True range is ``max(high-low, |high-prev_close|, |low-prev_close|)``; the first bar has no
+    prior close so its TR is NaN (warmup), and the first ``period`` outputs are NaN — the same
+    leading-NaN convention as ``rsi``. A volatility measure in price units, used for the ATR
+    channel's no-trade band.
+    """
+    if period < 1:
+        raise ValueError("period must be >= 1")
+    prev_close = close.shift(1)
+    true_range = pd.concat(
+        [high - low, (high - prev_close).abs(), (low - prev_close).abs()], axis=1
+    ).max(axis=1)
+    true_range.iloc[0] = np.nan  # no prior close for the first bar
+    return _wilder_smooth(true_range, period)
+
+
 def _wilder_smooth(values: pd.Series, period: int) -> pd.Series:
     """Wilder's smoothed average: SMA seed over the first ``period`` values, then recursive.
 

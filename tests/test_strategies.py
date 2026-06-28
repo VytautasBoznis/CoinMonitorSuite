@@ -2,6 +2,7 @@ import pytest
 
 from coinmon.data.models import Candle
 from coinmon.feed import BarView, CostModel
+from coinmon.strategies.atr_channel import ATRChannelBreakout
 from coinmon.strategies.base import Strategy
 from coinmon.strategies.ema_crossover import EMACrossover
 from coinmon.strategies.rsi_meanreversion import RSIMeanReversion
@@ -56,6 +57,35 @@ def test_no_lookahead_a_target_depends_only_on_past():
     for t in (10, 20, 30, len(closes) - 1):
         prefix = _run(RSIMeanReversion(period=5), _views(closes[: t + 1]))
         assert prefix[-1] == full[t]
+
+
+def _ohlc_views(rows):
+    # rows: (high, low, close); open unused by the channel strategy.
+    return [
+        BarView(candle=Candle(open_time=i, open=c, high=h, low=lo, close=c, volume=1.0))
+        for i, (h, lo, c) in enumerate(rows)
+    ]
+
+
+def test_atr_channel_enters_breakout_exits_breakdown():
+    # Tight consolidation around 100 (no breakout), then a sharp rally above the upper band,
+    # then a collapse below the lower band.
+    consol = [(101.0, 99.0, 100.0 + (0.5 if i % 2 else -0.5)) for i in range(16)]
+    rally = [(c + 1.0, c - 1.0, float(c)) for c in (108, 116, 126, 138, 150)]
+    crash = [(c + 1.0, c - 1.0, float(c)) for c in (130, 100, 70, 50, 40)]
+    targets = _run(ATRChannelBreakout(period=5, mult=1.5), _ohlc_views(consol + rally + crash))
+    assert set(targets[:16]) == {0}  # stayed flat through the consolidation
+    assert 1 in targets  # entered on the breakout
+    assert targets[-1] == 0  # released after the breakdown
+
+
+def test_atr_channel_precomputed_features_bypass_internal_compute():
+    # Feed supplies ema/atr features: the channel is mid +/- 1.5*atr = 100 +/- 3, so a close
+    # above 103 enters long without any internal recompute.
+    closes = [100.0, 105.0, 110.0]
+    feats = [{"ema_5": 100.0, "atr_5": 2.0} for _ in closes]
+    targets = _run(ATRChannelBreakout(period=5, mult=1.5), _views(closes, feats))
+    assert targets == [0, 1, 1]
 
 
 class _ScriptedInner(Strategy):

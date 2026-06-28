@@ -4,6 +4,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 
 from coinmon.feed import CostModel
+from coinmon.strategies.atr_channel import ATRChannelBreakout
 from coinmon.strategies.base import Strategy
 from coinmon.strategies.ema_crossover import EMACrossover
 from coinmon.strategies.rsi_meanreversion import RSIMeanReversion
@@ -47,6 +48,10 @@ def _build_ema(p: Mapping[str, float]) -> Strategy:
     return EMACrossover(CostModel.from_settings(), fast=int(p["fast"]), slow=int(p["slow"]))
 
 
+def _build_atr(p: Mapping[str, float]) -> Strategy:
+    return ATRChannelBreakout(period=int(p["period"]), mult=p["mult"])
+
+
 # The registry of searchable families. Ranges are deliberately broad-but-sane: the OOS fitness +
 # fragility gate (not a tight prior) is what's trusted to reject the junk corners. The soft
 # orderings oversold < exit_level and fast < slow are NOT hard-enforced — a malformed band just
@@ -69,6 +74,14 @@ FAMILIES: dict[str, StrategyFamily] = {
             "slow": ParamSpec(5, 200, integer=True),
         },
         build=_build_ema,
+    ),
+    "atr_channel": StrategyFamily(
+        name="atr_channel",
+        params={
+            "period": ParamSpec(5, 40, integer=True),
+            "mult": ParamSpec(0.5, 4.0),
+        },
+        build=_build_atr,
     ),
 }
 

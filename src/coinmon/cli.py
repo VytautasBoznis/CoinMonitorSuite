@@ -20,6 +20,7 @@ from coinmon.live.feed import LiveFeed
 from coinmon.live.runner import ForwardRunner
 from coinmon.search.ga import GAConfig
 from coinmon.search.runner import FitnessParams, run_search
+from coinmon.strategies.atr_channel import ATRChannelBreakout
 from coinmon.strategies.base import Strategy
 from coinmon.strategies.ema_crossover import EMACrossover
 from coinmon.strategies.rsi_meanreversion import RSIMeanReversion
@@ -33,6 +34,7 @@ INITIAL_CAPITAL = 10_000.0
 STRATEGIES: dict[str, Callable[[], Strategy]] = {
     "ema_crossover": lambda: EMACrossover(CostModel.from_settings()),
     "rsi_meanreversion": lambda: RSIMeanReversion(),
+    "atr_channel": lambda: ATRChannelBreakout(),
 }
 
 

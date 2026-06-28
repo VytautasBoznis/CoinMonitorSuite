@@ -1,0 +1,53 @@
+from __future__ import annotations
+
+import pandas as pd
+
+from coinmon.feed import BarView
+from coinmon.indicators import atr, ema
+from coinmon.strategies.base import Strategy
+
+
+class ATRChannelBreakout(Strategy):
+    """Keltner-style channel breakout (long/flat): go long on a volatility-confirmed breakout,
+    flat once price falls back through the lower channel.
+
+    The channel is an EMA midline +/- ``mult`` * ATR, both over ``period``. Enter long when the
+    close pushes above the upper band; exit when it drops below the lower band. The ``mult`` * ATR
+    half-width IS the no-trade band — it scales with volatility, so the cost hurdle is structural
+    (like RSIMeanReversion's threshold gap) rather than a fixed price-cost band. Uses precomputed
+    ``atr_<period>`` / ``ema_<period>`` features when the feed supplies them, else recomputes both
+    from its own buffers of highs/lows/closes.
+    """
+
+    def __init__(self, period: int = 14, mult: float = 1.5) -> None:
+        self.period = period
+        self.mult = mult
+        self._highs: list[float] = []
+        self._lows: list[float] = []
+        self._closes: list[float] = []
+        self._target = 0
+
+    def on_bar(self, view: BarView) -> int:
+        candle = view.candle
+        self._highs.append(candle.high)
+        self._lows.append(candle.low)
+        self._closes.append(candle.close)
+
+        atr_value = view.feature(f"atr_{self.period}")
+        mid = view.feature(f"ema_{self.period}")
+        if atr_value is None or mid is None:
+            closes = pd.Series(self._closes)
+            atr_value = atr(
+                pd.Series(self._highs), pd.Series(self._lows), closes, self.period
+            ).iloc[-1]
+            mid = ema(closes, self.period).iloc[-1]
+        if pd.isna(atr_value) or pd.isna(mid):
+            return self._target  # warmup: not enough history for ATR yet
+
+        upper = mid + self.mult * atr_value
+        lower = mid - self.mult * atr_value
+        if self._target == 0 and candle.close > upper:
+            self._target = 1
+        elif self._target == 1 and candle.close < lower:
+            self._target = 0
+        return self._target

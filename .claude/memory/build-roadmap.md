@@ -170,6 +170,97 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
   GOs are thin-trade leveraged crash-shorts on one down-regime). Next: raise `--graduate-min-trades` to ~15–20,
   test across regimes, forward-test. See [[regime-adaptive-multiseed-sweep]].
 
+- [ ] **N — Scale the search (now that the JUDGE is validated).** The sweep ([[regime-adaptive-multiseed-sweep]])
+  proved the gate is a trustworthy judge but alpha is unproven on a tiny search. User's call: make the search
+  fast + strict + bigger, IN THIS ORDER (speed → strictness → surface, so the stricter judge is already in place
+  before the surface is flooded — adding surface first just manufactures false GOs). **Done one part per session.**
+  - **N1 — Incremental indicators (O(n²)→O(n)).** THE perf win: strategies recompute each indicator over the
+    whole `_closes` buffer every bar (`rsi(pd.Series(self._closes),…).iloc[-1]`, same in atr_channel) → O(n²)
+    with pandas-alloc overhead, the binding constraint since chunk A. Make EMA/RSI/ATR stateful streaming
+    (O(1)/bar; Wilder smoothing IS an EMA, so RSI/ATR are genuinely recursive once warm). Verify: bit-parity test
+    vs the current pandas output, then ~50–300× faster. Preserves live-parity (still the same Strategy object).
+  - **N2 — CPU multiprocessing.** Population/folds/fragility/seeds are embarrassingly parallel. Fan the per-genome
+    fitness map across cores (the Ryzen). MUST stay deterministic: parallelize the pure `genome→float`, never the
+    RNG stream. Windows = spawn (picklable workers / reload candles from DB). Verify: identical results to serial,
+    ~Ncores× faster. (GPU/4060 deferred — it needs a vectorized batch-engine rewrite that breaks live-parity; only
+    worth it after O(n²) is gone and we're still compute-bound at 100k-genome scale.)
+  - **N3 — Stricter gate: min-trades → 15.** Trivial (`graduate_min_trades` default), high signal: the sweep's
+    GOs were thin-trade (5–7) low-evidence genomes; 15 forces real sample size. "Maybe more later."
+  - **N4 — Expand the pair universe (~12 → ~100).** REALITY: ~100 pairs = scrape ~12–15 base coins, then ratios
+    combine (C(14,2)≈91 + 14 USDC) via the existing synthesis — auto-generate UNIVERSE from available symbols, not
+    100 feeds. CAVEAT (load-bearing, [[search-overfits-not-strategy]], [[chunk-a-findings]]): more pairs = more
+    independent holdouts to fish in = MORE overfit surface / more lottery tickets, so a GO-among-100 is WEAKER
+    evidence than a GO-among-12, not stronger. Treat as a throughput/scale test, not "more pairs = more alpha".
+    Budget for data hygiene (illiquid alts have gaps/bad prints that poison ratio alignment). Eventually the gate
+    needs pair/regime-robustness (survive >1 pair / across up-down-chop holdouts), not just absolute return on one
+    tail. This is the END-GOAL substrate for "full Bybit portfolios" in the prod-v1 deploy (user will buy HW for
+    that; the workstation is the test rig).
+  - **N5 — Tier-1 incremental indicator library.** Add streaming O(1) indicators following N1's pattern: EMA/DEMA/
+    TEMA, MACD, RSI, ATR, ADX/DMI, TRIX/TSI, Parabolic SAR, SuperTrend, OBV/AD/PVT, Force Index/Elder Ray. (User's
+    Tier 1/2/3 taxonomy is correct; Tier 1 only for now.) **BUT** indicators are dead weight unless a representation
+    CONSUMES them — current system is a GA over ~3 fixed strategy templates, NOT genetic programming. "More room to
+    be wrong" really points at a future **tree-GP** (genomes = expression trees composing the indicator pool with
+    operators). Until that exists, N5 means adding strategy FAMILIES that use the new indicators, family by family.
+    Name the tree-GP target so the library has a real payoff.
+  - **N6 — Bigger multi-seed sweep (the payoff test).** Once fast+strict+bigger: run many seeds and see whether
+    GOs survive the 15-trade floor and a 100-pair surface — i.e., is there signal, or just more lottery winners?
+
+- [ ] **O — Extreme judge: cross-pair robustness gate.** (user idea, post-N6) If N6 yields GOs, harden the gate
+  before growing the search surface (P/Q): a GO is only confirmed if the SAME genome — pair gene overridden —
+  still holds up on **≥K of N (≥3) randomly-picked, decorrelated** pairs. This directly kills the lottery-ticket /
+  pair-specific-overfit failure mode ([[chunk-a-findings]] "pulse is pair-specific"; the sweep's GOs hopped pairs
+  by seed): a structural edge generalizes across coins, a holdout-luck curve-fit doesn't.
+  **METRIC CORRECTION (REVISIT with user):** user proposed "profitability holds ±10% of the original GO result."
+  Rejected as-is — returns DON'T match across pairs of different volatility/regime (±10% of a +2.92% number is an
+  impossibly tight band; ±10pp is arbitrary), so a magnitude-match would reject genuinely robust edges. Correct
+  invariant = **sign/profitability persistence**: stays positive + fragility-positive + clears min-trades on ≥K of
+  N pairs. Stretch: a risk-adjusted band (Calmar / return-vs-B&H) instead of raw sign. Catches: random pairs must
+  be DECORRELATED (3 majors crashing together ≠ 3 independent tests); seed the pick for reproducibility.
+  **TAG, don't reject (user refinement):** the cross-pair run is a CLASSIFIER, not a filter — label the GO
+  `golden` (held up on ≥K of N decorrelated pairs → structural, high-trust, core capital) vs `specialist`
+  (graduated on its own pair only → tailored, lower-trust, conditional capital). Both stored + allowed; this
+  rescues the real pair-specific alpha chunk A found (XRP ratios) instead of discarding it. Cheap to add — O
+  already runs the N pairs, just record the pass-count + label. The TIER is what P/Q and the allocator (R) trust.
+  This is still the "meaner judge" that must exist BEFORE P/Q — it's now the trust-DISCRIMINATOR, not a kill gate.
+
+- [ ] **P — Bounded multi-indicator genome (risk-managed GP half-step).** Before unbounded trees, a FIXED-shape
+  genome that picks 2–3 indicators from the Tier-1 pool (N5) + thresholds + a combine rule (AND/OR). Far more
+  expressive than the 3 hand-built templates (the MACHINE composes, not us), but the surface is CAPPED → bloat is
+  impossible and the overfit surface grows by a controlled, watchable amount. Reuses the `decode → Strategy`
+  contract: the genome compiles to a Strategy that interprets its (indicator, threshold, op) spec per bar,
+  point-in-time (no lookahead). **Verify:** does the now-cross-pair-hardened gate (O) hold its false-GO rate
+  against this bigger-but-bounded surface? If yes → earned the right to go unbounded (Q). If no → the judge needs
+  more work before tree-GP, discovered cheaply without building the whole tree machinery.
+
+- [ ] **Q — Full tree-GP (the endpoint).** Genomes = typed expression trees over the indicator pool + operators /
+  constants / price-fields; a strongly-typed grammar so crossover can't make `RSI(close > 30)` garbage; subtree
+  crossover + subtree/point mutation; **bloat control** (depth/size caps + parsimony pressure in fitness — the
+  classic GP tax). Reuses the ENTIRE eval rig unchanged (it's representation-agnostic — consumes
+  `make_strategy: () -> Strategy`; a tree just compiles to a Strategy). This is the "give the GP room to be wrong"
+  goal: the machine composes indicators into programs instead of us hand-writing families. **GATED ON:** N1/N2
+  (GP multiplies eval cost — trees are pricier, bloat, bigger pops/gens; the O(n²) engine must be gone first) AND
+  O (GP is a vastly stronger overfitting engine; the single-holdout gate validated against a 6-gene GA would get
+  rubber-stamped to death without the meaner judge) AND ideally P's evidence that the gate scales. Nothing here is
+  architecturally blocked today — the blocker is JUDGE-READINESS + SPEED, not plumbing.
+
+- [ ] **R — Tiered, regime-conditional allocation (deployment policy).** (user idea) A multi-strategy book on top
+  of the O tags: a `golden` (structural) CORE plus `specialist` (pair-tailored) sleeves, with capital allocated by
+  trust tier and conditions — like a real multi-strat fund. Two halves, NOT equally safe:
+  - **Defensive (build first, robust):** a coarse, slow global RISK-OFF detector (broad-market drawdown / vol
+    spike / cross-asset correlation spike) de-weights the fragile specialists and leans on golden. Being wrong
+    just means too cautious. Safe default.
+  - **Offensive (gated, DANGEROUS):** "deploy a specialist because its pair is booming" is the direction-overfit
+    trap one level up — a point-in-time REGIME PREDICTION that assumes the boom continues (non-stationarity, the
+    thing that killed every earlier NO-GO). The specialist was fit to a boom that already happened. So the
+    specialist-ON trigger is a META-STRATEGY that must be backtested + gated like any other, NOT a heuristic
+    trusted because it sounds reasonable. Treat "when to turn a specialist on" with the same suspicion as "which
+    direction to bet."
+  - **Continuous, not binary:** allocate capital by trust tier and scale specialist size down as conditions
+    deteriorate (a dial, not a core↔specialist toggle) — graceful degradation, not a regime coin-flip deciding all.
+  - **Deployment-phase, parked:** sits on the live suggestions/executor (G/I) and only matters once O produces
+    golden + specialist GOs to allocate between. We have ZERO confirmed alpha — do NOT build this before there are
+    strategies to allocate. Planned now, built later.
+
 - [ ] **G — Phase 2: suggestions service.** Service runs the graduated strategy live (paper) and
   emits trade suggestions; no execution. Dockerized; FastAPI control-plane begins.
   *Blocked on: how suggestions are delivered (log/webhook/Telegram/UI).* Verify: emits a correct

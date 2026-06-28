@@ -9,6 +9,13 @@ from coinmon.strategies.atr_channel import ATRChannelBreakout
 from coinmon.strategies.base import Strategy
 from coinmon.strategies.directional import RegimeAdaptive
 from coinmon.strategies.ema_crossover import EMACrossover
+from coinmon.strategies.indicator_combo import (
+    COMBO_FAMILY,
+    INDICATOR_COUNT,
+    N_CONDITIONS,
+    build_combo,
+    describe_combo,
+)
 from coinmon.strategies.rsi_meanreversion import RSIMeanReversion
 
 # Chunk B: a Genome is the GA's unit of selection — *what* to trade (the pair, a gene per the
@@ -32,11 +39,13 @@ class ParamSpec:
 @dataclass(frozen=True)
 class StrategyFamily:
     """A strategy class plus the param ranges that make it searchable. ``build`` decodes a param
-    dict into a concrete ``Strategy``."""
+    dict into a concrete ``Strategy``. ``describe`` (optional) renders those params as a readable
+    rule for summaries — used by the chunk-P combo family, whose flat genes are otherwise opaque."""
 
     name: str
     params: Mapping[str, ParamSpec]
     build: Callable[[Mapping[str, float]], Strategy]
+    describe: Callable[[Mapping[str, float]], str] | None = None
 
 
 def _build_rsi(p: Mapping[str, float]) -> Strategy:
@@ -86,6 +95,35 @@ FAMILIES: dict[str, StrategyFamily] = {
         build=_build_atr,
     ),
 }
+
+
+def _combo_param_specs() -> dict[str, ParamSpec]:
+    """Chunk P: the flat, SCALE-FREE param schema for the bounded multi-indicator family. Per
+    condition: an indicator index (integer), then unit [0, 1] ``period``/``threshold`` genes the
+    indicator's spec maps onto its own ranges at decode time (so one uniform schema covers every
+    indicator's scale), and an op gene (0 = ``<``, 1 = ``>``). One ``combine`` gene picks AND vs OR.
+    The unit-genotype trick is what lets the GA mutate a single schema while every indicator still
+    gets meaningful periods/thresholds — see ``indicator_combo``."""
+    specs: dict[str, ParamSpec] = {}
+    for i in range(N_CONDITIONS):
+        specs[f"ind{i}"] = ParamSpec(0, INDICATOR_COUNT - 1, integer=True)
+        specs[f"period{i}"] = ParamSpec(0.0, 1.0)
+        specs[f"op{i}"] = ParamSpec(0, 1, integer=True)
+        specs[f"thr{i}"] = ParamSpec(0.0, 1.0)
+    specs["combine"] = ParamSpec(0, 1, integer=True)
+    return specs
+
+
+# Registered as an ordinary family so chunk P reuses the WHOLE pipeline unchanged (GA sampling/
+# mutation/crossover, decode/decode_portfolio, fitness, graduation, cross-pair). It is explored by
+# every search BY DEFAULT — that is the point of P: grow the searchable surface by a bounded,
+# watchable amount and ask whether the O-hardened gate holds its false-GO rate against it.
+FAMILIES[COMBO_FAMILY] = StrategyFamily(
+    name=COMBO_FAMILY,
+    params=_combo_param_specs(),
+    build=build_combo,
+    describe=describe_combo,
+)
 
 # The pair gene's sampling pool (chunk-A: pair selection dominates how-to-trade). USDC legs trade
 # directly; coin/coin entries are synthesized as ratios at load time. XRP ratios are in because

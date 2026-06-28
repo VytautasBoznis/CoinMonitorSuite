@@ -305,14 +305,25 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
   already runs the N pairs, just record the pass-count + label. The TIER is what P/Q and the allocator (R) trust.
   This is still the "meaner judge" that must exist BEFORE P/Q — it's now the trust-DISCRIMINATOR, not a kill gate.
 
-- [ ] **P — Bounded multi-indicator genome (risk-managed GP half-step).** Before unbounded trees, a FIXED-shape
-  genome that picks 2–3 indicators from the Tier-1 pool (N5) + thresholds + a combine rule (AND/OR). Far more
-  expressive than the 3 hand-built templates (the MACHINE composes, not us), but the surface is CAPPED → bloat is
-  impossible and the overfit surface grows by a controlled, watchable amount. Reuses the `decode → Strategy`
-  contract: the genome compiles to a Strategy that interprets its (indicator, threshold, op) spec per bar,
-  point-in-time (no lookahead). **Verify:** does the now-cross-pair-hardened gate (O) hold its false-GO rate
-  against this bigger-but-bounded surface? If yes → earned the right to go unbounded (Q). If no → the judge needs
-  more work before tree-GP, discovered cheaply without building the whole tree machinery.
+- [x] **P — Bounded multi-indicator genome (risk-managed GP half-step).** (2026-06-28) Built
+  `strategies/indicator_combo.py`: a FIXED-shape genome that picks `N_CONDITIONS` (=2; constant generalises to 3)
+  indicators from a curated N5 pool, each an `(indicator, period, op ∈ {<,>}, threshold)` predicate, joined by one
+  AND/OR `combine` gene → long when the combined rule fires, flat otherwise (no separate band — a churny rule pays
+  fees and OOS fitness rejects it). Registered as an ordinary `genome.FAMILIES["indicator_combo"]`, so it reuses the
+  **WHOLE pipeline unchanged** (GA sample/mutate/crossover, decode/decode_portfolio incl. RegimeAdaptive+perp, OOS
+  fitness, graduation, cross-pair) — the only edits were the family registration + an optional `StrategyFamily.describe`
+  (so the winner's composed rule is watchable, e.g. `rsi(14) > 72.3 AND ema_dev(20) < -0.012`) surfaced in
+  `SearchReport.summary`. **The threshold-scale problem** (indicators live on incomparable scales) is solved by a
+  SCALE-FREE genotype: `period`/`threshold` are unit [0,1] genes each indicator's spec maps onto its own range at
+  decode time, so one uniform schema covers every indicator — the standard GP trick, and the seam Q will reuse.
+  Pool is curated to 6 pair-scale-INVARIANT signals (rsi, trix, tsi, macd_hist/close, (close−ema)/close, atr/close);
+  the cumulative-volume N5 indicators (OBV/AD/PVT) are deliberately EXCLUDED (absolute level is pair-scale-dependent →
+  needs a "vs own trend" normalisation, a clean follow-on). Combo is explored by EVERY search by default (the point of
+  P — grow the surface a bounded, watchable amount). 229 tests green (+16: registration, scale-free unit mapping,
+  AND/OR semantics, warmup-hold, 1000× pair-scale invariance proof, GA reaches it, fitness/engine end-to-end, adaptive
+  wrap, readable describe), ruff clean. **Verify is a LIVE user run** (`search --timeframe 1d --holdout 0.2 --stress 80
+  --cross-pair 5`): does the O-hardened gate hold its false-GO rate against this bigger-but-bounded surface? If yes →
+  earned the right to go unbounded (Q). If no → the judge needs more work, discovered cheaply. See [[chunk-p-bounded-combo]].
 
 - [ ] **Q — Full tree-GP (the endpoint).** Genomes = typed expression trees over the indicator pool + operators /
   constants / price-fields; a strongly-typed grammar so crossover can't make `RSI(close > 30)` garbage; subtree

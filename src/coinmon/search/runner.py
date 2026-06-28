@@ -9,7 +9,7 @@ from coinmon.backtest.fitness import FitnessResult, evaluate_fitness
 from coinmon.backtest.stress import MonteCarloResult, run_monte_carlo
 from coinmon.data.candles import load_candles, split_holdout
 from coinmon.search.ga import GAConfig, GAResult, evolve
-from coinmon.search.genome import Genome, build_universe, decode, decode_portfolio
+from coinmon.search.genome import FAMILIES, Genome, build_universe, decode, decode_portfolio
 from coinmon.search.graduation import GraduationReport, graduate
 from coinmon.search.robustness import (
     RobustnessReport,
@@ -66,7 +66,14 @@ class SearchReport:
     robustness: RobustnessReport | None = None
 
     def summary(self) -> str:
-        p = ", ".join(f"{k}={v:g}" for k, v in sorted(self.best.params.items()))
+        # A family may render its params as a readable rule (chunk P's combo, whose flat genes are
+        # opaque); otherwise fall back to the raw key=value dump.
+        describe = FAMILIES[self.best.family].describe
+        p = (
+            describe(self.best.params)
+            if describe is not None
+            else ", ".join(f"{k}={v:g}" for k, v in sorted(self.best.params.items()))
+        )
         book = (
             f"{self.best.leverage:.1f}x perp regime-adaptive (MA{int(self.best.trend_period)})"
             if self.best.direction == "adaptive"

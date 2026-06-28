@@ -28,6 +28,7 @@ This file indexes all memory files for the CoinMonitorSuite project.
 - [n2-parallelism-overhead](n2-parallelism-overhead.md) — N2 multiprocessing is bit-identical to serial but, post-N1, only beats serial at HEAVY scale (default stays serial; win reserved for N4/Q)
 - [n6-multiseed-sweep-convergence](n6-multiseed-sweep-convergence.md) — N6 `coinmon sweep`: 15-trade gate collapsed the prior lottery into ONE convergent pair (BTC/USDC ema adaptive, 2/10 GO), but still one crash regime so alpha unproven
 - [chunk-o-cross-pair-robustness](chunk-o-cross-pair-robustness.md) — chunk O: a TAGGER (golden/specialist), not a kill gate; re-graduates a GO genome on K-of-N decorrelated peers to separate structural edge from pair-specific curve-fit
+- [chunk-p-bounded-combo](chunk-p-bounded-combo.md) — chunk P: fixed-shape multi-indicator genome (N indicators + AND/OR) as a normal FAMILY; scale-free unit genotype solves cross-indicator thresholds; the GP half-step before tree-GP (Q)
 - [build-roadmap](build-roadmap.md) — the chunked plan to finish the project (one chunk ≈ one session); source of truth for what's next
 - [session-build-loop](session-build-loop.md) — how each session runs: read memory → do next roadmap chunk → ask blockers → deliver a commit message
 - [user-commits-themselves](user-commits-themselves.md) — never run git commit; hand over a commit message and stop

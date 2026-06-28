@@ -55,3 +55,18 @@ up-regime never shorts, down-regime shorts the flats; synthetic-downtrend gradua
 is the next user run** (`coinmon search --timeframe 1d --holdout 0.2 --stress 80`): does direction now read
 the holdout's own regime and graduate GO where the fixed gene NO-GO'd? The choppy-crash caveat above still
 stands — validate, don't assume.
+
+**RESOLVED 2026-06-28 — VALIDATED LIVE, first search-winner GO ever.** Ran
+`search --timeframe 1d --holdout 0.2 --stress 80 --seed 0` (pop30/gen12) against the Docker DB.
+Winner `rsi_meanreversion BNB/ETH, 1.0x perp regime-adaptive (MA47), 38% stop` → graduation **GO**
+(holdout **+2.92%** over 134 unseen bars, 13 trades, fragility 100% positive). This is the EXACT
+case this memory diagnosed: BNB/ETH's holdout is a **+13.65% UP regime**, where the old fixed-short
+GA picked SHORT and NO-GO'd (-0.92%, it shorted the rise). The regime-adaptive genome reads the
+up-regime and stays long/flat (won't short the rise) → +2.92% → GO. **Direction read the holdout's
+own trend, not an in-sample bet — the overfit vector is closed.** First time the pipeline blessed a
+real search winner (prior GOs were only a hand-graduated long twin in a diagnostic). Caveats that
+keep this honest: (1) ONE seed — re-run a few before calling it robust (prior 5-seed sweep was
+seed-sensitive, [[first-live-search-graduation]]); (2) it TRAILS buy&hold (+2.92% vs +13.65%, 0% of
+runs beat B&H) — a legitimate absolute-return GO, but a flat-prone mean-reverter lags a strong rally,
+not market-beating; (3) the **choppy-crash case is still UNPROVEN** — the winner landed on an
+up-regime pair, so the whipsaw caveat above was not exercised this run.

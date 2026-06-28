@@ -161,6 +161,11 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
   (+4), ruff clean (only pre-existing walkforward/viewer E501s). **Live downtrend-GO proof is the next user
   run** (`search --timeframe 1d --holdout 0.2 --stress 80`): does reading the holdout's own regime finally
   graduate GO where the fixed gene NO-GO'd? Caveat: not guaranteed on a *choppy* crash ([[chunk-l-live-validation]]).
+  **VALIDATED LIVE (2026-06-28): first search-winner GO ever** — winner `rsi_meanreversion BNB/ETH 1.0x perp
+  regime-adaptive (MA47), 38% stop` graduated **GO** (holdout +2.92%/134 bars, 13 trades, fragility 100%) on
+  the SAME +13.65% up-regime where the fixed-short gene NO-GO'd by shorting the rise. Direction now reads the
+  holdout's own trend. Caveats: one seed (0); trails B&H; choppy-crash case still unproven (winner was up-regime).
+  See [[direction-gene-overfits-regime]] (RESOLVED).
 
 - [ ] **G — Phase 2: suggestions service.** Service runs the graduated strategy live (paper) and
   emits trade suggestions; no execution. Dockerized; FastAPI control-plane begins.

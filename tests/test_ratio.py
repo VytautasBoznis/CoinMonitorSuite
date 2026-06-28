@@ -52,3 +52,29 @@ def test_build_ratio_inner_join_drops_unaligned_bars():
 
     assert out["open_time"].tolist() == [2, 3]  # bar 1 (eth-only) dropped
     assert not out.isna().any().any()
+
+
+def test_build_ratio_drops_bad_prints():
+    # Chunk N4 hygiene: an illiquid alt's bad bar (a zero/negative/NaN print) would divide to
+    # inf/NaN and poison the synthetic series — that bar must be dropped before the division.
+    eth = _frame(
+        [
+            [1, 2000.0, 2100.0, 1900.0, 2050.0, 10.0],
+            [2, 0.0, 2200.0, 2000.0, 2150.0, 12.0],  # bad print: zero open
+            [3, 2150.0, 2250.0, 2100.0, 2200.0, 9.0],
+        ]
+    )
+    btc = _frame(
+        [
+            [1, 40000.0, 41000.0, 39000.0, 40500.0, 5.0],
+            [2, 40500.0, 42000.0, 0.0, 41000.0, 8.0],  # bad print: zero low (a ratio denominator)
+            [3, 41000.0, 43000.0, 40500.0, 42000.0, 7.0],
+        ]
+    )
+    out = build_ratio(eth, btc)
+
+    assert out["open_time"].tolist() == [1, 3]  # the bad bar (2) is gone
+    assert not out.isna().any().any()
+    import numpy as np
+
+    assert np.isfinite(out.to_numpy()).all()

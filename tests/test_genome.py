@@ -5,7 +5,14 @@ from coinmon.backtest.engine import BacktestEngine
 from coinmon.backtest.fitness import evaluate_fitness
 from coinmon.backtest.portfolio import PerpPortfolio, SpotPortfolio
 from coinmon.feed import CostModel
-from coinmon.search.genome import FAMILIES, Genome, decode, decode_portfolio, validate
+from coinmon.search.genome import (
+    FAMILIES,
+    Genome,
+    build_universe,
+    decode,
+    decode_portfolio,
+    validate,
+)
 from coinmon.strategies.directional import RegimeAdaptive
 from coinmon.strategies.ema_crossover import EMACrossover
 from coinmon.strategies.rsi_meanreversion import RSIMeanReversion
@@ -233,3 +240,31 @@ def test_evaluate_fitness_uses_the_genome_portfolio_factory():
         folds=2, min_trades=0,
     )
     assert perp.fold_returns != spot.fold_returns
+
+
+# --- chunk N4: auto-built pair universe ----------------------------------------------------
+
+
+def test_build_universe_yields_direct_legs_plus_all_ratios():
+    # n bases -> n direct USDC pairs + C(n,2) coin/coin ratios.
+    universe = build_universe(["BTC", "ETH", "SOL"], "USDC")
+    assert universe == (
+        "BTC/USDC", "ETH/USDC", "SOL/USDC",  # direct legs (sorted)
+        "BTC/ETH", "BTC/SOL", "ETH/SOL",     # all unordered ratios
+    )
+    n = 14
+    bases = [f"C{i}" for i in range(n)]
+    assert len(build_universe(bases, "USDC")) == n + n * (n - 1) // 2  # ~105 at n=14
+
+
+def test_build_universe_is_order_independent_and_deduped():
+    # Built from the same coins regardless of input order or duplicates -> a seeded run reproduces.
+    a = build_universe(["ETH", "BTC", "BTC", "SOL"], "USDC")
+    b = build_universe(["SOL", "ETH", "BTC"], "USDC")
+    assert a == b
+
+
+def test_build_universe_drops_the_quote_coin():
+    # USDC/USDC is meaningless; a stored USDC base must not create a self-pair.
+    assert "USDC/USDC" not in build_universe(["BTC", "USDC", "ETH"], "USDC")
+    assert build_universe(["BTC", "USDC", "ETH"], "USDC") == build_universe(["BTC", "ETH"], "USDC")

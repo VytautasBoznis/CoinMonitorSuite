@@ -19,7 +19,7 @@ from coinmon.feed import BarView, CostModel
 from coinmon.live.feed import LiveFeed
 from coinmon.live.runner import ForwardRunner
 from coinmon.search.ga import GAConfig
-from coinmon.search.runner import FitnessParams, run_search
+from coinmon.search.runner import FitnessParams, discover_universe, run_search
 from coinmon.strategies.atr_channel import ATRChannelBreakout
 from coinmon.strategies.base import Strategy
 from coinmon.strategies.ema_crossover import EMACrossover
@@ -189,6 +189,15 @@ def _forward(args: argparse.Namespace) -> None:
 def _search(args: argparse.Namespace) -> None:
     conn = db.connect()
     try:
+        # Chunk N4: the universe is auto-built from the coins the scraper has stored (every USDC leg
+        # + every coin/coin ratio), not a hand-curated list — so the search scales with the DB.
+        universe = discover_universe(
+            db.list_series(conn),
+            exchange=settings.exchange,
+            quote=settings.quote_currency,
+            timeframe=args.timeframe,
+        )
+        print(f"universe: {len(universe)} pairs auto-built from stored {args.timeframe} candles\n")
         # The connection stays open for the whole run: CandleCache reads each pair lazily.
         report = run_search(
             lambda s: db.read_candles(conn, settings.exchange, s, args.timeframe),
@@ -197,6 +206,7 @@ def _search(args: argparse.Namespace) -> None:
                 population=args.population,
                 generations=args.generations,
                 seed=args.seed,
+                universe=universe,
             ),
             fitness_params=FitnessParams(
                 folds=args.folds, embargo_bars=args.embargo, min_trades=args.min_trades

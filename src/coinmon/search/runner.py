@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
 import pandas as pd
@@ -9,7 +9,7 @@ from coinmon.backtest.fitness import FitnessResult, evaluate_fitness
 from coinmon.backtest.stress import MonteCarloResult, run_monte_carlo
 from coinmon.data.candles import load_candles, split_holdout
 from coinmon.search.ga import GAConfig, GAResult, evolve
-from coinmon.search.genome import UNIVERSE, Genome, decode, decode_portfolio
+from coinmon.search.genome import Genome, build_universe, decode, decode_portfolio
 from coinmon.search.graduation import GraduationReport, graduate
 
 # Chunk C orchestration: glue the pure GA (search/ga.py) to real data and the honest score.
@@ -106,14 +106,38 @@ def fragility_verdict(result: MonteCarloResult, min_fraction_positive: float) ->
     return result.fraction_positive >= min_fraction_positive
 
 
-def _preload_universe(cache: CandleCache) -> dict[str, pd.DataFrame]:
-    """Resolve every UNIVERSE pair up front so the per-pair frames can be shipped to worker
+def discover_universe(
+    series: Sequence[tuple[str, str, str]], *, exchange: str, quote: str, timeframe: str
+) -> tuple[str, ...]:
+    """Chunk N4: auto-build the search universe from what the scraper has stored. Takes the
+    ``(exchange, symbol, timeframe)`` rows ``db.list_series`` returns, keeps the ``quote``-quoted
+    symbols for this ``exchange``/``timeframe``, and expands their base coins into the full direct +
+    ratio universe (``build_universe``). Raises ``SystemExit`` if nothing matches so the run fails
+    with a clear message rather than an empty-pool crash."""
+    bases = sorted(
+        {
+            sym.split("/")[0]
+            for ex, sym, tf in series
+            if ex == exchange and tf == timeframe and sym.endswith(f"/{quote}")
+        }
+    )
+    if not bases:
+        raise SystemExit(
+            f"no {quote}-quoted {exchange} symbols stored for {timeframe} — run the scraper first"
+        )
+    return build_universe(bases, quote)
+
+
+def _preload_universe(
+    cache: CandleCache, universe: Sequence[str]
+) -> dict[str, pd.DataFrame]:
+    """Resolve every ``universe`` pair up front so the per-pair frames can be shipped to worker
     processes (the serial path loads them lazily; parallel needs them all). A pair that fails to
     load becomes an empty frame, which the worker maps to ``-inf`` — the same result the serial
     fitness gives when ``load_candles`` raises."""
     empty = pd.DataFrame({c: [] for c in ("open_time", "open", "high", "low", "close", "volume")})
     frames: dict[str, pd.DataFrame] = {}
-    for pair in UNIVERSE:
+    for pair in universe:
         try:
             frames[pair] = cache.get(pair)
         except (ValueError, KeyError):
@@ -136,7 +160,9 @@ def _evolve(
 
     if resolve_workers(workers) == 1:
         return evolve(fitness, config)
-    ctx = WorkerContext(_preload_universe(cache), taker_fee, fitness_params, holdout_fraction)
+    ctx = WorkerContext(
+        _preload_universe(cache, config.universe), taker_fee, fitness_params, holdout_fraction
+    )
     with ParallelScorer(ctx, workers) as scorer:
         return evolve(fitness, config, score_batch=scorer)
 

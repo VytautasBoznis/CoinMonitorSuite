@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 
 from coinmon.backtest.portfolio import PerpPortfolio, Portfolio, SpotPortfolio
@@ -96,6 +96,23 @@ UNIVERSE: tuple[str, ...] = (
     "ETH/BTC", "SOL/BTC", "BNB/BTC", "XRP/BTC",
     "XRP/ETH", "SOL/ETH", "BNB/ETH",
 )
+
+
+def build_universe(bases: Sequence[str], quote: str) -> tuple[str, ...]:
+    """Chunk N4: generate the FULL pair universe from a set of base coins — every ``BASE/QUOTE``
+    direct (USDC-quoted) pair plus every unordered ``BASE_i/BASE_j`` ratio (synthesized at load
+    time via ``build_ratio``). ``n`` bases yield ``n`` direct + ``C(n,2)`` ratios (~14 bases ≈ 105
+    pairs), so the search universe scales with what the scraper covers instead of a hand-curated
+    shortlist. Bases are de-duped and sorted so a seeded run is reproducible regardless of input
+    order; a base equal to ``quote`` is dropped (no ``USDC/USDC``)."""
+    coins = sorted({b for b in bases if b != quote})
+    direct = [f"{b}/{quote}" for b in coins]
+    ratios = [
+        f"{coins[i]}/{coins[j]}"
+        for i in range(len(coins))
+        for j in range(i + 1, len(coins))
+    ]
+    return tuple(direct + ratios)
 
 # Directionality is a gene, but NOT a fixed direction. A fixed per-genome ``short`` was the overfit
 # vector — chosen in-sample, blind to the holdout regime, so it bet the wrong way every live run

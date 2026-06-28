@@ -166,6 +166,24 @@ def test_evolve_score_batch_sees_each_genome_at_most_once():
     assert len(seen) == len(set(seen))
 
 
+def test_random_genome_and_mutate_honor_a_custom_universe():
+    # Chunk N4: the pair gene must only ever come from the supplied universe pool.
+    pool = ("FOO/USDC", "BAR/USDC", "FOO/BAR")
+    rng = random.Random(21)
+    g = random_genome(rng, pool)
+    assert g.pair in pool
+    for _ in range(300):
+        g = mutate(g, rng, rate=1.0, universe=pool)  # rate=1.0 forces the pair to re-roll
+        assert g.pair in pool
+
+
+def test_evolve_searches_only_the_config_universe():
+    # The GA samples its pair gene from config.universe, so a winner can only trade a stored pair.
+    pool = ("AAA/USDC", "BBB/USDC", "AAA/BBB")
+    result = evolve(lambda g: 1.0, GAConfig(population=8, generations=5, seed=3, universe=pool))
+    assert {g.pair for g, _ in result.scored_final} <= set(pool)
+
+
 def test_evolve_memoizes_fitness_calls():
     calls = {"n": 0}
 

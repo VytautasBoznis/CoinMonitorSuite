@@ -6,7 +6,12 @@ import pytest
 from coinmon.backtest.stress import MonteCarloResult
 from coinmon.search.ga import GAConfig
 from coinmon.search.genome import validate
-from coinmon.search.runner import FitnessParams, fragility_verdict, run_search
+from coinmon.search.runner import (
+    FitnessParams,
+    discover_universe,
+    fragility_verdict,
+    run_search,
+)
 
 
 def _read(symbol):
@@ -105,6 +110,30 @@ def test_run_search_raises_when_no_genome_can_be_scored():
     # Every pair resolves to an empty frame => every genome scores -inf and is discarded.
     with pytest.raises(SystemExit):
         run_search(_empty, taker_fee=0.0, config=_CFG, fitness_params=_FP)
+
+
+def test_discover_universe_expands_stored_usdc_bases():
+    # Chunk N4: the universe is auto-built from the USDC legs the scraper stored for this
+    # exchange/timeframe — every direct pair plus every coin/coin ratio.
+    series = [
+        ("bybit", "BTC/USDC", "1d"),
+        ("bybit", "ETH/USDC", "1d"),
+        ("bybit", "SOL/USDC", "1d"),
+        ("bybit", "BTC/USDC", "1h"),  # wrong timeframe -> ignored
+        ("binance", "DOGE/USDC", "1d"),  # wrong exchange -> ignored
+        ("bybit", "ETH/BTC", "1d"),  # already a ratio, not a USDC leg -> ignored
+    ]
+    universe = discover_universe(series, exchange="bybit", quote="USDC", timeframe="1d")
+    assert universe == (
+        "BTC/USDC", "ETH/USDC", "SOL/USDC", "BTC/ETH", "BTC/SOL", "ETH/SOL"
+    )
+
+
+def test_discover_universe_raises_when_nothing_matches():
+    with pytest.raises(SystemExit):
+        discover_universe(
+            [("bybit", "BTC/USDC", "1h")], exchange="bybit", quote="USDC", timeframe="1d"
+        )
 
 
 def test_fragility_verdict_thresholds_on_fraction_positive():

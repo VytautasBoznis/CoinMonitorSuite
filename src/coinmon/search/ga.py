@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import random
 import statistics
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
 from coinmon.search.genome import (
@@ -44,15 +44,16 @@ def _sample_stop(rng: random.Random) -> float | None:
     return _sample_param(STOP, rng) if rng.random() < 0.5 else None
 
 
-def random_genome(rng: random.Random) -> Genome:
-    """A uniformly-sampled valid genome: random family, random pair from the UNIVERSE pool, each
-    param drawn within its spec, a direction gene (long/flat spot vs a regime-adaptive perp) with
-    leverage and a regime window drawn within their ranges, and a coin-flip intrabar stop gene. Used
-    to seed the initial population."""
+def random_genome(rng: random.Random, universe: Sequence[str] = UNIVERSE) -> Genome:
+    """A uniformly-sampled valid genome: random family, random pair from the ``universe`` pool
+    (chunk N4: the search universe is now passed in so it can scale with the scraped coins; defaults
+    to the curated ``UNIVERSE`` for back-compat), each param drawn within its spec, a direction gene
+    (long/flat spot vs a regime-adaptive perp) with leverage and a regime window drawn within their
+    ranges, and a coin-flip intrabar stop gene. Used to seed the initial population."""
     family = rng.choice(list(FAMILIES))
     spec = FAMILIES[family]
     params = {name: _sample_param(s, rng) for name, s in spec.params.items()}
-    pair = rng.choice(UNIVERSE)
+    pair = rng.choice(universe)
     direction = rng.choice(DIRECTIONS)
     leverage = _sample_param(LEVERAGE, rng)
     trend_period = _sample_param(TREND, rng)
@@ -67,6 +68,7 @@ def mutate(
     rate: float = 0.3,
     sigma: float = 0.2,
     family_switch_rate: float = 0.05,
+    universe: Sequence[str] = UNIVERSE,
 ) -> Genome:
     """Return a mutated copy. With ``family_switch_rate`` the genome jumps to a different family
     (resampling that family's params, keeping the pair) so neither family can go extinct mid-run.
@@ -104,7 +106,7 @@ def mutate(
         if rng.random() < rate:
             step = rng.gauss(0.0, sigma * (spec.high - spec.low))
             params[name] = _clamp(params[name] + step, spec)
-    pair = rng.choice(UNIVERSE) if rng.random() < rate else genome.pair
+    pair = rng.choice(universe) if rng.random() < rate else genome.pair
     return Genome(genome.family, pair, params, direction, leverage, trend_period, stop_pct)
 
 
@@ -157,6 +159,10 @@ class GAConfig:
     tournament_size: int = 3
     mutation_rate: float = 0.3
     seed: int = 0
+    # The pair-gene pool the GA samples from (chunk N4). Defaults to the curated UNIVERSE; the CLI
+    # overrides it with one auto-built from the scraped coins. A bigger universe = more overfit
+    # surface, NOT more alpha (see [[search-overfits-not-strategy]], [[chunk-a-findings]]).
+    universe: tuple[str, ...] = UNIVERSE
 
 
 @dataclass(frozen=True)
@@ -231,7 +237,7 @@ def evolve(
                 cache[_key(g)] = f
         return [(g, cache[_key(g)]) for g in genomes]
 
-    population = [random_genome(rng) for _ in range(config.population)]
+    population = [random_genome(rng, config.universe) for _ in range(config.population)]
     scored = sorted(score(population), key=lambda sg: sg[1], reverse=True)
     history = [_summarize(0, scored)]
 
@@ -241,7 +247,14 @@ def evolve(
         while len(children) < config.population - len(elites):
             p1 = tournament_select(scored, rng, config.tournament_size)
             p2 = tournament_select(scored, rng, config.tournament_size)
-            children.append(mutate(crossover(p1, p2, rng), rng, rate=config.mutation_rate))
+            children.append(
+                mutate(
+                    crossover(p1, p2, rng),
+                    rng,
+                    rate=config.mutation_rate,
+                    universe=config.universe,
+                )
+            )
         scored = sorted(score(elites + children), key=lambda sg: sg[1], reverse=True)
         history.append(_summarize(gen, scored))
 

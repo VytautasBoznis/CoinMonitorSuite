@@ -207,15 +207,24 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
     test still passes). 148 tests green, no test changes needed (`test_run_search_graduates…` only asserts
     `passed` is a bool, not True). Changed files ruff-clean (pre-existing walkforward/viewer E501s untouched).
     "Maybe more later." Next: N4 (expand pair universe ~12→~100).
-  - **N4 — Expand the pair universe (~12 → ~100).** REALITY: ~100 pairs = scrape ~12–15 base coins, then ratios
-    combine (C(14,2)≈91 + 14 USDC) via the existing synthesis — auto-generate UNIVERSE from available symbols, not
-    100 feeds. CAVEAT (load-bearing, [[search-overfits-not-strategy]], [[chunk-a-findings]]): more pairs = more
-    independent holdouts to fish in = MORE overfit surface / more lottery tickets, so a GO-among-100 is WEAKER
-    evidence than a GO-among-12, not stronger. Treat as a throughput/scale test, not "more pairs = more alpha".
-    Budget for data hygiene (illiquid alts have gaps/bad prints that poison ratio alignment). Eventually the gate
-    needs pair/regime-robustness (survive >1 pair / across up-down-chop holdouts), not just absolute return on one
-    tail. This is the END-GOAL substrate for "full Bybit portfolios" in the prod-v1 deploy (user will buy HW for
-    that; the workstation is the test rig).
+  - [x] **N4 — Expand the pair universe (~12 → ~100).** (2026-06-28) The universe is now AUTO-BUILT from the
+    coins the scraper stored, not a hand-curated 12. `genome.build_universe(bases, quote)` (pure): n bases → n
+    direct USDC legs + C(n,2) coin/coin ratios (~14 bases ≈ 105 pairs), de-duped + sorted for seed-reproducibility,
+    drops the quote coin. The pair pool is now a `GAConfig.universe` field (default = the curated `UNIVERSE` for
+    back-compat) threaded into `random_genome`/`mutate` (kwarg, default `UNIVERSE` so all existing GA/runner tests
+    are byte-unchanged) and `_preload_universe(cache, universe)`. `runner.discover_universe(series, exchange, quote,
+    timeframe)` filters `db.list_series` rows to the matching USDC legs, extracts bases, calls `build_universe`,
+    and SystemExits clearly if nothing matches; CLI `_search` calls it and prints "universe: N pairs auto-built…".
+    Data hygiene landed in `build_ratio`: bars with a non-positive/NaN price in EITHER leg are dropped before the
+    division (a zero denominator → inf would poison the whole synthetic series); clean USDC pairs unaffected.
+    With the current 5-base DB this builds 15 pairs (5 USDC + C(5,2)=10 ratios) using ALL combos vs the old curated
+    12; reaching ~100 is just scraping more bases — the code auto-scales. 156 tests green (+8: build_universe shape/
+    order/dedup/quote-drop, discover_universe filter+empty, GA honors custom universe, ratio drops bad prints), all
+    changed files ruff-clean. CAVEAT STILL HOLDS ([[search-overfits-not-strategy]], [[chunk-a-findings]]): more
+    pairs = more overfit surface / lottery tickets, so a GO-among-100 is WEAKER evidence — this is a throughput/scale
+    enabler, not alpha. The cross-pair robustness gate (chunk O) is what turns scale into trust. Next: N5 (Tier-1
+    incremental indicator library) — but indicators are dead weight until a representation (P/Q tree-GP) consumes
+    them, so N5 = add strategy FAMILIES, or skip ahead to O (harden the judge before flooding the surface).
   - **N5 — Tier-1 incremental indicator library.** Add streaming O(1) indicators following N1's pattern: EMA/DEMA/
     TEMA, MACD, RSI, ATR, ADX/DMI, TRIX/TSI, Parabolic SAR, SuperTrend, OBV/AD/PVT, Force Index/Elder Ray. (User's
     Tier 1/2/3 taxonomy is correct; Tier 1 only for now.) **BUT** indicators are dead weight unless a representation

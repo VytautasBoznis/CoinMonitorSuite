@@ -262,9 +262,15 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
   real golden-vs-specialist proof is a user run (`search --timeframe 1d --holdout 0.2 --stress 80
   --cross-pair 5`). Defaults: N=5 test pairs, K=3 for golden. Caveat: the current ~15-pair DB only has
   ~14 non-own candidates and majors are highly correlated, so a clean 5-decorrelated set needs more
-  scraped bases. Sweep-level tier aggregation (count golden vs specialist across seeds) is the obvious
-  next add. See [[chunk-o-cross-pair-robustness]]. Next: P (bounded multi-indicator genome) — but it
-  depends on N5 (indicator library), so N5 or P-prep is the real next step.
+  scraped bases. See [[chunk-o-cross-pair-robustness]].
+  - [x] **O-sweep — sweep-level tier aggregation.** (2026-06-28) Threaded the chunk-O tagger through
+    the multi-seed sweep: `_sweep` CLI gained `--cross-pair N` / `--cross-pair-min K` (passed to
+    `run_search`), `SweepRow` gained `tier: str|None=None` (pulled from `report.robustness.tier`,
+    None for a NO-GO or when cross-pair is off), `summarize_sweep` badges each GO row `[GOLDEN]`/
+    `[SPECIALIST]` and adds a `tiers: G golden, S specialist` aggregation line (only when tags exist).
+    170 tests green (+1), ruff clean. NOT yet run live (needs more scraped bases for a clean
+    decorrelated set). Next: P (bounded multi-indicator genome) — but it depends on N5 (indicator
+    library), so N5 or P-prep is the real next step.
 
   **Original design notes (kept for context, all honored by the implementation above):** (user idea, post-N6) If N6 yields GOs, harden the gate
   before growing the search surface (P/Q): a GO is only confirmed if the SAME genome — pair gene overridden —

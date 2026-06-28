@@ -351,11 +351,14 @@ class SweepRow:
     holdout_trades: int
     fragility_positive: float
     benchmark_return: float
+    tier: str | None = None  # chunk O cross-pair tag (golden/specialist); None if not classified
 
 
 def sweep_row(seed: int, report: SearchReport) -> SweepRow:
     """Flatten a holdout ``SearchReport`` into a ``SweepRow``. Requires the graduation gate to have
-    run (``holdout_fraction > 0``) — a sweep without a verdict has nothing to aggregate."""
+    run (``holdout_fraction > 0``) — a sweep without a verdict has nothing to aggregate. Carries the
+    chunk-O cross-pair ``tier`` when the winner was classified (``None`` for a NO-GO or when the
+    sweep ran without ``--cross-pair``)."""
     g = report.graduation
     if g is None:
         raise ValueError("sweep_row needs a graduated report (run the sweep with a holdout)")
@@ -369,6 +372,7 @@ def sweep_row(seed: int, report: SearchReport) -> SweepRow:
         holdout_trades=g.holdout_trades,
         fragility_positive=g.fragility.fraction_positive,
         benchmark_return=g.benchmark_return,
+        tier=report.robustness.tier if report.robustness is not None else None,
     )
 
 
@@ -379,10 +383,11 @@ def summarize_sweep(rows: Sequence[SweepRow]) -> str:
     lines = ["multi-seed sweep — graduation verdict per seed:"]
     for r in sorted(rows, key=lambda x: x.seed):
         verdict = "GO   " if r.passed else "NO-GO"
+        tier = f"  [{r.tier.upper()}]" if r.tier else ""
         lines.append(
             f"  seed {r.seed:>3}  [{verdict}]  {r.family} on {r.pair} ({r.direction})  "
             f"ret {r.holdout_return:+.2%}  trades {r.holdout_trades:>3}  "
-            f"frag {r.fragility_positive:.0%}  (B&H {r.benchmark_return:+.2%})"
+            f"frag {r.fragility_positive:.0%}  (B&H {r.benchmark_return:+.2%}){tier}"
         )
     gos = [r for r in rows if r.passed]
     lines.append("")
@@ -399,4 +404,14 @@ def summarize_sweep(rows: Sequence[SweepRow]) -> str:
             f"  GO holdout return: median {median:+.2%}, "
             f"range {returns[0]:+.2%}..{returns[-1]:+.2%}"
         )
+        # Chunk O tier aggregation: golden (structural — held up on K-of-N decorrelated peers)
+        # vs specialist (own pair only). Surfaced only when --cross-pair tagged the GOs.
+        tagged = [r.tier for r in gos if r.tier]
+        if tagged:
+            golden = tagged.count("golden")
+            specialist = tagged.count("specialist")
+            lines.append(
+                f"  tiers: {golden} golden, {specialist} specialist  "
+                "(golden = structural, generalizes across peers; specialist = own pair only)"
+            )
     return "\n".join(lines)

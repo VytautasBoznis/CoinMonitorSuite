@@ -268,6 +268,8 @@ def _sweep(args: argparse.Namespace) -> None:
                 fragility_runs=args.stress,
                 holdout_fraction=args.holdout,
                 graduate_min_trades=args.graduate_min_trades,
+                cross_pair_n=args.cross_pair,
+                cross_pair_min=args.cross_pair_min,
                 workers=args.workers,
                 cache=cache,
             )
@@ -470,6 +472,21 @@ def build_parser() -> argparse.ArgumentParser:
         default=15,
         metavar="N",
         help="minimum holdout trades for a seed's winner to graduate GO",
+    )
+    p_sweep.add_argument(
+        "--cross-pair",
+        type=int,
+        default=0,
+        metavar="N",
+        help="chunk O: tag each seed's GO golden/specialist by re-graduating it on N decorrelated "
+        "peer pairs; the sweep then counts golden vs specialist across seeds (0 = skip)",
+    )
+    p_sweep.add_argument(
+        "--cross-pair-min",
+        type=int,
+        default=3,
+        metavar="K",
+        help="minimum cross-pair passes (of --cross-pair N) to earn the 'golden' tier (default 3)",
     )
     p_sweep.add_argument(
         "--workers",

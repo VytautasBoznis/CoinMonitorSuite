@@ -209,10 +209,11 @@ def test_sweep_row_rejects_ungraduated_report():
         sweep_row(0, report)
 
 
-def _row(seed, passed, pair, ret):
+def _row(seed, passed, pair, ret, tier=None):
     return SweepRow(
         seed=seed, passed=passed, family="rsi_meanreversion", pair=pair, direction="long",
         holdout_return=ret, holdout_trades=20, fragility_positive=1.0, benchmark_return=0.0,
+        tier=tier,
     )
 
 
@@ -226,6 +227,23 @@ def test_summarize_sweep_counts_gos_and_distinct_pairs():
     assert "GO: 2/3 seeds" in out
     # Two GOs on two different pairs = the lottery signature, surfaced as distinct pairs.
     assert "2 distinct pair(s): BNB/ETH, SOL/ETH" in out
+    # No --cross-pair tags => no tier line.
+    assert "tiers:" not in out
+
+
+def test_summarize_sweep_aggregates_cross_pair_tiers():
+    # Chunk O: with --cross-pair, each GO carries a tier; the sweep counts golden vs specialist
+    # across seeds (the untagged NO-GO and the GO without a tier don't pollute the count).
+    rows = [
+        _row(0, True, "BTC/USDC", 0.20, tier="golden"),
+        _row(1, True, "BTC/USDC", 0.15, tier="specialist"),
+        _row(2, True, "ETH/USDC", 0.10, tier="golden"),
+        _row(3, False, "SOL/ETH", -0.05),  # NO-GO -> never tagged
+    ]
+    out = summarize_sweep(rows)
+    assert "tiers: 2 golden, 1 specialist" in out
+    assert "[GOLDEN]" in out
+    assert "[SPECIALIST]" in out
 
 
 def test_fragility_verdict_thresholds_on_fraction_positive():

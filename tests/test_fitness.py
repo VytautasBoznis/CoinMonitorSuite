@@ -6,7 +6,9 @@ import pytest
 
 from coinmon.backtest.fitness import (
     _downside_dev,
+    _drawdown_penalty,
     _fold_bounds,
+    _recovery_gain,
     _robust_center,
     evaluate_fitness,
 )
@@ -54,8 +56,10 @@ def test_fitness_arithmetic_matches_its_components():
     assert r.instability_penalty == pytest.approx(r.downside_dev)  # weight 1.0
     expected_trade_pen = max(0.0, 1.0 - r.total_trades / 20)
     assert r.trade_penalty == pytest.approx(expected_trade_pen)
+    assert r.worst_drawdown == pytest.approx(max(r.fold_drawdowns))
+    assert r.drawdown_penalty == pytest.approx(_drawdown_penalty(r.fold_drawdowns, 0.30))
     assert r.fitness == pytest.approx(
-        r.median_oos_return - r.instability_penalty - r.trade_penalty
+        r.median_oos_return - r.instability_penalty - r.trade_penalty - r.drawdown_penalty
     )
 
 
@@ -99,6 +103,41 @@ def test_robust_center_ignores_a_single_lucky_fold():
     assert _robust_center([0.10, 0.10, 0.10, 100.0]) == pytest.approx(0.10)
     # A genome positive in every fold is rewarded its typical fold, not dampened.
     assert _robust_center([0.20, 0.20, 0.20, 0.20]) == pytest.approx(0.20)
+
+
+def test_recovery_gain_is_the_loss_asymmetry_and_caps_at_ruin():
+    # The real cost of a drawdown: the gain needed to climb back. Convex, exploding toward ruin.
+    assert _recovery_gain(0.0) == pytest.approx(0.0)
+    assert _recovery_gain(0.2) == pytest.approx(0.25)  # -20% needs +25%
+    assert _recovery_gain(0.5) == pytest.approx(1.0)  # -50% needs +100%
+    assert _recovery_gain(0.8) == pytest.approx(4.0)  # -80% needs +400%
+    # Liquidation (d -> 1) would need an infinite gain; capped finite so GA ordering survives.
+    assert _recovery_gain(1.0) == pytest.approx(_recovery_gain(0.99))
+    assert _recovery_gain(1.0) < float("inf")
+
+
+def test_drawdown_penalty_is_zero_inside_the_band_and_convex_outside():
+    # A routine dip within the tolerance band costs nothing...
+    assert _drawdown_penalty([0.10, 0.25, 0.30], band=0.30) == pytest.approx(0.0)
+    # ...but the worst fold past the band is charged its recovery gain ABOVE the band's.
+    expected = _recovery_gain(0.50) - _recovery_gain(0.30)
+    assert _drawdown_penalty([0.10, 0.50, 0.20], band=0.30) == pytest.approx(expected)
+    # Convexity: doubling the excess drawdown more-than-doubles the penalty.
+    p_shallow = _drawdown_penalty([0.40], band=0.30)
+    p_deep = _drawdown_penalty([0.60], band=0.30)
+    assert p_deep > 2.0 * p_shallow
+
+
+def test_drawdown_penalty_driven_by_worst_fold_not_averaged():
+    # One ruinous fold sinks the genome even amid shallow ones — the leverage-blowup fix.
+    only_worst = _drawdown_penalty([0.90], band=0.30)
+    with_lucky_folds = _drawdown_penalty([0.01, 0.90, 0.02, 0.01], band=0.30)
+    assert with_lucky_folds == pytest.approx(only_worst)
+
+
+def test_liquidating_fold_is_catastrophically_penalized():
+    # A fold that liquidates reports a 100% drawdown; its penalty must dwarf any plausible return.
+    assert _drawdown_penalty([1.0], band=0.30) > 90.0
 
 
 def test_embargo_too_large_for_fold_size_raises():

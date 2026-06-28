@@ -15,27 +15,34 @@ from coinmon.strategies.base import Strategy
 # the overfit the grid search already demonstrated HARD to repeat: a genome is scored across
 # several out-of-sample folds (never one in-sample number), the MEDIAN fold return (robust to a
 # single lucky fold) is rewarded, and it is then docked for (a) losing money in any fold
-# (downside, not mere variation) and (b) trading too rarely to be anything but noise.
+# (downside, not mere variation), (b) trading too rarely to be anything but noise, and (c) riding
+# any fold into a deep drawdown — a convex, recovery-asymmetry penalty (chunk L) that makes the
+# search pay honestly for the tail risk leverage introduces instead of chasing blow-ups.
 # See docs/lessons-learned.md "the search overfits, the fixed params survive".
 
 
 @dataclass(frozen=True)
 class FitnessResult:
-    fitness: float  # median_oos_return - instability_penalty - trade_penalty (the GA objective)
+    fitness: float  # median_return - instability - trade_penalty - drawdown_penalty (GA objective)
     median_oos_return: float  # median of the per-fold returns — the central tendency rewarded
     mean_oos_return: float  # mean of the per-fold returns (informational; outlier-sensitive)
     return_std: float  # spread of per-fold returns (informational; not penalized)
     downside_dev: float  # RMS of the negative fold returns — the inconsistency the penalty bites
+    worst_drawdown: float  # deepest single-fold max drawdown (magnitude) — drives the DD penalty
     total_trades: int  # closed round-trips summed across all folds
     instability_penalty: float
     trade_penalty: float
+    drawdown_penalty: float
     fold_returns: list[float]
     fold_trades: list[int]
+    fold_drawdowns: list[float]  # per-fold max drawdown magnitudes (0..1; 1.0 == liquidated)
 
     def summary(self) -> str:
         per_fold = ", ".join(
-            f"{r:+.2%}({t}t)"
-            for r, t in zip(self.fold_returns, self.fold_trades, strict=True)
+            f"{r:+.2%}({t}t,{d:.0%}dd)"
+            for r, t, d in zip(
+                self.fold_returns, self.fold_trades, self.fold_drawdowns, strict=True
+            )
         )
         folds = len(self.fold_returns)
         return (
@@ -43,6 +50,7 @@ class FitnessResult:
             f"  median OOS return  {self.median_oos_return:+.2%}  over {folds} folds (drives it)\n"
             f"  mean OOS return    {self.mean_oos_return:+.2%}  (informational)\n"
             f"  downside dev       {self.downside_dev:.2%}  (-{self.instability_penalty:.4f})\n"
+            f"  worst drawdown     {self.worst_drawdown:.2%}  (-{self.drawdown_penalty:.4f})\n"
             f"  return std         {self.return_std:.2%}  (spread; not penalized)\n"
             f"  total trades       {self.total_trades}  (-{self.trade_penalty:.4f})\n"
             f"  per fold           {per_fold}"
@@ -83,6 +91,33 @@ def _downside_dev(returns: list[float]) -> float:
     return math.sqrt(statistics.fmean([min(0.0, r) ** 2 for r in returns]))
 
 
+# Drawdowns at/above this magnitude are treated as ruin: their recovery gain is capped here so a
+# liquidated fold (drawdown == 1.0, which would need an infinite gain back) yields a large but
+# finite catastrophic penalty (g(0.99) = 99) instead of an inf that would break GA ordering.
+_DRAWDOWN_RUIN_CAP = 0.99
+
+
+def _recovery_gain(drawdown: float) -> float:
+    """The gain needed to climb back from a max drawdown of ``drawdown`` (0..1): ``d / (1 - d)``.
+    This is the REAL asymmetry of a loss — down 20% needs +25%, down 50% needs +100%, down 80%
+    needs +400% — so it is naturally convex and explodes toward total loss. Anchoring the penalty
+    to it (rather than a hand-picked exponent) is why deep drawdowns cost super-linearly while a
+    shallow one barely registers. Capped at ``_DRAWDOWN_RUIN_CAP`` so liquidation stays finite."""
+    return _DRAWDOWN_RUIN_CAP / (1.0 - _DRAWDOWN_RUIN_CAP) if drawdown >= _DRAWDOWN_RUIN_CAP \
+        else drawdown / (1.0 - drawdown)
+
+
+def _drawdown_penalty(drawdowns: list[float], band: float) -> float:
+    """Convex penalty driven by the WORST fold's drawdown, measured as recovery-gain ABOVE a
+    tolerance ``band``: ``max_t(recovery_gain(d_t) - recovery_gain(band))``, floored at 0. Inside
+    the band (e.g. a routine -25/-30% dip) it is zero; past it the recovery asymmetry bites hard,
+    and a liquidating fold (d == 1) is near-catastrophic. The WORST fold drives it — not an average
+    — so one ruinous fold sinks the genome and can't be diluted by lucky folds (the exact failure
+    of the leverage-blind fitness: it rewarded a 4.6x short whose -100% fold averaged away)."""
+    floor = _recovery_gain(band)
+    return max((max(0.0, _recovery_gain(d) - floor) for d in drawdowns), default=0.0)
+
+
 def evaluate_fitness(
     candles: pd.DataFrame,
     make_strategy: Callable[[], Strategy],
@@ -95,6 +130,8 @@ def evaluate_fitness(
     min_trades: int = 20,
     instability_weight: float = 1.0,
     trade_penalty_weight: float = 1.0,
+    drawdown_weight: float = 1.0,
+    drawdown_band: float = 0.30,
 ) -> FitnessResult:
     """Score a single fixed genome (``make_strategy``) out-of-sample across ``folds`` segments.
 
@@ -112,6 +149,14 @@ def evaluate_fitness(
     ``make_portfolio`` is a ``(cash, taker_fee) -> Portfolio`` factory; it defaults to the long/flat
     ``SpotPortfolio`` so existing callers are unchanged, but a directional genome supplies a
     leveraged ``PerpPortfolio`` factory (chunk K2) so the same OOS rig scores a short.
+
+    The ``drawdown_penalty`` (chunk L) subtracts a convex term anchored to recovery asymmetry: the
+    WORST fold's max drawdown beyond ``drawdown_band`` is charged ``recovery_gain(d) -
+    recovery_gain(band)`` (down 50% needs +100% back; liquidation is near-catastrophic). This is the
+    fitness-side answer to leverage: leverage stays a free gene, but a genome that rides a position
+    to ruin pays super-linearly, so the search only keeps leverage that comes with survivable
+    drawdowns. It bites SELECTION only — the simulated equity stays a truthful mirror of the
+    exchange (no synthetic loss multiplier), so a graduated genome trades the same numbers live.
     """
     if folds < 1:
         raise ValueError(f"need at least 1 fold, got {folds}")
@@ -124,6 +169,7 @@ def evaluate_fitness(
 
     fold_returns: list[float] = []
     fold_trades: list[int] = []
+    fold_drawdowns: list[float] = []
     for start, end in _fold_bounds(n, folds, embargo_bars):
         segment = candles.iloc[start:end].reset_index(drop=True)
         result = BacktestEngine(
@@ -131,18 +177,21 @@ def evaluate_fitness(
         ).run(segment)
         fold_returns.append(result.metrics["total_return"])
         fold_trades.append(int(result.metrics["trades"]))
+        fold_drawdowns.append(-result.metrics["max_drawdown"])  # store as a positive magnitude
 
     median_return = _robust_center(fold_returns)
     mean_return = statistics.fmean(fold_returns)
     return_std = statistics.pstdev(fold_returns)  # population: well-defined for a single fold
     downside = _downside_dev(fold_returns)
+    worst_drawdown = max(fold_drawdowns, default=0.0)
     total_trades = sum(fold_trades)
 
     instability_penalty = instability_weight * downside
     # min_trades <= 0 disables the trade-count floor (no penalty, no division).
     undertraded = max(0.0, 1.0 - total_trades / min_trades) if min_trades > 0 else 0.0
     trade_penalty = trade_penalty_weight * undertraded
-    fitness = median_return - instability_penalty - trade_penalty
+    drawdown_penalty = drawdown_weight * _drawdown_penalty(fold_drawdowns, drawdown_band)
+    fitness = median_return - instability_penalty - trade_penalty - drawdown_penalty
 
     return FitnessResult(
         fitness=fitness,
@@ -150,9 +199,12 @@ def evaluate_fitness(
         mean_oos_return=mean_return,
         return_std=return_std,
         downside_dev=downside,
+        worst_drawdown=worst_drawdown,
         total_trades=total_trades,
         instability_penalty=instability_penalty,
         trade_penalty=trade_penalty,
+        drawdown_penalty=drawdown_penalty,
         fold_returns=fold_returns,
         fold_trades=fold_trades,
+        fold_drawdowns=fold_drawdowns,
     )

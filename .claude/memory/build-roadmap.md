@@ -103,8 +103,36 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
   surface `[Lx perp short | long/flat spot]`. 113 tests green, ruff clean (only pre-existing
   walkforward/viewer E501s remain, untouched); proof test: same RSI genome out-returns its spot twin
   and graduates GO on a synthetic downtrend. **CLI search now explores direction by default** — the
-  GA can finally pick a short winner. Still un-run against the live DB (the real downtrend-holdout
-  GO is a user `coinmon search --timeframe 1d --holdout 0.2 --stress 80` on the Docker DB).
+  GA can finally pick a short winner. **First live run done (2026-06-28):** `search --timeframe 1d
+  --holdout 0.2 --stress 80` → GA winner `atr_channel XRP/ETH 4.6x perp short`, graduation **NO-GO**
+  (holdout -99%, fragility 0%). The gate correctly rejected a leveraged blow-up (safety intact), but
+  it surfaced [[leverage-breaks-fitness-scaling]]: the OOS fitness is calibrated for spot returns, so
+  leverage inflates the median + floors downside at liquidation → the SEARCH is pulled toward
+  reckless leverage and its winner almost always NO-GOs. **Follow-up (before the downtrend-GO can be
+  claimed): recalibrate fitness** — disqualify liquidating folds + reward risk-adjusted (not raw)
+  return, and/or tighten the leverage range. Code/plumbing for K is done; the fitness fix is chunk L.
+
+- [~] **L — Risk-shaped search (stop-loss gene + convex drawdown penalty).** The fix for
+  [[leverage-breaks-fitness-scaling]]: keep leverage a free gene but make ruin expensive, and give the
+  bot a brake. User decided (2026-06-28): the multiplier lives in FITNESS only (equity stays a
+  truthful exchange mirror — no synthetic loss debit, preserves live-parity), and the stop triggers
+  INTRABAR on each bar's low/high (not close). **Part B done (2026-06-28):** `evaluate_fitness` now
+  subtracts a convex `drawdown_penalty` anchored to recovery asymmetry `g(d)=d/(1-d)` — the WORST
+  fold's max drawdown beyond `drawdown_band=0.30` is charged `g(d)-g(band)`, capped finite at d=0.99
+  so a liquidating fold (d=1) is catastrophic (~98) without inf-breaking GA ordering; new
+  `_recovery_gain`/`_drawdown_penalty` + FitnessResult fields (`worst_drawdown`, `drawdown_penalty`,
+  `fold_drawdowns`) + summary. 117 tests green, ruff clean. **Live proof it works:** same
+  `search --timeframe 1d --holdout 0.2 --stress 80` → winner leverage **4.6x → 2.5x**, gen-0 mean
+  fitness **-1.08 → -47.7**, holdout **-99% → -39.7%** (leverage NOT capped — the GA chose less of it
+  because tail risk now costs). Still NO-GO though: the winner kept a 74%-DD fold because its +429%
+  raw leveraged median outweighs the -2.48 penalty → **Part A is the missing brake.** **Part A (next):**
+  intrabar stop-loss as a GENE (threshold the GA tunes), enforced in the engine/perp book against bar
+  low/high, force-closing at the stop level mid-bar — must sit OUTSIDE `ShortWhenFlat` and latch flat
+  (the existing `strategies/stop_loss.py` is long-only, exits at next-open, and would re-short through
+  the wrapper, so it can't be reused as-is). **Open semantic decision for A:** on a stop-out, default
+  is *go flat + suppress re-entry until the base signal resets* (matches existing StopLoss); the
+  alternative is *flip to the opposite side*. Will default to flat-and-wait unless told otherwise.
+  A risk-adjusted (return/drawdown) fold metric stays a fallback if A alone doesn't close the gate.
 
 - [ ] **G — Phase 2: suggestions service.** Service runs the graduated strategy live (paper) and
   emits trade suggestions; no execution. Dockerized; FastAPI control-plane begins.

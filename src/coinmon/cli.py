@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import argparse
+import time
 from collections.abc import Callable
+from datetime import UTC, datetime
 
 import pandas as pd
 
-from coinmon.backtest.engine import BacktestEngine
+from coinmon.backtest.engine import BacktestEngine, StepResult
 from coinmon.backtest.portfolio import SpotPortfolio
 from coinmon.backtest.result import BacktestResult
 from coinmon.backtest.stress import run_monte_carlo
@@ -14,6 +16,8 @@ from coinmon.config import settings
 from coinmon.data import db
 from coinmon.data.candles import load_candles
 from coinmon.feed import BarView, CostModel
+from coinmon.live.feed import LiveFeed
+from coinmon.live.runner import ForwardRunner
 from coinmon.search.ga import GAConfig
 from coinmon.search.runner import FitnessParams, run_search
 from coinmon.strategies.base import Strategy
@@ -124,6 +128,62 @@ def _walk_forward(args: argparse.Namespace) -> None:
     print(result.summary())
 
 
+def _fmt_time(open_time: int) -> str:
+    return datetime.fromtimestamp(open_time / 1000, UTC).strftime("%Y-%m-%d %H:%M")
+
+
+def _fmt_rotation(s: StepResult) -> str:
+    side = "BUY " if s.position == 1 else "SELL"
+    return f"  {_fmt_time(s.open_time)}  {side} @ {s.close:g}"
+
+
+def _forward(args: argparse.Namespace) -> None:
+    conn = db.connect()
+    feed = LiveFeed(
+        lambda s: db.read_candles(conn, settings.exchange, s, args.timeframe), args.symbol
+    )
+    runner = ForwardRunner(STRATEGIES[args.strategy](), _make_portfolio())
+
+    # One-shot replay of every bar already stored — same decisions the backtester would make.
+    replayed = runner.feed(feed.poll())
+    if not replayed:
+        conn.close()
+        raise SystemExit(
+            f"no candles stored for {args.symbol} {args.timeframe} — run the scraper first"
+        )
+
+    print(f"forward {args.strategy} on {args.symbol} {args.timeframe} ({len(replayed)} bars)\n")
+    rotations = [s for s in replayed if s.filled]
+    print(f"replayed {len(replayed)} bars, {len(rotations)} rotations; recent:")
+    for s in rotations[-5:]:
+        print(_fmt_rotation(s))
+    latest = runner.latest
+    assert latest is not None  # replayed is non-empty
+    held = "LONG" if latest.position == 1 else "FLAT"
+    want = "LONG" if latest.target == 1 else "FLAT"
+    pending = " -> ROTATE next bar" if latest.target != latest.position else ""
+    print(
+        f"\nas of {_fmt_time(latest.open_time)}: holding {held}, "
+        f"target {want}{pending}; equity {latest.equity:.2f}"
+    )
+
+    if not args.follow:
+        conn.close()
+        return
+
+    print(f"\nfollowing every {args.interval}s (Ctrl-C to stop)...")
+    try:
+        while True:
+            time.sleep(args.interval)
+            for s in runner.feed(feed.poll()):
+                if s.filled:
+                    print(_fmt_rotation(s))
+    except KeyboardInterrupt:
+        print("\nstopped")
+    finally:
+        conn.close()
+
+
 def _search(args: argparse.Namespace) -> None:
     conn = db.connect()
     try:
@@ -207,6 +267,31 @@ def build_parser() -> argparse.ArgumentParser:
         help="metric the search maximizes on each train window",
     )
     p_wf.set_defaults(func=_walk_forward)
+
+    p_fwd = sub.add_parser(
+        "forward",
+        help="Run a strategy forward over the growing DB (live BarView, same engine as backtest)",
+    )
+    p_fwd.add_argument(
+        "--strategy", required=True, choices=sorted(STRATEGIES), help="e.g. rsi_meanreversion"
+    )
+    p_fwd.add_argument(
+        "--symbol", required=True, help="e.g. BTC/USDC, or ETH/BTC (synthetic ratio)"
+    )
+    p_fwd.add_argument("--timeframe", default="1d")
+    p_fwd.add_argument(
+        "--follow",
+        action="store_true",
+        help="keep polling the DB for new closed bars and print rotations as they happen",
+    )
+    p_fwd.add_argument(
+        "--interval",
+        type=float,
+        default=60.0,
+        metavar="SECONDS",
+        help="poll interval when --follow is set (default 60)",
+    )
+    p_fwd.set_defaults(func=_forward)
 
     p_search = sub.add_parser(
         "search",

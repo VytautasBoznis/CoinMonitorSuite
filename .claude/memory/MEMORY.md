@@ -18,6 +18,7 @@ This file indexes all memory files for the CoinMonitorSuite project.
 - [chunk-a-findings](chunk-a-findings.md) — chunk A validation: pulse is pair-specific (XRP ratios survive fragility), pair must be a gene, and the fitness symmetric-std penalty wrongly rejects all-folds-positive genomes
 - [chunk-c-search-loop](chunk-c-search-loop.md) — chunk C GA: pure seed-deterministic mechanics (search/ga.py) + runner that scores OOS and gates the winner with fragility as a post-filter; CLI `coinmon search`
 - [chunk-d-graduation-gate](chunk-d-graduation-gate.md) — chunk D graduation gate: graduate() runs the GA winner on a never-searched holdout + full fragility → hard go/no-go with reasons; `search --holdout`
+- [chunk-f-live-forward-feed](chunk-f-live-forward-feed.md) — chunk F live forward feed: shared BarStepper core + coinmon/live (LiveFeed, ForwardRunner); forward replay == backtest (parity by construction); `coinmon forward`
 - [build-roadmap](build-roadmap.md) — the chunked plan to finish the project (one chunk ≈ one session); source of truth for what's next
 - [session-build-loop](session-build-loop.md) — how each session runs: read memory → do next roadmap chunk → ask blockers → deliver a commit message
 - [user-commits-themselves](user-commits-themselves.md) — never run git commit; hand over a commit message and stop

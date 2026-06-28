@@ -72,9 +72,19 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
   precompute fixed-menu indicators to DB, serve `BarView.features` point-in-time ([[feature-store-seam]]),
   strategies take the fast path. Own Docker container. Verify: identical results vs recompute, big speedup.
 
-- [ ] **F — Live forward feed.** Run a graduated strategy forward in real time off the scraper's
-  growing DB (live BarView), same engine contract. Verify: forward replay matches backtest on
-  overlapping bars (parity).
+- [x] **F — Live forward feed.** (2026-06-28) Extracted the engine's per-bar state machine into a
+  shared `BarStepper`/`StepResult` (`backtest/engine.py`): the fill→mark→decide core, now used by
+  both `BacktestEngine.run` and the live feed so they decide+fill IDENTICALLY (**parity by
+  construction**, not a duplicated loop). New `coinmon/live/`: `LiveFeed` (incremental DB reader —
+  re-resolves the pair incl. synthetic ratios via `load_candles`, returns only bars past a
+  watermark, so each closed bar drives the strategy exactly once across many polls; scraper stores
+  only closed bars so no partial-bar guard needed) and `ForwardRunner` (drives one strategy via
+  `BarStepper`, state persists across polls). CLI `coinmon forward --strategy --symbol --timeframe
+  [--follow --interval]`: one-shot replay of stored bars + optional poll loop. 94 tests green —
+  parity proven two ways (scripted + RSI on a real series: forward equity curve & trade list ==
+  `BacktestEngine`) and **batch-invariant** (multi-poll == one-shot). Genome→strategy on the CLI
+  still uses the `STRATEGIES` dict (no graduated-genome persistence yet — that lands with G/H).
+  Next: chunk G (suggestions service) — *blocked on delivery channel*.
 
 - [ ] **G — Phase 2: suggestions service.** Service runs the graduated strategy live (paper) and
   emits trade suggestions; no execution. Dockerized; FastAPI control-plane begins.

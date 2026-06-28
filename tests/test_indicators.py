@@ -4,12 +4,32 @@ import pandas as pd
 import pytest
 
 from coinmon.indicators import (
+    StreamingAD,
     StreamingATR,
+    StreamingDEMA,
+    StreamingElderRay,
     StreamingEMA,
+    StreamingForceIndex,
+    StreamingMACD,
+    StreamingOBV,
+    StreamingPVT,
     StreamingRSI,
+    StreamingTEMA,
+    StreamingTRIX,
+    StreamingTSI,
+    ad,
     atr,
+    dema,
+    elder_ray,
     ema,
+    force_index,
+    macd,
+    obv,
+    pvt,
     rsi,
+    tema,
+    trix,
+    tsi,
 )
 
 
@@ -120,3 +140,120 @@ def test_streaming_atr_bit_parity(period):
     _assert_bit_equal(
         streamed, atr(pd.Series(highs), pd.Series(lows), pd.Series(closes), period)
     )
+
+
+# --- N5a Tier-1 library: bit-parity (streaming == full-series, float-for-float) ----
+
+
+def _volume(n: int) -> list[float]:
+    """A deterministic, always-positive volume walk to pair with ``_ohlc``."""
+    return [1000.0 + 400.0 * math.sin(i * 0.9) + 5.0 * i for i in range(n)]
+
+
+@pytest.mark.parametrize("period", [2, 3, 14, 40])
+def test_streaming_dema_bit_parity(period):
+    _, _, closes = _ohlc(120)
+    stream = StreamingDEMA(period)
+    streamed = [stream.update(c) for c in closes]
+    _assert_bit_equal(streamed, dema(pd.Series(closes), period))
+
+
+@pytest.mark.parametrize("period", [2, 3, 14, 40])
+def test_streaming_tema_bit_parity(period):
+    _, _, closes = _ohlc(120)
+    stream = StreamingTEMA(period)
+    streamed = [stream.update(c) for c in closes]
+    _assert_bit_equal(streamed, tema(pd.Series(closes), period))
+
+
+def test_streaming_macd_bit_parity():
+    _, _, closes = _ohlc(120)
+    stream = StreamingMACD(12, 26, 9)
+    streamed = [stream.update(c) for c in closes]
+    ref_macd, ref_signal, ref_hist = macd(pd.Series(closes), 12, 26, 9)
+    _assert_bit_equal([s[0] for s in streamed], ref_macd)
+    _assert_bit_equal([s[1] for s in streamed], ref_signal)
+    _assert_bit_equal([s[2] for s in streamed], ref_hist)
+
+
+@pytest.mark.parametrize("period", [2, 3, 15, 40])
+def test_streaming_trix_bit_parity(period):
+    _, _, closes = _ohlc(120)
+    stream = StreamingTRIX(period)
+    streamed = [stream.update(c) for c in closes]
+    _assert_bit_equal(streamed, trix(pd.Series(closes), period))
+
+
+@pytest.mark.parametrize("long,short", [(25, 13), (5, 3), (40, 20)])
+def test_streaming_tsi_bit_parity(long, short):
+    _, _, closes = _ohlc(120)
+    stream = StreamingTSI(long, short)
+    streamed = [stream.update(c) for c in closes]
+    _assert_bit_equal(streamed, tsi(pd.Series(closes), long, short))
+
+
+@pytest.mark.parametrize("period", [2, 13, 40])
+def test_streaming_elder_ray_bit_parity(period):
+    highs, lows, closes = _ohlc(120)
+    stream = StreamingElderRay(period)
+    streamed = [
+        stream.update(h, low, c) for h, low, c in zip(highs, lows, closes, strict=True)
+    ]
+    ref_bull, ref_bear = elder_ray(
+        pd.Series(highs), pd.Series(lows), pd.Series(closes), period
+    )
+    _assert_bit_equal([s[0] for s in streamed], ref_bull)
+    _assert_bit_equal([s[1] for s in streamed], ref_bear)
+
+
+def test_streaming_obv_bit_parity():
+    _, _, closes = _ohlc(120)
+    vols = _volume(120)
+    stream = StreamingOBV()
+    streamed = [stream.update(c, v) for c, v in zip(closes, vols, strict=True)]
+    _assert_bit_equal(streamed, obv(pd.Series(closes), pd.Series(vols)))
+
+
+def test_streaming_ad_bit_parity():
+    highs, lows, closes = _ohlc(120)
+    vols = _volume(120)
+    stream = StreamingAD()
+    streamed = [
+        stream.update(h, low, c, v)
+        for h, low, c, v in zip(highs, lows, closes, vols, strict=True)
+    ]
+    _assert_bit_equal(
+        streamed,
+        ad(pd.Series(highs), pd.Series(lows), pd.Series(closes), pd.Series(vols)),
+    )
+
+
+def test_streaming_pvt_bit_parity():
+    _, _, closes = _ohlc(120)
+    vols = _volume(120)
+    stream = StreamingPVT()
+    streamed = [stream.update(c, v) for c, v in zip(closes, vols, strict=True)]
+    _assert_bit_equal(streamed, pvt(pd.Series(closes), pd.Series(vols)))
+
+
+@pytest.mark.parametrize("period", [2, 13, 40])
+def test_streaming_force_index_bit_parity(period):
+    _, _, closes = _ohlc(120)
+    vols = _volume(120)
+    stream = StreamingForceIndex(period)
+    streamed = [stream.update(c, v) for c, v in zip(closes, vols, strict=True)]
+    _assert_bit_equal(streamed, force_index(pd.Series(closes), pd.Series(vols), period))
+
+
+def test_obv_known_values():
+    # closes 10, 11, 11, 9, 10 ; vols all 100 -> +100, 0 (flat), -100, +100
+    out = obv(pd.Series([10.0, 11.0, 11.0, 9.0, 10.0]), pd.Series([100.0] * 5))
+    assert out.tolist() == [0.0, 100.0, 100.0, 0.0, 100.0]
+
+
+def test_pvt_known_values():
+    # bar1: 100*(11-10)/10 = 10 ; bar2: +100*(12-11)/11 = 10 + 9.0909...
+    out = pvt(pd.Series([10.0, 11.0, 12.0]), pd.Series([100.0, 100.0, 100.0]))
+    assert out.iloc[0] == 0.0
+    assert out.iloc[1] == pytest.approx(10.0)
+    assert out.iloc[2] == pytest.approx(10.0 + 100.0 * 1.0 / 11.0)

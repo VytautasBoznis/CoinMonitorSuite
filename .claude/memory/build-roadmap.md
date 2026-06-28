@@ -231,7 +231,22 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
     CONSUMES them — current system is a GA over ~3 fixed strategy templates, NOT genetic programming. "More room to
     be wrong" really points at a future **tree-GP** (genomes = expression trees composing the indicator pool with
     operators). Until that exists, N5 means adding strategy FAMILIES that use the new indicators, family by family.
-    Name the tree-GP target so the library has a real payoff.
+    Name the tree-GP target so the library has a real payoff. Split into N5a (clean EMA/momentum + volume families)
+    and N5b (stateful trio) because the latter need much more delicate bit-parity work.
+    - [x] **N5a — EMA/momentum + volume families.** (2026-06-28) Added 10 streaming O(1)/bar indicators to
+      `indicators/__init__.py`, each a full-series reference fn (the bit-parity oracle) + a `Streaming…` class
+      (what strategies/P consume), same contract as ema/rsi/atr: **DEMA, TEMA, MACD** (returns macd/signal/hist),
+      **TRIX, TSI, Elder Ray** (bull/bear power) — all EMA-derived, so they reuse `StreamingEMA` and inherit its
+      proven adjust=False parity — plus the volume family **OBV, AD (Chaikin A/D line), PVT, Force Index**. Streaming
+      arithmetic written to match the reference float-for-float (e.g. PVT computes `volume * roc`, not
+      `volume*(c-prev)/prev`, to match pandas op order). 197 tests green (+27: bit-parity across periods, multi-output
+      component checks, OBV/PVT known-values), ruff clean. Consumers still use only the streaming forms (strategies
+      import them; the pandas fns are test oracles). Library only — no strategy/genome wiring (that's P).
+    - [ ] **N5b — Stateful trio (ADX/DMI, Parabolic SAR, SuperTrend).** The deferred fiddly ones: ADX needs a
+      second-stage Wilder seed over the first `period` valid DX values (the leading-NaN `_wilder_smooth` won't fit
+      as-is); Parabolic SAR is an AF/EP trend-flip state machine clamped to the prior two bars' extremes; SuperTrend
+      is ATR-band trend-direction carry-over. Each is its own loop reference + streaming class with hand-computed
+      known-value tests (no independent pandas oracle for the stateful recurrences). Do before/with P if P wants them.
   - [x] **N6 — Bigger multi-seed sweep (the payoff test).** (2026-06-28) Built `coinmon sweep` — runs the SAME
     graduation search across `--seeds N` (shared DB conn + `CandleCache`, so candles read once not once/seed) and
     aggregates GO/NO-GO with the lottery-vs-edge diagnosis (GO count + DISTINCT pairs the GOs land on). Pure

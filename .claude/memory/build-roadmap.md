@@ -86,6 +86,17 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
   still uses the `STRATEGIES` dict (no graduated-genome persistence yet — that lands with G/H).
   Next: chunk G (suggestions service) — *blocked on delivery channel*.
 
+- [~] **K — Directional capability (perp short).** Inserted ahead of G after the gate-decision
+  resolved toward *adding a bearish leg*, not softening the gate (see [[perp-short-capability]] and
+  [[first-live-search-graduation]]). **K1 done (2026-06-28):** `PerpPortfolio` (long/flat/short,
+  isolated all-in leverage, notional-based taker fees, close-bar liquidation latch), engine/
+  `BarStepper` generalized to a 3-state position (-1/0/+1; spot 0/1 path byte-unchanged, parity
+  green), `strategies/directional.ShortWhenFlat` (flat→short). 106 tests green, ruff clean; proof
+  test: long/flat spot bleeds on a downtrend while ShortWhenFlat+PerpPortfolio profits. **K2 (next):**
+  wire directionality into the GA — genome genes (portfolio/leverage/short-enable) ⇒ `decode` must
+  also produce a *portfolio factory* (today `evaluate_fitness`/`runner`/`graduation`/CLI all build
+  `SpotPortfolio` themselves), then a live search whose winner can finally GO on the downtrend holdout.
+
 - [ ] **G — Phase 2: suggestions service.** Service runs the graduated strategy live (paper) and
   emits trade suggestions; no execution. Dockerized; FastAPI control-plane begins.
   *Blocked on: how suggestions are delivered (log/webhook/Telegram/UI).* Verify: emits a correct

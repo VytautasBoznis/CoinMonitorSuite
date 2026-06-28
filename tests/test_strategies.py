@@ -4,6 +4,7 @@ from coinmon.data.models import Candle
 from coinmon.feed import BarView, CostModel
 from coinmon.strategies.atr_channel import ATRChannelBreakout
 from coinmon.strategies.base import Strategy
+from coinmon.strategies.directional import ShortWhenFlat
 from coinmon.strategies.ema_crossover import EMACrossover
 from coinmon.strategies.rsi_meanreversion import RSIMeanReversion
 from coinmon.strategies.stop_loss import StopLoss
@@ -151,6 +152,14 @@ def test_stop_loss_rejects_out_of_range_pct():
     for bad in (0.0, 1.0, -0.1, 1.5):
         with pytest.raises(ValueError):
             StopLoss(_ScriptedInner([0]), stop_pct=bad)
+
+
+def test_short_when_flat_turns_cash_into_short():
+    # +1 long passes through, the 0 exit-to-cash becomes -1 short, an existing -1 is untouched.
+    inner = _ScriptedInner([1, 0, -1])
+    w = ShortWhenFlat(inner)
+    assert [w.on_bar(_bar(100.0)) for _ in inner.targets] == [1, -1, -1]
+    assert inner.calls == 3  # consulted on every bar
 
 
 def test_precomputed_features_bypass_internal_compute():

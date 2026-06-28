@@ -5,10 +5,11 @@ import pytest
 
 from coinmon.backtest.engine import BacktestEngine
 from coinmon.backtest.metrics import summarize
-from coinmon.backtest.portfolio import SpotPortfolio
+from coinmon.backtest.portfolio import PerpPortfolio, SpotPortfolio
 from coinmon.data.candles import load_candles
 from coinmon.feed import BarView
 from coinmon.strategies.base import Strategy
+from coinmon.strategies.directional import ShortWhenFlat
 
 
 class _AlwaysLong(Strategy):
@@ -71,6 +72,74 @@ def test_open_position_is_not_a_closed_trade():
     p = SpotPortfolio(cash=100.0, taker_fee=0.0)
     p.rebalance(1, price=10.0)  # entered, never exited
     assert p.trades == []  # unrealized, so no trade recorded
+
+
+class _AlwaysFlat(Strategy):
+    def on_bar(self, view: BarView) -> int:
+        return 0
+
+
+def test_perp_leverage_one_round_trip_pays_two_notional_fees():
+    # A 1x perp long ~ a spot long, but the taker fee is on the full notional each leg (the
+    # margin is held separately from the position), so a round trip costs 2 x fee x notional.
+    p = PerpPortfolio(cash=100.0, taker_fee=0.01, leverage=1.0)
+    p.rebalance(1, price=10.0)
+    assert p.equity(10.0) == pytest.approx(99.0)  # paid the 1% entry fee on 100 notional
+    p.rebalance(0, price=10.0)
+    assert p.equity(10.0) == pytest.approx(98.0)  # two 1% notional fees
+
+
+def test_perp_short_profits_when_price_falls():
+    p = PerpPortfolio(cash=100.0, taker_fee=0.0, leverage=1.0)
+    p.rebalance(-1, price=10.0)  # open short
+    assert p.units == pytest.approx(-10.0)
+    assert p.equity(8.0) == pytest.approx(120.0)  # 20% drop -> +20 on a 1x short
+    p.rebalance(0, price=8.0)  # close
+    assert p.trades == [pytest.approx(20.0)]
+
+
+def test_perp_leverage_scales_pnl():
+    p = PerpPortfolio(cash=100.0, taker_fee=0.0, leverage=3.0)
+    p.rebalance(-1, price=10.0)
+    assert p.equity(9.0) == pytest.approx(130.0)  # 10% drop x3 leverage -> +30%
+
+
+def test_perp_over_leveraged_adverse_move_liquidates():
+    p = PerpPortfolio(cash=100.0, taker_fee=0.0, leverage=3.0)
+    p.rebalance(-1, price=10.0)  # 3x short: ~33% rally wipes the collateral
+    assert p.equity(14.0) == pytest.approx(0.0)  # liquidated, equity floored at 0
+    assert p.trades == [pytest.approx(-100.0)]  # whole collateral booked as the loss
+    # The account is dead: no further trade, and a price recovery does NOT un-liquidate it.
+    p.rebalance(-1, price=10.0)
+    assert p.equity(8.0) == pytest.approx(0.0)
+
+
+def test_perp_flip_long_to_short_closes_then_reopens():
+    p = PerpPortfolio(cash=100.0, taker_fee=0.0, leverage=1.0)
+    p.rebalance(1, price=10.0)  # long
+    p.rebalance(-1, price=12.0)  # flip: realize +20 on the long, open a short at 12
+    assert p.trades == [pytest.approx(20.0)]  # the closed long round-trip
+    assert p.units == pytest.approx(-10.0)  # now short 120-notional / 12
+
+
+def test_engine_short_position_marks_and_counts_exposure():
+    # Always short on a falling market: held a short on bars 1-3, so exposure = 3/4 and the mark
+    # rises as price drops.
+    candles = _candles([(100.0, 100.0), (100.0, 90.0), (90.0, 80.0), (80.0, 70.0)])
+    result = BacktestEngine(_Scripted([-1, -1, -1, -1]), PerpPortfolio(100.0, 0.0)).run(candles)
+    assert result.equity_curve.iloc[-1] == pytest.approx(130.0)  # +30 from a 30-point drop
+    assert result.metrics["exposure"] == pytest.approx(0.75)
+
+
+def test_short_when_flat_beats_spot_long_in_a_downtrend():
+    # The capability proof: same falling series, long/flat spot bleeds while ShortWhenFlat on a
+    # perp turns the flat signal into a short and profits from the drop.
+    candles = _candles([(100.0, 100.0), (100.0, 90.0), (90.0, 80.0), (80.0, 70.0)])
+    long_spot = BacktestEngine(_AlwaysLong(), SpotPortfolio(100.0, 0.0)).run(candles)
+    short_perp = BacktestEngine(
+        ShortWhenFlat(_AlwaysFlat()), PerpPortfolio(100.0, 0.0)
+    ).run(candles)
+    assert long_spot.equity_curve.iloc[-1] < 100.0 < short_perp.equity_curve.iloc[-1]
 
 
 def test_engine_executes_at_next_bar_open_not_signal_bar_close():

@@ -62,3 +62,65 @@ class SpotPortfolio(Portfolio):
 
     def equity(self, price: float) -> float:
         return self.cash + self.units * price
+
+
+class PerpPortfolio(Portfolio):
+    """Long / flat / short USDT-perp account with isolated, all-in leverage — the bearish-leg
+    capability spot can't give (a long/flat account can only sidestep a downtrend; a short
+    profits from it). The whole account is the margin for one position (all-in, like the spot
+    book): going long or short opens a position of notional = ``equity * leverage``, paying a
+    taker fee on that notional; the opposite or flat target closes it, paying the exit taker fee
+    and realizing the round-trip PnL. ``target`` is +1 long / 0 flat / -1 short.
+
+    PnL on an open position is ``units * (price - entry)`` with ``units`` signed, so a short
+    (units < 0) gains as price falls. Leverage L multiplies both gain and loss, so an adverse
+    move of ~1/L wipes the collateral: ``equity`` latches an **isolated-margin liquidation** the
+    first bar the mark hits zero (collateral gone, position force-closed, the loss booked as a
+    trade, the account dead for the rest of the run). Simplifications kept honest for a first
+    model: liquidation is checked on the bar CLOSE only (an intrabar wick that liquidates then
+    recovers is missed), no maintenance-margin buffer (liq at mark <= 0, marginally generous),
+    and no funding. The eval rig (OOS fitness + fragility + holdout) is what punishes reckless
+    leverage — not a hand-tuned cap here.
+    """
+
+    def __init__(self, cash: float, taker_fee: float, leverage: float = 1.0) -> None:
+        if leverage < 1.0:
+            raise ValueError("leverage must be >= 1.0")
+        self.cash = cash
+        self.units = 0.0  # signed: + long, - short; 0 when flat
+        self.taker_fee = taker_fee
+        self.leverage = leverage
+        self._target = 0
+        self._entry_price = 0.0
+        self._entry_equity = 0.0  # collateral at entry, to PnL the round-trip on close
+        self._liquidated = False
+        self.trades: list[float] = []
+
+    def rebalance(self, target: int, price: float) -> None:
+        if self._liquidated or target == self._target:
+            return
+        if self._target != 0:  # close the open position: realize PnL, then pay the exit fee
+            self.cash += self.units * (price - self._entry_price)
+            self.cash -= abs(self.units) * price * self.taker_fee
+            self.trades.append(self.cash - self._entry_equity)  # realized round-trip PnL
+            self.units = 0.0
+        if target != 0:  # open a leveraged position, paying the entry fee on the notional
+            self._entry_equity = self.cash
+            notional = self.cash * self.leverage
+            self.cash -= notional * self.taker_fee
+            self.units = (notional / price) * (1.0 if target == 1 else -1.0)
+            self._entry_price = price
+        self._target = target
+
+    def equity(self, price: float) -> float:
+        if self._target == 0:
+            return self.cash
+        mark = self.cash + self.units * (price - self._entry_price)
+        if mark <= 0.0 and not self._liquidated:  # isolated-margin liquidation: collateral gone
+            self.trades.append(-self._entry_equity)
+            self.cash = 0.0
+            self.units = 0.0
+            self._target = 0
+            self._liquidated = True
+            return 0.0
+        return mark

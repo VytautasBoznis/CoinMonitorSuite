@@ -36,10 +36,9 @@ the chunk-A truth that the real edge here is **risk-adjusted, not absolute**
 ([[chunk-a-findings]], [[daily-meanreversion-goes-positive]] "downtrend-flattered"): the gate
 currently throws away the relative signal.
 
-**Open decision for the user (don't change the gate silently):** how should graduation judge a
-long/flat strategy in a down regime? Options — (a) keep absolute-return conservatism (never deploy
-capital that loses money, regime be damned); (b) add/switch to a relative "beat B&H by margin M"
-gate; (c) replace the single tail holdout with multiple windows / walk-forward graduation so one
-regime can't decide; (d) accept that long/flat spot needs a market that isn't a sustained
-downtrend and gate accordingly. Tied to whether the eventual product is long/flat spot only or
-gains short capability (perp) later.
+**RESOLVED (user, 2026-06-28): keep the gate absolute; add a bearish leg instead.** The user
+rejected all gate-softening options — the gate should never bless a money-losing strategy. The real
+fix is that long/flat spot *can't* perform in a downtrend, so give the system the ability to profit
+from the drop: a **leveraged perp short** ("at the moment you'd sell, short instead"). See
+[[perp-short-capability]] — chunk K1 (PerpPortfolio + 3-state engine + ShortWhenFlat) landed; K2
+wires it into the GA so a winner can finally GO on this downtrend holdout by shorting it.

@@ -55,7 +55,9 @@ class BarStepper:
         """
         filled = False
         if self._pending is not None and self._pending != self._position:
-            side = 1 if self._pending == 1 else -1
+            # Buy (+1) when moving more positive, sell (-1) when more negative — so a long->short
+            # flip sells, a short->flat buys. For the 0/1 spot path this is the old rule unchanged.
+            side = 1 if self._pending > self._position else -1
             fill = self.execution.fill_price(side, candle.open)
             if fill is not None:  # a None fill = order didn't execute; position unchanged
                 self.portfolio.rebalance(self._pending, fill)
@@ -114,7 +116,7 @@ class BacktestEngine:
             )
             result = stepper.step(candle)
             equity.append(result.equity)
-            bars_in_market += result.position  # position is 1 long / 0 flat
+            bars_in_market += abs(result.position)  # held a position when +1 long or -1 short
 
         curve = pd.Series(
             equity,

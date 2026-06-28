@@ -140,6 +140,8 @@ def _search(args: argparse.Namespace) -> None:
                 folds=args.folds, embargo_bars=args.embargo, min_trades=args.min_trades
             ),
             fragility_runs=args.stress,
+            holdout_fraction=args.holdout,
+            graduate_min_trades=args.graduate_min_trades,
         )
     finally:
         conn.close()
@@ -230,7 +232,22 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=0,
         metavar="N",
-        help="fragility kill-filter runs on the winner (0 = skip the gate)",
+        help="fragility kill-filter runs on the winner (0 = skip; defaults to 200 under --holdout)",
+    )
+    p_search.add_argument(
+        "--holdout",
+        type=float,
+        default=0.0,
+        metavar="FRACTION",
+        help="carve the last FRACTION of each pair as a never-searched holdout and run the "
+        "graduation gate on the winner, e.g. 0.2 (0 = skip, chunk-C behavior)",
+    )
+    p_search.add_argument(
+        "--graduate-min-trades",
+        type=int,
+        default=5,
+        metavar="N",
+        help="minimum holdout trades for the graduation gate to pass (with --holdout)",
     )
     p_search.set_defaults(func=_search)
 

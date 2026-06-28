@@ -66,6 +66,27 @@ def test_run_search_skips_fragility_gate_by_default():
     report = run_search(_read, taker_fee=0.0, config=_CFG, fitness_params=_FP)
     assert report.fragility is None
     assert report.passed_fragility is None
+    assert report.graduation is None
+
+
+def test_run_search_graduates_the_winner_on_a_holdout():
+    # With a holdout the chunk-D gate runs instead of the chunk-C fragility post-filter: the GA
+    # scores only the search head and the winner is graduated on the never-seen tail.
+    report = run_search(
+        _read,
+        taker_fee=0.0,
+        config=_CFG,
+        fitness_params=_FP,
+        fragility_runs=10,
+        holdout_fraction=0.2,
+    )
+    assert report.fragility is None
+    assert report.passed_fragility is None
+    assert report.graduation is not None
+    assert report.graduation.fragility.runs == 10
+    assert isinstance(report.graduation.passed, bool)
+    # The holdout is ~20% of the 220-bar series; the search never saw those bars.
+    assert report.graduation.holdout_bars == 44
 
 
 def test_run_search_raises_when_no_genome_can_be_scored():

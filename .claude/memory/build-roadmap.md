@@ -56,9 +56,17 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
   the "reject garbage on real data" proof is a user run (`coinmon search --timeframe 1d --stress N`,
   Docker DB up). Next: chunk D graduation gate (untouched holdout + full fragility → go/no-go).
 
-- [ ] **D — Graduation gate.** Pipeline that takes the GA winner, runs it on a never-touched final
-  holdout span + full fragility kill-filter, emits a go/no-go report. Verify: garbage genome fails
-  the gate; the gate is the only path to "live-eligible."
+- [x] **D — Graduation gate.** (2026-06-28) `search/graduation.py`: `graduate(genome, holdout, …)`
+  runs the GA winner on a never-searched holdout tail + full fragility, returns a hard go/no-go
+  `GraduationReport` with explicit `reasons` (gates: holdout return > 0, ≥ `min_trades` holdout
+  trades, fragility `fraction_positive ≥ min`; B&H reported, not gated). `data/candles.split_holdout`
+  carves the last `holdout_fraction` of each pair *before* evolution. `run_search` gained
+  `holdout_fraction` (default 0 = unchanged chunk-C): when > 0 the GA scores only the search head
+  and graduation supersedes the chunk-C fragility post-filter. CLI `search --holdout FRACTION
+  --graduate-min-trades N`. 88 tests green (garbage genome → NO-GO with reasons; robust edge → GO).
+  **Not yet run against the live DB** — the real graduation proof is a user run
+  (`coinmon search --timeframe 1d --holdout 0.2 --stress 80`). Next: chunk E (feature store, only if
+  GA is compute-bound) or chunk F (live forward feed).
 
 - [ ] **E — Indicator/feature-store engine (conditional).** Only if the GA is compute-bound:
   precompute fixed-menu indicators to DB, serve `BarView.features` point-in-time ([[feature-store-seam]]),

@@ -8,9 +8,10 @@ import pandas as pd
 from coinmon.backtest.fitness import FitnessResult, evaluate_fitness
 from coinmon.backtest.portfolio import SpotPortfolio
 from coinmon.backtest.stress import MonteCarloResult, run_monte_carlo
-from coinmon.data.candles import load_candles
+from coinmon.data.candles import load_candles, split_holdout
 from coinmon.search.ga import GAConfig, GAResult, evolve
 from coinmon.search.genome import Genome, decode
+from coinmon.search.graduation import GraduationReport, graduate
 
 # Chunk C orchestration: glue the pure GA (search/ga.py) to real data and the honest score.
 # It resolves each genome's pair gene to candles (the same load_candles path the CLI uses),
@@ -57,6 +58,7 @@ class SearchReport:
     ga: GAResult
     fragility: MonteCarloResult | None
     passed_fragility: bool | None
+    graduation: GraduationReport | None = None
 
     def summary(self) -> str:
         p = ", ".join(f"{k}={v:g}" for k, v in sorted(self.best.params.items()))
@@ -72,14 +74,16 @@ class SearchReport:
         if self.fragility is not None:
             verdict = "PASS" if self.passed_fragility else "REJECT"
             lines += ["", f"fragility gate [{verdict}]:", self.fragility.summary()]
+        if self.graduation is not None:
+            lines += ["", self.graduation.summary()]
         return "\n".join(lines)
 
 
 def _score_genome(
-    genome: Genome, cache: CandleCache, taker_fee: float, fp: FitnessParams
+    genome: Genome, candles: pd.DataFrame, taker_fee: float, fp: FitnessParams
 ) -> FitnessResult:
     return evaluate_fitness(
-        cache.get(genome.pair),
+        candles,
         decode(genome),
         taker_fee,
         folds=fp.folds,
@@ -103,15 +107,28 @@ def run_search(
     fitness_params: FitnessParams = _DEFAULT_FITNESS,
     fragility_runs: int = 0,
     fragility_min_positive: float = 0.9,
+    holdout_fraction: float = 0.0,
+    graduate_min_trades: int = 5,
 ) -> SearchReport:
-    """Run the GA over genomes scored by OOS fitness, then gate the winner with the fragility
-    kill-filter. A genome whose pair has too little data (or any scoring error) is assigned
-    ``-inf`` so the GA discards it rather than crashing the run."""
+    """Run the GA over genomes scored by OOS fitness, then gate the winner.
+
+    With ``holdout_fraction == 0`` (default) this is the chunk-C run: the GA sees the full series
+    and the winner faces the fragility kill-filter as a post-filter. With ``holdout_fraction > 0``
+    the chunk-D graduation gate engages instead: the last fraction of each pair is carved off
+    *before* evolution, the GA scores only the search head, and the winner is graduated on the
+    never-seen holdout tail (full fragility + go/no-go). The fragility post-filter is skipped in
+    this mode — graduation supersedes it. A genome whose pair has too little data (or any scoring
+    error) is assigned ``-inf`` so the GA discards it rather than crashing the run."""
     cache = CandleCache(read)
+
+    def search_span(pair: str) -> pd.DataFrame:
+        frame = cache.get(pair)
+        return split_holdout(frame, holdout_fraction)[0] if holdout_fraction else frame
 
     def fitness(genome: Genome) -> float:
         try:
-            return _score_genome(genome, cache, taker_fee, fitness_params).fitness
+            result = _score_genome(genome, search_span(genome.pair), taker_fee, fitness_params)
+            return result.fitness
         except (ValueError, KeyError):  # too few bars for the folds/embargo, or missing legs
             return float("-inf")
 
@@ -119,11 +136,22 @@ def run_search(
     if ga.best_fitness == float("-inf"):
         raise SystemExit("no genome could be scored — is the candle data present for the UNIVERSE?")
 
-    best_fitness = _score_genome(ga.best, cache, taker_fee, fitness_params)
+    best_fitness = _score_genome(ga.best, search_span(ga.best.pair), taker_fee, fitness_params)
 
     fragility: MonteCarloResult | None = None
     passed: bool | None = None
-    if fragility_runs:
+    graduation: GraduationReport | None = None
+    if holdout_fraction:
+        holdout = split_holdout(cache.get(ga.best.pair), holdout_fraction)[1]
+        graduation = graduate(
+            ga.best,
+            holdout,
+            taker_fee,
+            fragility_runs=fragility_runs or 200,
+            min_fraction_positive=fragility_min_positive,
+            min_trades=graduate_min_trades,
+        )
+    elif fragility_runs:
         fragility = run_monte_carlo(
             decode(ga.best),
             lambda: SpotPortfolio(INITIAL_CAPITAL, taker_fee),
@@ -138,4 +166,5 @@ def run_search(
         ga=ga,
         fragility=fragility,
         passed_fragility=passed,
+        graduation=graduation,
     )

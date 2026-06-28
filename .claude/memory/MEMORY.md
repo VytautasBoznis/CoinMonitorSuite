@@ -17,6 +17,7 @@ This file indexes all memory files for the CoinMonitorSuite project.
 - [search-overfits-not-strategy](search-overfits-not-strategy.md) — the param SEARCH overfits (−23% OOS) while fixed params survive (+12%); GA fitness must be OOS/walk-forward with instability + trade-count penalties
 - [chunk-a-findings](chunk-a-findings.md) — chunk A validation: pulse is pair-specific (XRP ratios survive fragility), pair must be a gene, and the fitness symmetric-std penalty wrongly rejects all-folds-positive genomes
 - [chunk-c-search-loop](chunk-c-search-loop.md) — chunk C GA: pure seed-deterministic mechanics (search/ga.py) + runner that scores OOS and gates the winner with fragility as a post-filter; CLI `coinmon search`
+- [chunk-d-graduation-gate](chunk-d-graduation-gate.md) — chunk D graduation gate: graduate() runs the GA winner on a never-searched holdout + full fragility → hard go/no-go with reasons; `search --holdout`
 - [build-roadmap](build-roadmap.md) — the chunked plan to finish the project (one chunk ≈ one session); source of truth for what's next
 - [session-build-loop](session-build-loop.md) — how each session runs: read memory → do next roadmap chunk → ask blockers → deliver a commit message
 - [user-commits-themselves](user-commits-themselves.md) — never run git commit; hand over a commit message and stop

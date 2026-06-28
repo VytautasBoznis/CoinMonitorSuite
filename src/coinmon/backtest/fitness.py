@@ -124,6 +124,7 @@ def evaluate_fitness(
     taker_fee: float,
     *,
     make_portfolio: Callable[[float, float], Portfolio] | None = None,
+    stop_pct: float | None = None,
     folds: int = 4,
     embargo_bars: int = 0,
     initial_capital: float = 10_000.0,
@@ -148,7 +149,9 @@ def evaluate_fitness(
 
     ``make_portfolio`` is a ``(cash, taker_fee) -> Portfolio`` factory; it defaults to the long/flat
     ``SpotPortfolio`` so existing callers are unchanged, but a directional genome supplies a
-    leveraged ``PerpPortfolio`` factory (chunk K2) so the same OOS rig scores a short.
+    leveraged ``PerpPortfolio`` factory (chunk K2) so the same OOS rig scores a short. ``stop_pct``
+    (chunk L) arms the engine's intrabar stop for every fold — the brake that lets a leveraged book
+    cut its drawdown so the ``drawdown_penalty`` stops sinking it; ``None`` keeps the unbraked path.
 
     The ``drawdown_penalty`` (chunk L) subtracts a convex term anchored to recovery asymmetry: the
     WORST fold's max drawdown beyond ``drawdown_band`` is charged ``recovery_gain(d) -
@@ -173,7 +176,7 @@ def evaluate_fitness(
     for start, end in _fold_bounds(n, folds, embargo_bars):
         segment = candles.iloc[start:end].reset_index(drop=True)
         result = BacktestEngine(
-            make_strategy(), build_portfolio(initial_capital, taker_fee)
+            make_strategy(), build_portfolio(initial_capital, taker_fee), stop_pct=stop_pct
         ).run(segment)
         fold_returns.append(result.metrics["total_return"])
         fold_trades.append(int(result.metrics["trades"]))

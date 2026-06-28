@@ -21,8 +21,9 @@ class ForwardRunner:
         strategy: Strategy,
         portfolio: Portfolio,
         execution: ExecutionModel | None = None,
+        stop_pct: float | None = None,
     ) -> None:
-        self._stepper = BarStepper(strategy, portfolio, execution)
+        self._stepper = BarStepper(strategy, portfolio, execution, stop_pct)
         self.signals: list[StepResult] = []
 
     def feed(self, candles: Iterable[Candle]) -> list[StepResult]:

@@ -3,10 +3,11 @@ import math
 import pandas as pd
 import pytest
 
-from coinmon.backtest.engine import BacktestEngine
+from coinmon.backtest.engine import BacktestEngine, BarStepper
 from coinmon.backtest.metrics import summarize
 from coinmon.backtest.portfolio import PerpPortfolio, SpotPortfolio
 from coinmon.data.candles import load_candles
+from coinmon.data.models import Candle
 from coinmon.feed import BarView
 from coinmon.strategies.base import Strategy
 from coinmon.strategies.directional import ShortWhenFlat
@@ -200,6 +201,79 @@ def test_metrics_per_trade_win_rate_and_profit_factor():
     assert m["trades"] == 3
     assert m["win_rate"] == pytest.approx(2 / 3)
     assert m["profit_factor"] == pytest.approx(50.0 / 10.0)  # gross 50 won / 10 lost
+
+
+def _ohlc(rows):
+    # rows: list of (open, high, low, close) — full control of the bar for intrabar-stop tests.
+    return pd.DataFrame(
+        {
+            "open_time": range(len(rows)),
+            "open": [o for o, _, _, _ in rows],
+            "high": [h for _, h, _, _ in rows],
+            "low": [low for _, _, low, _ in rows],
+            "close": [c for _, _, _, c in rows],
+            "volume": [1.0] * len(rows),
+        }
+    )
+
+
+def test_no_stop_leaves_engine_byte_unchanged():
+    # Parity: stop_pct=None must reproduce the no-stop engine exactly (the default path).
+    candles = _candles([(10.0, 10.0), (10.0, 12.0), (12.0, 8.0), (8.0, 9.0)])
+    base = BacktestEngine(_AlwaysLong(), SpotPortfolio(100.0, 0.001)).run(candles)
+    stopless = BacktestEngine(
+        _AlwaysLong(), SpotPortfolio(100.0, 0.001), stop_pct=None
+    ).run(candles)
+    assert list(stopless.equity_curve) == pytest.approx(list(base.equity_curve))
+
+
+def test_intrabar_stop_caps_a_long_loss_at_the_stop_level():
+    # Long fills at bar 1's open (10); the bar then dips to a low of 8, through the 10% stop at 9.
+    # With the stop the position exits at 9 (cash 90); without it the long rides the close to 8.5.
+    candles = _ohlc([(10.0, 10.0, 10.0, 10.0), (10.0, 10.0, 8.0, 8.5)])
+    stopped = BacktestEngine(
+        _AlwaysLong(), SpotPortfolio(100.0, 0.0), stop_pct=0.10
+    ).run(candles)
+    unstopped = BacktestEngine(_AlwaysLong(), SpotPortfolio(100.0, 0.0)).run(candles)
+    assert stopped.equity_curve.iloc[-1] == pytest.approx(90.0)  # exited at the 9.0 stop level
+    assert unstopped.equity_curve.iloc[-1] == pytest.approx(85.0)  # rode the bar down to 8.5
+
+
+def test_intrabar_stop_prevents_a_leveraged_short_liquidation():
+    # 3x short fills at bar 1's open (10); the bar rallies to a high of 14. Unstopped, the +40%
+    # mark wipes the 3x collateral (liquidation, equity 0); a 10% stop exits at 11 (a -30% loss)
+    # and survives — exactly the brake chunk L needs so leverage isn't synonymous with ruin.
+    candles = _ohlc(
+        [(10.0, 10.0, 10.0, 10.0), (10.0, 14.0, 10.0, 14.0), (14.0, 14.0, 14.0, 14.0)]
+    )
+    stopped = BacktestEngine(
+        ShortWhenFlat(_AlwaysFlat()), PerpPortfolio(100.0, 0.0, 3.0), stop_pct=0.10
+    ).run(candles)
+    liquidated = BacktestEngine(
+        ShortWhenFlat(_AlwaysFlat()), PerpPortfolio(100.0, 0.0, 3.0)
+    ).run(candles)
+    assert stopped.equity_curve.iloc[-1] == pytest.approx(70.0)  # exited the short at 11
+    assert liquidated.equity_curve.iloc[-1] == pytest.approx(0.0)  # collateral wiped
+
+
+def test_stop_suppresses_reentry_until_the_signal_resets():
+    # A stop-out latches flat: the strategy keeps shouting "long" (suppressed) until its signal
+    # leaves the stopped side (goes flat), after which a fresh long is allowed to re-arm and fill.
+    stepper = BarStepper(_Scripted([1, 1, 1, 0, 1, 1]), SpotPortfolio(100.0, 0.0), stop_pct=0.10)
+    rows = [
+        (10.0, 10.0, 10.0, 10.0),  # bar 0: decide long
+        (10.0, 10.0, 8.0, 9.0),  # bar 1: fill long @10, stopped @9 -> flat, latch
+        (9.0, 9.0, 9.0, 9.0),  # bar 2: signal still long -> suppressed, stay flat
+        (9.0, 9.0, 9.0, 9.0),  # bar 3: signal resets to flat -> latch cleared
+        (9.0, 9.0, 9.0, 9.0),  # bar 4: signal long again -> re-arm pending
+        (11.0, 11.0, 11.0, 11.0),  # bar 5: fill the fresh long @11
+    ]
+    candles = [
+        Candle(open_time=i, open=o, high=h, low=low, close=c, volume=1.0)
+        for i, (o, h, low, c) in enumerate(rows)
+    ]
+    positions = [stepper.step(c).position for c in candles]
+    assert positions == [0, 0, 0, 0, 0, 1]
 
 
 def test_load_candles_usdc_pair_reads_directly():

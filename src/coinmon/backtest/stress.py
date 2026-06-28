@@ -83,6 +83,7 @@ def run_monte_carlo(
     fail_prob: float = 0.01,
     seed: int = 0,
     benchmark_return: float | None = None,
+    stop_pct: float | None = None,
 ) -> MonteCarloResult:
     """Replay the strategy ``runs`` times under independent, reproducible ``StochasticExecution``
     draws and collect the total-return distribution.
@@ -90,11 +91,15 @@ def run_monte_carlo(
     Factories (not instances) are taken because both ``Strategy`` and ``Portfolio`` carry
     per-run state — each run needs a fresh pair. ``benchmark_return`` is buy-and-hold's
     total return (under ideal execution); pass it to get the "% of runs beating B&H" read.
+    ``stop_pct`` arms the engine's intrabar stop (chunk L) so the fragility test stresses the same
+    braked genome the search scored — and the stop slips under the perturbed execution like a fill.
     """
     children = np.random.SeedSequence(seed).spawn(runs)
     returns = []
     for child in children:
         execution = StochasticExecution(max_slippage, fail_prob, np.random.default_rng(child))
-        result = BacktestEngine(make_strategy(), make_portfolio(), execution).run(candles)
+        result = BacktestEngine(
+            make_strategy(), make_portfolio(), execution, stop_pct=stop_pct
+        ).run(candles)
         returns.append(result.metrics["total_return"])
     return MonteCarloResult(returns=returns, benchmark_return=benchmark_return)

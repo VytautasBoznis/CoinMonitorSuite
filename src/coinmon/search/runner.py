@@ -64,8 +64,9 @@ class SearchReport:
         book = (
             f"{self.best.leverage:.1f}x perp short" if self.best.short else "long/flat spot"
         )
+        stop = f", {self.best.stop_pct:.0%} stop" if self.best.stop_pct is not None else ""
         lines = [
-            f"best genome: {self.best.family} on {self.best.pair} [{book}] ({p})",
+            f"best genome: {self.best.family} on {self.best.pair} [{book}{stop}] ({p})",
             "",
             self.fitness.summary(),
             "",
@@ -89,6 +90,7 @@ def _score_genome(
         decode(genome),
         taker_fee,
         make_portfolio=decode_portfolio(genome),
+        stop_pct=genome.stop_pct,
         folds=fp.folds,
         embargo_bars=fp.embargo_bars,
         min_trades=fp.min_trades,
@@ -161,6 +163,7 @@ def run_search(
             lambda: build_portfolio(INITIAL_CAPITAL, taker_fee),
             cache.get(ga.best.pair),
             runs=fragility_runs,
+            stop_pct=ga.best.stop_pct,
         )
         passed = fragility_verdict(fragility, fragility_min_positive)
 

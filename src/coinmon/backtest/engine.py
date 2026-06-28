@@ -42,16 +42,21 @@ class BarStepper:
         strategy: Strategy,
         portfolio: Portfolio,
         execution: ExecutionModel | None = None,
+        stop_pct: float | None = None,
     ) -> None:
         self.strategy = strategy
         self.portfolio = portfolio
         self.execution = execution or IdealExecution()
+        self._stop_pct = stop_pct  # None = no stop (path byte-unchanged); else fraction from entry
         self._position = 0  # held after the latest bar's fill
         self._pending: int | None = None  # target decided last bar, to fill at this bar's open
+        self._entry: float | None = None  # fill price of the open position, the stop's reference
+        self._stopped_side = 0  # side just stopped out of; suppresses re-entry until signal resets
 
     def step(self, candle: Candle) -> StepResult:
-        """Advance one closed bar: fill last bar's order at this open, mark equity at this close,
-        then ask the strategy for the next target. Mirrors one iteration of ``BacktestEngine.run``.
+        """Advance one closed bar: fill last bar's order at this open, enforce the intrabar stop,
+        mark equity at this close, then ask the strategy for the next target. Mirrors one iteration
+        of ``BacktestEngine.run``.
         """
         filled = False
         if self._pending is not None and self._pending != self._position:
@@ -62,17 +67,61 @@ class BarStepper:
             if fill is not None:  # a None fill = order didn't execute; position unchanged
                 self.portfolio.rebalance(self._pending, fill)
                 self._position = self._pending
+                self._entry = fill if self._position != 0 else None
                 filled = True
+
+        stopped = self._stop_check(candle)
         equity = self.portfolio.equity(candle.close)
-        self._pending = self.strategy.on_bar(BarView(candle=candle))
+        self._pending = self._guard_reentry(self.strategy.on_bar(BarView(candle=candle)))
         return StepResult(
             open_time=candle.open_time,
             close=candle.close,
-            filled=filled,
+            filled=filled or stopped,
             position=self._position,
             target=self._pending,
             equity=equity,
         )
+
+    def _stop_check(self, candle: Candle) -> bool:
+        """If a stop is armed and the bar traded through the stop level, force the position flat at
+        that level mid-bar (before equity is marked) and latch the stopped side. The trigger reads
+        the bar's low (long) / high (short), both known at close, so no-lookahead holds; the exit is
+        routed through the execution model so a stop slips under the fragility harness like a fill.
+        Filling at exactly the stop level is a deliberate simplification — a gap THROUGH the stop
+        would realize worse, which the fragility slippage draw approximates."""
+        if self._stop_pct is None or self._position == 0 or self._entry is None:
+            return False
+        if self._position == 1:
+            level = self._entry * (1.0 - self._stop_pct)
+            if candle.low > level:
+                return False
+            exit_side = -1  # sell to close the long
+        else:
+            level = self._entry * (1.0 + self._stop_pct)
+            if candle.high < level:
+                return False
+            exit_side = 1  # buy to close the short
+        fill = self.execution.fill_price(exit_side, level)
+        if fill is None:  # the stop order didn't land this bar; re-checked next bar
+            return False
+        self.portfolio.rebalance(0, fill)
+        self._stopped_side = self._position
+        self._position = 0
+        self._entry = None
+        return True
+
+    def _guard_reentry(self, target: int) -> int:
+        """After a stop-out, stay flat while the strategy keeps demanding the side that was stopped;
+        resume the moment its signal leaves that side (flips or goes flat). For long/flat spot this
+        is the classic 'no immediate re-entry after a stop'; for a ``ShortWhenFlat`` perp (signal is
+        always +1/-1) it means a stopped-out short waits for the signal to flip long before re-arm.
+        """
+        if self._stopped_side == 0:
+            return target
+        if target == self._stopped_side:
+            return 0
+        self._stopped_side = 0
+        return target
 
 
 class BacktestEngine:
@@ -86,10 +135,12 @@ class BacktestEngine:
         strategy: Strategy,
         portfolio: Portfolio,
         execution: ExecutionModel | None = None,
+        stop_pct: float | None = None,
     ) -> None:
         self.strategy = strategy
         self.portfolio = portfolio
         self.execution = execution or IdealExecution()
+        self.stop_pct = stop_pct
 
     def run(self, candles: pd.DataFrame) -> BacktestResult:
         """Replay ``candles`` → equity curve + metrics.
@@ -102,7 +153,7 @@ class BacktestEngine:
         if candles.empty:
             raise ValueError("cannot backtest an empty candle frame")
 
-        stepper = BarStepper(self.strategy, self.portfolio, self.execution)
+        stepper = BarStepper(self.strategy, self.portfolio, self.execution, self.stop_pct)
         equity = []
         bars_in_market = 0
         for row in candles.itertuples(index=False):

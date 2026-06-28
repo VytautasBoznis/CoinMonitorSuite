@@ -112,7 +112,7 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
   claimed): recalibrate fitness** — disqualify liquidating folds + reward risk-adjusted (not raw)
   return, and/or tighten the leverage range. Code/plumbing for K is done; the fitness fix is chunk L.
 
-- [~] **L — Risk-shaped search (stop-loss gene + convex drawdown penalty).** The fix for
+- [x] **L — Risk-shaped search (stop-loss gene + convex drawdown penalty).** The fix for
   [[leverage-breaks-fitness-scaling]]: keep leverage a free gene but make ruin expensive, and give the
   bot a brake. User decided (2026-06-28): the multiplier lives in FITNESS only (equity stays a
   truthful exchange mirror — no synthetic loss debit, preserves live-parity), and the stop triggers
@@ -129,10 +129,24 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
   intrabar stop-loss as a GENE (threshold the GA tunes), enforced in the engine/perp book against bar
   low/high, force-closing at the stop level mid-bar — must sit OUTSIDE `ShortWhenFlat` and latch flat
   (the existing `strategies/stop_loss.py` is long-only, exits at next-open, and would re-short through
-  the wrapper, so it can't be reused as-is). **Open semantic decision for A:** on a stop-out, default
-  is *go flat + suppress re-entry until the base signal resets* (matches existing StopLoss); the
-  alternative is *flip to the opposite side*. Will default to flat-and-wait unless told otherwise.
-  A risk-adjusted (return/drawdown) fold metric stays a fallback if A alone doesn't close the gate.
+  the wrapper, so it can't be reused as-is). **Part A done (2026-06-28):** the intrabar stop is a gene
+  enforced in the SHARED engine core (`BarStepper.stop_pct`), not a Strategy wrapper — so it fills
+  mid-bar at the stop level, which a next-open signal can't. After the open fill it checks the bar's
+  low (long) / high (short) against `entry*(1∓stop_pct)`, force-closes flat at that level (routed
+  through the execution model, so the stop slips under fragility like any fill), latches the stopped
+  side, and `_guard_reentry` keeps it flat while the strategy keeps demanding that side — resuming the
+  moment the signal flips/resets (default flat-and-wait, generalized to 3-state so a stopped-out short
+  waits for a long flip). `Genome.stop_pct: float|None` + `STOP=ParamSpec(0.02,0.50)`; **None is
+  first-class "no stop" and the GA reaches it** (coin-flip sample, `_mutate_stop` arms/disarms,
+  crossover/`_key` carry it) — because a stop HURTS some families ([[stop-loss-hurts-mean-reversion]])
+  so "off" must be selectable. Threaded `stop_pct` through `evaluate_fitness`/`run_monte_carlo`/
+  `graduate`/`runner`/`ForwardRunner` from `genome.stop_pct` (engine stays genome-agnostic; default
+  None = byte-unchanged spot/perp path, parity preserved). 127 tests green (+10), ruff clean (only
+  pre-existing walkforward/viewer E501s). Engine proofs: a 10% stop caps a long's loss at the stop
+  level and **prevents a 3x short liquidation** (survives at 70 vs 0); suppression latch verified
+  bar-by-bar. **Live downtrend-GO proof is the next user run** (`search --timeframe 1d --holdout 0.2
+  --stress 80`): expect the GA to pair leverage with a protective stop and finally graduate GO. A
+  risk-adjusted (return/drawdown) fold metric stays a fallback if the stop alone doesn't close it.
 
 - [ ] **G — Phase 2: suggestions service.** Service runs the graduated strategy live (paper) and
   emits trade suggestions; no execution. Dockerized; FastAPI control-plane begins.

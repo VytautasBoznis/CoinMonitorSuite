@@ -134,6 +134,62 @@ def test_validate_rejects_out_of_range_leverage():
         validate(bad)
 
 
+# --- chunk L Part A: the intrabar stop is a gene -------------------------------------------
+
+
+def test_genome_defaults_to_no_stop():
+    # A genome built without the stop gene runs unbraked (chunk-B/K2 behavior unchanged).
+    g = _rsi_genome()
+    assert g.stop_pct is None
+    validate(g)  # None is a valid, first-class "no stop"
+
+
+def test_validate_accepts_an_in_range_stop():
+    g = Genome(
+        "rsi_meanreversion", "XRP/ETH", {"period": 14, "oversold": 30.0, "exit_level": 50.0},
+        stop_pct=0.10,
+    )
+    validate(g)
+
+
+def test_validate_rejects_out_of_range_stop():
+    bad = Genome(
+        "rsi_meanreversion", "ETH/BTC", {"period": 14, "oversold": 30.0, "exit_level": 50.0},
+        stop_pct=0.99,
+    )
+    with pytest.raises(ValueError):
+        validate(bad)
+
+
+def test_evaluate_fitness_threads_the_stop_through_the_fold_loop():
+    # A leveraged short on a steady rally liquidates unbraked; a 10% stop must change the fold
+    # outcome — proof stop_pct reaches the engine inside the OOS rig, not just the bare engine.
+    closes = [float(100 + i) for i in range(80)]
+    candles = pd.DataFrame(
+        {
+            "open_time": range(80),
+            "open": closes,
+            "high": [c + 1 for c in closes],
+            "low": [c - 1 for c in closes],
+            "close": closes,
+            "volume": [1.0] * 80,
+        }
+    )
+    g = Genome(
+        "rsi_meanreversion", "XRP/ETH", {"period": 5, "oversold": 30.0, "exit_level": 55.0},
+        short=True, leverage=3.0,
+    )
+    unbraked = evaluate_fitness(
+        candles, decode(g), taker_fee=0.0, make_portfolio=decode_portfolio(g),
+        folds=2, min_trades=0,
+    )
+    braked = evaluate_fitness(
+        candles, decode(g), taker_fee=0.0, make_portfolio=decode_portfolio(g),
+        stop_pct=0.10, folds=2, min_trades=0,
+    )
+    assert braked.fold_returns != unbraked.fold_returns
+
+
 def test_evaluate_fitness_uses_the_genome_portfolio_factory():
     # A short genome on a falling series must score differently from the same genome left on spot:
     # proof the portfolio factory actually reaches the fold loop.

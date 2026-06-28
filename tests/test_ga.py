@@ -43,6 +43,31 @@ def test_mutate_can_flip_direction():
     assert any(mutate(g, rng).short for _ in range(200))  # flat genome can become a short
 
 
+def test_random_genomes_explore_stop_on_and_off():
+    # chunk L: the stop gene must reach both states — a stop helps some families and hurts others,
+    # so the GA has to be able to keep either no-stop or a real threshold.
+    rng = random.Random(13)
+    genomes = [random_genome(rng) for _ in range(200)]
+    assert any(g.stop_pct is None for g in genomes)
+    assert any(g.stop_pct is not None for g in genomes)
+    armed = {g.stop_pct for g in genomes if g.stop_pct is not None}
+    assert len(armed) > 1  # the threshold spreads across its range, not one pinned value
+
+
+def test_mutate_can_arm_and_disarm_the_stop():
+    rng = random.Random(14)
+    unstopped = Genome(
+        "rsi_meanreversion", "XRP/ETH", {"period": 14, "oversold": 30.0, "exit_level": 50.0},
+        stop_pct=None,
+    )
+    assert any(mutate(unstopped, rng).stop_pct is not None for _ in range(200))  # can arm
+    stopped = Genome(
+        "rsi_meanreversion", "XRP/ETH", {"period": 14, "oversold": 30.0, "exit_level": 50.0},
+        stop_pct=0.10,
+    )
+    assert any(mutate(stopped, rng).stop_pct is None for _ in range(200))  # can disarm
+
+
 def test_crossover_within_family_is_valid_and_inherits_from_parents():
     rng = random.Random(3)
     a = Genome("rsi_meanreversion", "XRP/ETH", {"period": 5, "oversold": 20.0, "exit_level": 60.0})

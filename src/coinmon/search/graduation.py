@@ -37,8 +37,10 @@ class GraduationReport:
         book = (
             f"{self.genome.leverage:.1f}x perp short" if self.genome.short else "long/flat spot"
         )
+        stop = f", {self.genome.stop_pct:.0%} stop" if self.genome.stop_pct is not None else ""
         lines = [
-            f"graduation gate [{verdict}] — {self.genome.family} on {self.genome.pair} [{book}]",
+            f"graduation gate [{verdict}] — {self.genome.family} on {self.genome.pair} "
+            f"[{book}{stop}]",
             f"  holdout span     {self.holdout_bars} bars (never seen by the search)",
             f"  holdout return   {self.holdout_return:+.2%}  "
             f"(buy & hold {self.benchmark_return:+.2%})",
@@ -67,7 +69,9 @@ def graduate(
     the gate is incomplete without the stress test."""
     factory = decode(genome)
     build_portfolio = decode_portfolio(genome)
-    result = BacktestEngine(factory(), build_portfolio(INITIAL_CAPITAL, taker_fee)).run(holdout)
+    result = BacktestEngine(
+        factory(), build_portfolio(INITIAL_CAPITAL, taker_fee), stop_pct=genome.stop_pct
+    ).run(holdout)
     holdout_return = result.metrics["total_return"]
     holdout_trades = int(result.metrics["trades"])
     # B&H over the holdout span, gross of the entry fee (matches the walk-forward benchmark).
@@ -79,6 +83,7 @@ def graduate(
         holdout,
         runs=fragility_runs,
         benchmark_return=benchmark_return,
+        stop_pct=genome.stop_pct,
     )
 
     reasons: list[str] = []

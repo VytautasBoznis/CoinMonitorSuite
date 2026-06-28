@@ -5,7 +5,7 @@ import statistics
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from coinmon.search.genome import FAMILIES, LEVERAGE, UNIVERSE, Genome, ParamSpec
+from coinmon.search.genome import FAMILIES, LEVERAGE, STOP, UNIVERSE, Genome, ParamSpec
 
 # Chunk C: the evolutionary search. This module is the GA *mechanics* only — purely a function
 # of a seeded ``random.Random`` and a caller-supplied ``fitness(genome) -> float`` — so it carries
@@ -28,17 +28,26 @@ def _clamp(value: float, spec: ParamSpec) -> float:
     return float(round(value)) if spec.integer else value
 
 
+def _sample_stop(rng: random.Random) -> float | None:
+    """A coin-flip stop gene: half the genomes carry a stop drawn within its range, half run with
+    no stop (``None``). Both must be reachable — a stop helps some families and hurts others
+    ([[stop-loss-hurts-mean-reversion]]), so the GA has to be able to pick either."""
+    return _sample_param(STOP, rng) if rng.random() < 0.5 else None
+
+
 def random_genome(rng: random.Random) -> Genome:
     """A uniformly-sampled valid genome: random family, random pair from the UNIVERSE pool, each
-    param drawn within its spec, and a coin-flip direction gene (long/flat spot vs a leveraged
-    perp short) with leverage drawn within its range. Used to seed the initial population."""
+    param drawn within its spec, a coin-flip direction gene (long/flat spot vs a leveraged perp
+    short) with leverage drawn within its range, and a coin-flip intrabar stop gene. Used to seed
+    the initial population."""
     family = rng.choice(list(FAMILIES))
     spec = FAMILIES[family]
     params = {name: _sample_param(s, rng) for name, s in spec.params.items()}
     pair = rng.choice(UNIVERSE)
     short = rng.random() < 0.5
     leverage = _sample_param(LEVERAGE, rng)
-    return Genome(family, pair, params, short, leverage)
+    stop_pct = _sample_stop(rng)
+    return Genome(family, pair, params, short, leverage, stop_pct)
 
 
 def mutate(
@@ -54,19 +63,21 @@ def mutate(
     Otherwise each param is jittered with probability ``rate`` by a Gaussian step of ``sigma`` of
     its range (then clamped/rounded to stay valid), and the pair gene is re-rolled with the same
     probability — pair choice dominated in chunk A, so it must stay mobile. The direction genes
-    (short on/off, leverage) also mutate at ``rate`` so the GA can flip a strategy bearish (or
-    dial its leverage) without waiting for a fresh random genome; both survive a family switch."""
+    (short on/off, leverage) and the stop gene also mutate at ``rate`` so the GA can flip a strategy
+    bearish, dial its leverage, or arm/disarm its stop without waiting for a fresh random genome;
+    all survive a family switch."""
     short = (not genome.short) if rng.random() < rate else genome.short
     leverage = (
         _clamp(genome.leverage + rng.gauss(0.0, sigma * (LEVERAGE.high - LEVERAGE.low)), LEVERAGE)
         if rng.random() < rate
         else genome.leverage
     )
+    stop_pct = _mutate_stop(genome.stop_pct, rng, rate, sigma)
     if FAMILIES.keys() - {genome.family} and rng.random() < family_switch_rate:
         new_family = rng.choice([f for f in FAMILIES if f != genome.family])
         spec = FAMILIES[new_family]
         params = {name: _sample_param(s, rng) for name, s in spec.params.items()}
-        return Genome(new_family, genome.pair, params, short, leverage)
+        return Genome(new_family, genome.pair, params, short, leverage, stop_pct)
 
     family = FAMILIES[genome.family]
     params = dict(genome.params)
@@ -75,13 +86,28 @@ def mutate(
             step = rng.gauss(0.0, sigma * (spec.high - spec.low))
             params[name] = _clamp(params[name] + step, spec)
     pair = rng.choice(UNIVERSE) if rng.random() < rate else genome.pair
-    return Genome(genome.family, pair, params, short, leverage)
+    return Genome(genome.family, pair, params, short, leverage, stop_pct)
+
+
+def _mutate_stop(
+    stop_pct: float | None, rng: random.Random, rate: float, sigma: float
+) -> float | None:
+    """Mutate the stop gene at ``rate``: a disarmed stop arms (drawn within its range), an armed
+    stop either jitters its threshold (Gaussian, clamped) or — one time in five — disarms entirely,
+    so the GA can move freely between no-stop and any threshold."""
+    if rng.random() >= rate:
+        return stop_pct
+    if stop_pct is None:
+        return _sample_param(STOP, rng)
+    if rng.random() < 0.2:
+        return None
+    return _clamp(stop_pct + rng.gauss(0.0, sigma * (STOP.high - STOP.low)), STOP)
 
 
 def crossover(a: Genome, b: Genome, rng: random.Random) -> Genome:
     """Uniform crossover. Across different families the param schemas are incompatible, so one
-    parent is inherited wholesale (with its direction genes); within a family each param, the pair
-    gene and the direction genes are picked independently from either parent."""
+    parent is inherited wholesale (with its direction + stop genes); within a family each param, the
+    pair gene, the direction genes and the stop gene are picked independently from either parent."""
     if a.family != b.family:
         return a if rng.random() < 0.5 else b
     family = FAMILIES[a.family]
@@ -91,7 +117,8 @@ def crossover(a: Genome, b: Genome, rng: random.Random) -> Genome:
     pair = a.pair if rng.random() < 0.5 else b.pair
     short = a.short if rng.random() < 0.5 else b.short
     leverage = a.leverage if rng.random() < 0.5 else b.leverage
-    return Genome(a.family, pair, params, short, leverage)
+    stop_pct = a.stop_pct if rng.random() < 0.5 else b.stop_pct
+    return Genome(a.family, pair, params, short, leverage, stop_pct)
 
 
 def tournament_select(
@@ -131,13 +158,15 @@ class GAResult:
 
 def _key(genome: Genome) -> tuple:
     """Hashable identity for fitness memoization (``params`` is an unhashable dict). Includes the
-    direction genes so a long and a short variant of the same family/pair/params don't collide."""
+    direction and stop genes so long/short or stopped/unstopped variants of the same family/pair/
+    params don't collide."""
     return (
         genome.family,
         genome.pair,
         tuple(sorted(genome.params.items())),
         genome.short,
         genome.leverage,
+        genome.stop_pct,
     )
 
 

@@ -58,3 +58,17 @@ return outweighs the -2.48 penalty. Cranking the penalty would be the hand-picke
 real gap is that the bot has **no brake** to keep upside while cutting the drawdown → that's chunk-L Part A
 (intrabar stop-loss gene). B prices the risk; A gives the bot the tool. A risk-adjusted (return/drawdown)
 fold metric remains an option if A alone doesn't close it. See [[build-roadmap]] chunk L.
+
+**UPDATE 2026-06-28 — Part A landed (intrabar stop gene = the brake).** The stop lives in the SHARED engine
+core (`BarStepper.stop_pct`), NOT a Strategy wrapper, because it must fill mid-bar at the stop level (a
+next-open signal can't): after the open fill it checks the bar low/high vs `entry*(1∓stop_pct)`, force-closes
+flat at the level (slips through the execution model under fragility), latches the stopped side, and
+suppresses re-entry until the signal flips/resets (3-state, so a stopped-out short waits for a long flip).
+`Genome.stop_pct: float|None` with `STOP=ParamSpec(0.02,0.50)` — **None ("no stop") is first-class and the GA
+reaches it** (coin-flip sample + arm/disarm mutate), because a stop HURTS some families
+([[stop-loss-hurts-mean-reversion]]). Threaded from `genome.stop_pct` through fitness/stress/graduate/runner/
+ForwardRunner; default None keeps the spot/perp path byte-unchanged (parity). Engine proof: a 10% stop
+**prevents a 3x short liquidation** (survives 70 vs 0). 127 tests green. **Not yet re-run live** — the
+downtrend-GO proof is the next user `search --timeframe 1d --holdout 0.2 --stress 80`: expect the GA to keep
+leverage but pair it with a protective stop and graduate GO. If the gate still won't close, the fallback is
+the risk-adjusted (return/drawdown) fold metric.

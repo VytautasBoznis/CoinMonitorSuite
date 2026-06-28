@@ -106,20 +106,30 @@ UNIVERSE: tuple[str, ...] = (
 # leverage gene is inert and the spot path is byte-unchanged (parity preserved).
 LEVERAGE = ParamSpec(1.0, 5.0)
 
+# Chunk L Part A: an intrabar stop-loss is a gene — the brake that lets the search keep leverage a
+# free gene without the ruin it caused ([[leverage-breaks-fitness-scaling]]). ``stop_pct`` is the
+# fraction the price may move against the entry before the engine force-closes flat mid-bar (against
+# the bar's low/high, not its close). ``None`` means NO stop, and the GA can reach it: a stop is not
+# universally good ([[stop-loss-hurts-mean-reversion]] found it hurts mean-reversion), so "off" must
+# be a first-class choice the search can keep. The range is broad-but-sane; OOS fitness + the gate
+# reject the junk corners, not a tight prior.
+STOP = ParamSpec(0.02, 0.50)
+
 
 @dataclass(frozen=True)
 class Genome:
     """One search candidate: trade ``pair`` with strategy ``family`` configured by ``params``,
-    either long/flat on spot or (``short``) always-directional on a ``leverage``-x perp. Frozen
-    so a generation is a stable snapshot; ``params`` is a plain dict (genomes aren't hashed).
-    ``short``/``leverage`` default to the long/flat spot book, so a genome built without them is
-    the chunk-B behavior unchanged."""
+    either long/flat on spot or (``short``) always-directional on a ``leverage``-x perp, optionally
+    braked by an intrabar ``stop_pct``. Frozen so a generation is a stable snapshot; ``params`` is a
+    plain dict (genomes aren't hashed). ``short``/``leverage``/``stop_pct`` default to long/flat
+    spot with no stop, so a genome built without them is the chunk-B behavior unchanged."""
 
     family: str
     pair: str
     params: Mapping[str, float]
     short: bool = False
     leverage: float = 1.0
+    stop_pct: float | None = None
 
 
 def validate(genome: Genome) -> None:
@@ -144,6 +154,8 @@ def validate(genome: Genome) -> None:
         raise ValueError(
             f"leverage={genome.leverage} outside [{LEVERAGE.low}, {LEVERAGE.high}]"
         )
+    if genome.stop_pct is not None and not STOP.low <= genome.stop_pct <= STOP.high:
+        raise ValueError(f"stop_pct={genome.stop_pct} outside [{STOP.low}, {STOP.high}]")
 
 
 def decode(genome: Genome) -> Callable[[], Strategy]:

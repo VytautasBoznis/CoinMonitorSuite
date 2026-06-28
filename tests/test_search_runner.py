@@ -110,6 +110,32 @@ def test_run_search_graduates_the_winner_on_a_holdout():
     assert report.graduation.holdout_bars == 44
 
 
+def test_run_search_skips_cross_pair_by_default():
+    report = run_search(
+        _read, taker_fee=0.0, config=_CFG, fitness_params=_FP, fragility_runs=10,
+        holdout_fraction=0.2,
+    )
+    assert report.robustness is None
+
+
+def test_run_search_classifies_cross_pair_when_winner_graduates():
+    # Chunk O: with --cross-pair set, a GO winner is re-graduated on decorrelated peers and tagged;
+    # a NO-GO winner has nothing to classify (robustness stays None). The classifier never changes
+    # the go/no-go itself.
+    report = run_search(
+        _read, taker_fee=0.0, config=_CFG, fitness_params=_FP, fragility_runs=10,
+        holdout_fraction=0.2, cross_pair_n=2, cross_pair_min=1,
+    )
+    if report.graduation.passed:
+        assert report.robustness is not None
+        assert len(report.robustness.verdicts) <= 2
+        assert report.robustness.tier in {"golden", "specialist"}
+        # The classifier overrides only the pair gene — never the winner's own pair.
+        assert all(v.pair != report.best.pair for v in report.robustness.verdicts)
+    else:
+        assert report.robustness is None
+
+
 def test_run_search_raises_when_no_genome_can_be_scored():
     # Every pair resolves to an empty frame => every genome scores -inf and is discarded.
     with pytest.raises(SystemExit):

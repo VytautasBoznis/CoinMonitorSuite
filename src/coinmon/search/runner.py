@@ -11,6 +11,11 @@ from coinmon.data.candles import load_candles, split_holdout
 from coinmon.search.ga import GAConfig, GAResult, evolve
 from coinmon.search.genome import Genome, build_universe, decode, decode_portfolio
 from coinmon.search.graduation import GraduationReport, graduate
+from coinmon.search.robustness import (
+    RobustnessReport,
+    classify_robustness,
+    pick_decorrelated_pairs,
+)
 
 # Chunk C orchestration: glue the pure GA (search/ga.py) to real data and the honest score.
 # It resolves each genome's pair gene to candles (the same load_candles path the CLI uses),
@@ -58,6 +63,7 @@ class SearchReport:
     fragility: MonteCarloResult | None
     passed_fragility: bool | None
     graduation: GraduationReport | None = None
+    robustness: RobustnessReport | None = None
 
     def summary(self) -> str:
         p = ", ".join(f"{k}={v:g}" for k, v in sorted(self.best.params.items()))
@@ -81,6 +87,8 @@ class SearchReport:
             lines += ["", f"fragility gate [{verdict}]:", self.fragility.summary()]
         if self.graduation is not None:
             lines += ["", self.graduation.summary()]
+        if self.robustness is not None:
+            lines += ["", self.robustness.summary()]
         return "\n".join(lines)
 
 
@@ -177,6 +185,9 @@ def run_search(
     fragility_min_positive: float = 0.9,
     holdout_fraction: float = 0.0,
     graduate_min_trades: int = 15,
+    cross_pair_n: int = 0,
+    cross_pair_min: int = 3,
+    cross_pair_max_corr: float = 0.7,
     workers: int = 1,
     cache: CandleCache | None = None,
 ) -> SearchReport:
@@ -193,6 +204,13 @@ def run_search(
     ``workers`` (chunk N2) fans the per-genome fitness map across CPU cores (``<= 0`` = all cores);
     ``1`` (default) keeps the serial path byte-unchanged. The result is identical regardless of
     worker count — only the pure ``genome -> float`` is parallelized, never the RNG stream.
+
+    ``cross_pair_n`` (chunk O) enables the cross-pair robustness classifier: after a winner
+    GRADUATES GO, the SAME genome (pair gene overridden) is re-graduated on ``cross_pair_n``
+    randomly-picked DECORRELATED pairs and TAGGED ``golden`` (held up on >= ``cross_pair_min`` of
+    them, a structural edge) or ``specialist`` (its own pair only, a pair-tailored edge). It only
+    classifies a GO and never changes the go/no-go — a trust label, not a kill gate. ``0`` (default)
+    skips it (chunk-N behavior unchanged).
 
     ``cache`` lets a caller (the multi-seed sweep) share one resolved-candle cache across runs so
     the DB is read once, not once per seed; default ``None`` builds a fresh cache (unchanged)."""
@@ -218,16 +236,34 @@ def run_search(
     fragility: MonteCarloResult | None = None
     passed: bool | None = None
     graduation: GraduationReport | None = None
+    robustness: RobustnessReport | None = None
     if holdout_fraction:
-        holdout = split_holdout(cache.get(ga.best.pair), holdout_fraction)[1]
+        fragility_runs = fragility_runs or 200
+
+        def holdout_of(pair: str) -> pd.DataFrame:
+            return split_holdout(cache.get(pair), holdout_fraction)[1]
+
         graduation = graduate(
             ga.best,
-            holdout,
+            holdout_of(ga.best.pair),
             taker_fee,
-            fragility_runs=fragility_runs or 200,
+            fragility_runs=fragility_runs,
             min_fraction_positive=fragility_min_positive,
             min_trades=graduate_min_trades,
         )
+        if cross_pair_n and graduation.passed:
+            robustness = _classify_cross_pair(
+                ga.best,
+                config,
+                holdout_of,
+                taker_fee,
+                fragility_runs=fragility_runs,
+                fragility_min_positive=fragility_min_positive,
+                graduate_min_trades=graduate_min_trades,
+                cross_pair_n=cross_pair_n,
+                cross_pair_min=cross_pair_min,
+                cross_pair_max_corr=cross_pair_max_corr,
+            )
     elif fragility_runs:
         build_portfolio = decode_portfolio(ga.best)
         fragility = run_monte_carlo(
@@ -246,6 +282,49 @@ def run_search(
         fragility=fragility,
         passed_fragility=passed,
         graduation=graduation,
+        robustness=robustness,
+    )
+
+
+def _classify_cross_pair(
+    genome: Genome,
+    config: GAConfig,
+    holdout_of: Callable[[str], pd.DataFrame],
+    taker_fee: float,
+    *,
+    fragility_runs: int,
+    fragility_min_positive: float,
+    graduate_min_trades: int,
+    cross_pair_n: int,
+    cross_pair_min: int,
+    cross_pair_max_corr: float,
+) -> RobustnessReport:
+    """Chunk O: tag a graduated winner golden/specialist by re-graduating it on decorrelated peer
+    pairs. Picks the test pairs from the search universe (the genome's own pair excluded — it
+    already graduated) by holdout-return decorrelation, then runs the same gate on each."""
+    candidates = [p for p in config.universe if p != genome.pair]
+
+    def returns_of(pair: str) -> pd.Series | None:
+        try:
+            holdout = holdout_of(pair)
+        except (ValueError, KeyError):
+            return None
+        if holdout.empty:
+            return None
+        return holdout.set_index("open_time")["close"].pct_change()
+
+    test_pairs = pick_decorrelated_pairs(
+        candidates, returns_of, cross_pair_n, seed=config.seed, max_corr=cross_pair_max_corr
+    )
+    return classify_robustness(
+        genome,
+        test_pairs,
+        holdout_of,
+        taker_fee,
+        fragility_runs=fragility_runs,
+        min_fraction_positive=fragility_min_positive,
+        min_trades=graduate_min_trades,
+        min_pass=cross_pair_min,
     )
 
 

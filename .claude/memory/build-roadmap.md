@@ -245,7 +245,28 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
     −48% over the holdout — one BTC-crash regime, both GOs are regime-adaptive shorts riding that drop. Next: O
     (cross-pair/cross-regime hardening) or forward-test. See [[n6-multiseed-sweep-convergence]].
 
-- [ ] **O — Extreme judge: cross-pair robustness gate.** (user idea, post-N6) If N6 yields GOs, harden the gate
+- [x] **O — Extreme judge: cross-pair robustness gate (TAGGER).** (2026-06-28) Built
+  `search/robustness.py`: after a winner GRADUATES GO, the SAME genome (pair gene overridden via
+  `dataclasses.replace`) is re-graduated on K-of-N randomly-picked DECORRELATED peer pairs and TAGGED
+  `golden` (held up on ≥`cross_pair_min` of them → structural, core trust) vs `specialist` (its own
+  pair only → pair-tailored, conditional trust). It is a CLASSIFIER, **never a kill gate** — it only
+  runs on a GO and never flips the go/no-go (rescues chunk-A's pair-specific XRP alpha instead of
+  discarding it). Metric = **sign/profitability persistence** (reuses `graduate()`'s exact gate:
+  positive return + fragility-positive + min-trades), NOT a magnitude band (the metric-correction note
+  was right). Decorrelation: `pick_decorrelated_pairs` seeds an RNG, shuffles, greedily accepts a pair
+  only if its |holdout-return correlation| with every already-chosen pair ≤ `max_corr` (0.7), tops up
+  if short so the test still runs on a small/correlated universe — so three majors crashing together
+  count as ONE test, not three. Wired into `run_search(cross_pair_n=, cross_pair_min=, cross_pair_max_corr=)`
+  (0 = chunk-N behavior unchanged) + `SearchReport.robustness` + summary; CLI `search --cross-pair N
+  --cross-pair-min K` (needs `--holdout`). 169 tests green (+9), ruff clean. **Not yet run live** — the
+  real golden-vs-specialist proof is a user run (`search --timeframe 1d --holdout 0.2 --stress 80
+  --cross-pair 5`). Defaults: N=5 test pairs, K=3 for golden. Caveat: the current ~15-pair DB only has
+  ~14 non-own candidates and majors are highly correlated, so a clean 5-decorrelated set needs more
+  scraped bases. Sweep-level tier aggregation (count golden vs specialist across seeds) is the obvious
+  next add. See [[chunk-o-cross-pair-robustness]]. Next: P (bounded multi-indicator genome) — but it
+  depends on N5 (indicator library), so N5 or P-prep is the real next step.
+
+  **Original design notes (kept for context, all honored by the implementation above):** (user idea, post-N6) If N6 yields GOs, harden the gate
   before growing the search surface (P/Q): a GO is only confirmed if the SAME genome — pair gene overridden —
   still holds up on **≥K of N (≥3) randomly-picked, decorrelated** pairs. This directly kills the lottery-ticket /
   pair-specific-overfit failure mode ([[chunk-a-findings]] "pulse is pair-specific"; the sweep's GOs hopped pairs

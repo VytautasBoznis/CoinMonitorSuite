@@ -199,8 +199,14 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
     reserved for the heavy regimes N4 (100 pairs) and Q (tree-GP) push toward.** See [[n2-parallelism-overhead]].
     (GPU/4060 deferred — it needs a vectorized batch-engine rewrite that breaks live-parity; only worth it after O(n²)
     is gone and we're still compute-bound at 100k-genome scale.)
-  - **N3 — Stricter gate: min-trades → 15.** Trivial (`graduate_min_trades` default), high signal: the sweep's
-    GOs were thin-trade (5–7) low-evidence genomes; 15 forces real sample size. "Maybe more later."
+  - [x] **N3 — Stricter gate: min-trades → 15.** (2026-06-28) Bumped the POLICY default 5→15 in the two
+    `graduate_min_trades` spots — `run_search` and the CLI `--graduate-min-trades` — so every real search now
+    demands ≥15 holdout trades (kills the sweep's thin-trade 5–7-trade low-evidence GOs). Left the lower-level
+    `graduate()` library floor at 5 on purpose: it's the building block, the runner is the policy layer (surgical,
+    and it keeps the synthetic graduation tests that call `graduate()` directly green — the 9-trade robust-edge
+    test still passes). 148 tests green, no test changes needed (`test_run_search_graduates…` only asserts
+    `passed` is a bool, not True). Changed files ruff-clean (pre-existing walkforward/viewer E501s untouched).
+    "Maybe more later." Next: N4 (expand pair universe ~12→~100).
   - **N4 — Expand the pair universe (~12 → ~100).** REALITY: ~100 pairs = scrape ~12–15 base coins, then ratios
     combine (C(14,2)≈91 + 14 USDC) via the existing synthesis — auto-generate UNIVERSE from available symbols, not
     100 feeds. CAVEAT (load-bearing, [[search-overfits-not-strategy]], [[chunk-a-findings]]): more pairs = more

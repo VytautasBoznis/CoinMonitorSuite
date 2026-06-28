@@ -333,7 +333,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_search.add_argument(
         "--graduate-min-trades",
         type=int,
-        default=5,
+        default=15,
         metavar="N",
         help="minimum holdout trades for the graduation gate to pass (with --holdout)",
     )

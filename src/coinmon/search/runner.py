@@ -150,7 +150,7 @@ def run_search(
     fragility_runs: int = 0,
     fragility_min_positive: float = 0.9,
     holdout_fraction: float = 0.0,
-    graduate_min_trades: int = 5,
+    graduate_min_trades: int = 15,
     workers: int = 1,
 ) -> SearchReport:
     """Run the GA over genomes scored by OOS fitness, then gate the winner.

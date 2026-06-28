@@ -232,8 +232,18 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
     be wrong" really points at a future **tree-GP** (genomes = expression trees composing the indicator pool with
     operators). Until that exists, N5 means adding strategy FAMILIES that use the new indicators, family by family.
     Name the tree-GP target so the library has a real payoff.
-  - **N6 — Bigger multi-seed sweep (the payoff test).** Once fast+strict+bigger: run many seeds and see whether
-    GOs survive the 15-trade floor and a 100-pair surface — i.e., is there signal, or just more lottery winners?
+  - [x] **N6 — Bigger multi-seed sweep (the payoff test).** (2026-06-28) Built `coinmon sweep` — runs the SAME
+    graduation search across `--seeds N` (shared DB conn + `CandleCache`, so candles read once not once/seed) and
+    aggregates GO/NO-GO with the lottery-vs-edge diagnosis (GO count + DISTINCT pairs the GOs land on). Pure
+    `SweepRow`/`sweep_row`/`summarize_sweep` in runner.py (testable without DB); `run_search` gained an optional
+    shared `cache`. 160 tests green (+4), ruff clean. **N5 was DEFERRED by the user** (do the payoff test first).
+    **Live run (10 seeds, 1d, holdout 0.2, stress 80, 15-trade gate): 2/10 GO — and BOTH GOs are the SAME
+    genome class** (`ema_crossover BTC/USDC adaptive`, +15–21%, 16–21 trades, fragility 100%). The N3 15-trade
+    floor worked: it NO-GO'd the high-return THIN-trade winners (+94% on 3 trades, +34% on 10). **This is the
+    headline shift vs the prior sweep** ([[regime-adaptive-multiseed-sweep]] had 4 GOs HOPPING pairs by seed =
+    lottery); here the GOs CONVERGE on one pair = a consistency signal. **But alpha still unproven:** B&H was
+    −48% over the holdout — one BTC-crash regime, both GOs are regime-adaptive shorts riding that drop. Next: O
+    (cross-pair/cross-regime hardening) or forward-test. See [[n6-multiseed-sweep-convergence]].
 
 - [ ] **O — Extreme judge: cross-pair robustness gate.** (user idea, post-N6) If N6 yields GOs, harden the gate
   before growing the search surface (P/Q): a GO is only confirmed if the SAME genome — pair gene overridden —

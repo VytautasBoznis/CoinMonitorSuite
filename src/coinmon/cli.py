@@ -19,7 +19,14 @@ from coinmon.feed import BarView, CostModel
 from coinmon.live.feed import LiveFeed
 from coinmon.live.runner import ForwardRunner
 from coinmon.search.ga import GAConfig
-from coinmon.search.runner import FitnessParams, discover_universe, run_search
+from coinmon.search.runner import (
+    CandleCache,
+    FitnessParams,
+    discover_universe,
+    run_search,
+    summarize_sweep,
+    sweep_row,
+)
 from coinmon.strategies.atr_channel import ATRChannelBreakout
 from coinmon.strategies.base import Strategy
 from coinmon.strategies.ema_crossover import EMACrossover
@@ -226,6 +233,51 @@ def _search(args: argparse.Namespace) -> None:
     print(report.summary())
 
 
+def _sweep(args: argparse.Namespace) -> None:
+    # Chunk N6: run the SAME graduation search across a range of seeds and aggregate the verdicts —
+    # the payoff test for whether GOs name a consistent edge or hop pairs by seed. Shares one DB
+    # connection + CandleCache across seeds, so the candles are read once, not once per seed.
+    if args.holdout <= 0:
+        raise SystemExit("sweep needs --holdout > 0: the gate is what produces a verdict")
+    conn = db.connect()
+    try:
+        universe = discover_universe(
+            db.list_series(conn),
+            exchange=settings.exchange,
+            quote=settings.quote_currency,
+            timeframe=args.timeframe,
+        )
+        print(f"universe: {len(universe)} pairs auto-built from stored {args.timeframe} candles\n")
+        cache = CandleCache(lambda s: db.read_candles(conn, settings.exchange, s, args.timeframe))
+        rows = []
+        for seed in range(args.start_seed, args.start_seed + args.seeds):
+            report = run_search(
+                lambda s: db.read_candles(conn, settings.exchange, s, args.timeframe),
+                settings.taker_fee,
+                GAConfig(
+                    population=args.population,
+                    generations=args.generations,
+                    seed=seed,
+                    universe=universe,
+                ),
+                fitness_params=FitnessParams(
+                    folds=args.folds, embargo_bars=args.embargo, min_trades=args.min_trades
+                ),
+                fragility_runs=args.stress,
+                holdout_fraction=args.holdout,
+                graduate_min_trades=args.graduate_min_trades,
+                workers=args.workers,
+                cache=cache,
+            )
+            print(report.graduation.summary())
+            print()
+            rows.append(sweep_row(seed, report))
+    finally:
+        conn.close()
+
+    print(summarize_sweep(rows))
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="coinmon", description="CoinMonitorSuite backtester")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -356,6 +408,60 @@ def build_parser() -> argparse.ArgumentParser:
         "Identical results to serial — only the pure genome scoring is parallelized.",
     )
     p_search.set_defaults(func=_search)
+
+    p_sweep = sub.add_parser(
+        "sweep",
+        help="Run the graduation search across many seeds and aggregate GO/NO-GO (chunk N6)",
+    )
+    p_sweep.add_argument("--timeframe", default="1d")
+    p_sweep.add_argument("--population", type=int, default=30, metavar="N")
+    p_sweep.add_argument("--generations", type=int, default=12, metavar="N")
+    p_sweep.add_argument(
+        "--seeds", type=int, default=10, metavar="N", help="number of seeds to run"
+    )
+    p_sweep.add_argument(
+        "--start-seed", type=int, default=0, metavar="S", help="first seed (runs S..S+seeds-1)"
+    )
+    p_sweep.add_argument("--folds", type=int, default=4, metavar="N", help="OOS scoring folds")
+    p_sweep.add_argument(
+        "--embargo", type=int, default=5, metavar="BARS", help="purge between folds"
+    )
+    p_sweep.add_argument(
+        "--min-trades",
+        type=int,
+        default=20,
+        metavar="N",
+        help="trade-count floor below which a genome is penalized",
+    )
+    p_sweep.add_argument(
+        "--stress",
+        type=int,
+        default=0,
+        metavar="N",
+        help="fragility kill-filter runs per winner (0 = default 200 under the holdout gate)",
+    )
+    p_sweep.add_argument(
+        "--holdout",
+        type=float,
+        default=0.2,
+        metavar="FRACTION",
+        help="never-searched holdout fraction the graduation gate runs on (default 0.2)",
+    )
+    p_sweep.add_argument(
+        "--graduate-min-trades",
+        type=int,
+        default=15,
+        metavar="N",
+        help="minimum holdout trades for a seed's winner to graduate GO",
+    )
+    p_sweep.add_argument(
+        "--workers",
+        type=int,
+        default=1,
+        metavar="N",
+        help="CPU processes for the per-genome fitness map (0 = all cores; 1 = serial, default)",
+    )
+    p_sweep.set_defaults(func=_sweep)
 
     return parser
 

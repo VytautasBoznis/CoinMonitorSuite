@@ -7,10 +7,14 @@ from coinmon.backtest.stress import MonteCarloResult
 from coinmon.search.ga import GAConfig
 from coinmon.search.genome import validate
 from coinmon.search.runner import (
+    CandleCache,
     FitnessParams,
+    SweepRow,
     discover_universe,
     fragility_verdict,
     run_search,
+    summarize_sweep,
+    sweep_row,
 )
 
 
@@ -134,6 +138,68 @@ def test_discover_universe_raises_when_nothing_matches():
         discover_universe(
             [("bybit", "BTC/USDC", "1h")], exchange="bybit", quote="USDC", timeframe="1d"
         )
+
+
+def _counting_read(symbol):
+    _counting_read.calls += 1  # type: ignore[attr-defined]
+    return _read(symbol)
+
+
+def test_run_search_shared_cache_reads_each_pair_once_across_seeds():
+    # Chunk N6: a sweep shares one CandleCache across seeds so the DB is read once per pair, not
+    # once per seed. Two runs over the same 4-pair universe must reuse the cached frames.
+    _counting_read.calls = 0  # type: ignore[attr-defined]
+    cache = CandleCache(_counting_read)
+    universe = ("BTC/USDC", "ETH/USDC", "SOL/USDC", "BNB/USDC")
+    for seed in (0, 1, 2):
+        run_search(
+            _counting_read,
+            taker_fee=0.0,
+            config=GAConfig(population=6, generations=3, seed=seed, universe=universe),
+            fitness_params=_FP,
+            cache=cache,
+        )
+    # No pair is ever read twice across the three seeds: total reads <= universe size, where an
+    # unshared cache would re-read pairs every seed (up to 3x).
+    assert _counting_read.calls <= len(universe)  # type: ignore[attr-defined]
+
+
+def test_sweep_row_flattens_a_graduated_report():
+    report = run_search(
+        _read, taker_fee=0.0, config=_CFG, fitness_params=_FP, fragility_runs=10,
+        holdout_fraction=0.2,
+    )
+    row = sweep_row(7, report)
+    g = report.graduation
+    assert row.seed == 7
+    assert row.passed == g.passed
+    assert row.pair == g.genome.pair
+    assert row.holdout_return == g.holdout_return
+
+
+def test_sweep_row_rejects_ungraduated_report():
+    report = run_search(_read, taker_fee=0.0, config=_CFG, fitness_params=_FP)
+    with pytest.raises(ValueError):
+        sweep_row(0, report)
+
+
+def _row(seed, passed, pair, ret):
+    return SweepRow(
+        seed=seed, passed=passed, family="rsi_meanreversion", pair=pair, direction="long",
+        holdout_return=ret, holdout_trades=20, fragility_positive=1.0, benchmark_return=0.0,
+    )
+
+
+def test_summarize_sweep_counts_gos_and_distinct_pairs():
+    rows = [
+        _row(0, True, "BNB/ETH", 0.05),
+        _row(1, False, "XRP/BTC", -0.1),
+        _row(2, True, "SOL/ETH", 0.03),
+    ]
+    out = summarize_sweep(rows)
+    assert "GO: 2/3 seeds" in out
+    # Two GOs on two different pairs = the lottery signature, surfaced as distinct pairs.
+    assert "2 distinct pair(s): BNB/ETH, SOL/ETH" in out
 
 
 def test_fragility_verdict_thresholds_on_fraction_positive():

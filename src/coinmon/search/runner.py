@@ -178,6 +178,7 @@ def run_search(
     holdout_fraction: float = 0.0,
     graduate_min_trades: int = 15,
     workers: int = 1,
+    cache: CandleCache | None = None,
 ) -> SearchReport:
     """Run the GA over genomes scored by OOS fitness, then gate the winner.
 
@@ -191,8 +192,11 @@ def run_search(
 
     ``workers`` (chunk N2) fans the per-genome fitness map across CPU cores (``<= 0`` = all cores);
     ``1`` (default) keeps the serial path byte-unchanged. The result is identical regardless of
-    worker count — only the pure ``genome -> float`` is parallelized, never the RNG stream."""
-    cache = CandleCache(read)
+    worker count — only the pure ``genome -> float`` is parallelized, never the RNG stream.
+
+    ``cache`` lets a caller (the multi-seed sweep) share one resolved-candle cache across runs so
+    the DB is read once, not once per seed; default ``None`` builds a fresh cache (unchanged)."""
+    cache = cache if cache is not None else CandleCache(read)
 
     def search_span(pair: str) -> pd.DataFrame:
         frame = cache.get(pair)
@@ -243,3 +247,77 @@ def run_search(
         passed_fragility=passed,
         graduation=graduation,
     )
+
+
+# Chunk N6 — the payoff test. A single search is one draw from a noisy process: its winner is the
+# luckiest genome on one seed's RNG stream. The multi-seed sweep runs the SAME graduation search
+# across many seeds and asks the question N4's scale made urgent (see
+# [[regime-adaptive-multiseed-sweep]], [[search-overfits-not-strategy]]): do the GOs name a
+# CONSISTENT structural edge, or do they hop pairs/families by seed like lottery tickets? It adds
+# no new gate — it just measures how the already-validated judge behaves under repetition, so a
+# future O can decide what to trust.
+
+
+@dataclass(frozen=True)
+class SweepRow:
+    """One seed's graduation verdict, flattened for aggregation. Pulled from a holdout
+    ``SearchReport`` so the summary needs none of the heavy GA/fitness objects."""
+
+    seed: int
+    passed: bool
+    family: str
+    pair: str
+    direction: str
+    holdout_return: float
+    holdout_trades: int
+    fragility_positive: float
+    benchmark_return: float
+
+
+def sweep_row(seed: int, report: SearchReport) -> SweepRow:
+    """Flatten a holdout ``SearchReport`` into a ``SweepRow``. Requires the graduation gate to have
+    run (``holdout_fraction > 0``) — a sweep without a verdict has nothing to aggregate."""
+    g = report.graduation
+    if g is None:
+        raise ValueError("sweep_row needs a graduated report (run the sweep with a holdout)")
+    return SweepRow(
+        seed=seed,
+        passed=g.passed,
+        family=g.genome.family,
+        pair=g.genome.pair,
+        direction=g.genome.direction,
+        holdout_return=g.holdout_return,
+        holdout_trades=g.holdout_trades,
+        fragility_positive=g.fragility.fraction_positive,
+        benchmark_return=g.benchmark_return,
+    )
+
+
+def summarize_sweep(rows: Sequence[SweepRow]) -> str:
+    """Aggregate a multi-seed sweep into a verdict table + the lottery-vs-edge diagnosis. A
+    structural edge GOs on the SAME pair across seeds; a curve-fit GOs on a DIFFERENT pair each
+    time — so the headline counts GO seeds AND the distinct pairs those GOs land on."""
+    lines = ["multi-seed sweep — graduation verdict per seed:"]
+    for r in sorted(rows, key=lambda x: x.seed):
+        verdict = "GO   " if r.passed else "NO-GO"
+        lines.append(
+            f"  seed {r.seed:>3}  [{verdict}]  {r.family} on {r.pair} ({r.direction})  "
+            f"ret {r.holdout_return:+.2%}  trades {r.holdout_trades:>3}  "
+            f"frag {r.fragility_positive:.0%}  (B&H {r.benchmark_return:+.2%})"
+        )
+    gos = [r for r in rows if r.passed]
+    lines.append("")
+    lines.append(f"GO: {len(gos)}/{len(rows)} seeds")
+    if gos:
+        go_pairs = sorted({r.pair for r in gos})
+        returns = sorted(r.holdout_return for r in gos)
+        median = returns[len(returns) // 2]
+        lines.append(
+            f"  GOs span {len(go_pairs)} distinct pair(s): {', '.join(go_pairs)}"
+            + ("  (one pair across seeds = consistent; many = lottery)" if len(gos) > 1 else "")
+        )
+        lines.append(
+            f"  GO holdout return: median {median:+.2%}, "
+            f"range {returns[0]:+.2%}..{returns[-1]:+.2%}"
+        )
+    return "\n".join(lines)

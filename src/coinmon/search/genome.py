@@ -3,9 +3,11 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 
+from coinmon.backtest.portfolio import PerpPortfolio, Portfolio, SpotPortfolio
 from coinmon.feed import CostModel
 from coinmon.strategies.atr_channel import ATRChannelBreakout
 from coinmon.strategies.base import Strategy
+from coinmon.strategies.directional import ShortWhenFlat
 from coinmon.strategies.ema_crossover import EMACrossover
 from coinmon.strategies.rsi_meanreversion import RSIMeanReversion
 
@@ -95,16 +97,29 @@ UNIVERSE: tuple[str, ...] = (
     "XRP/ETH", "SOL/ETH", "BNB/ETH",
 )
 
+# Chunk K2: directionality is a gene. ``short`` flips the account from long/flat spot to an
+# always-directional leveraged perp (the bearish leg — see [[perp-short-capability]]): the strategy
+# is wrapped in ``ShortWhenFlat`` so its exit-to-cash becomes a short, and the book becomes a
+# ``PerpPortfolio`` at ``leverage``. The GA chooses whether to short and how hard; the OOS fitness +
+# fragility + holdout gate is what punishes reckless leverage, not a hand-tuned cap. The leverage
+# range stays modest (a wider band just gets pruned out-of-sample). When ``short`` is False the
+# leverage gene is inert and the spot path is byte-unchanged (parity preserved).
+LEVERAGE = ParamSpec(1.0, 5.0)
+
 
 @dataclass(frozen=True)
 class Genome:
-    """One search candidate: trade ``pair`` with strategy ``family`` configured by ``params``.
-    Frozen so a generation is a stable snapshot; ``params`` is a plain dict (genomes aren't
-    hashed)."""
+    """One search candidate: trade ``pair`` with strategy ``family`` configured by ``params``,
+    either long/flat on spot or (``short``) always-directional on a ``leverage``-x perp. Frozen
+    so a generation is a stable snapshot; ``params`` is a plain dict (genomes aren't hashed).
+    ``short``/``leverage`` default to the long/flat spot book, so a genome built without them is
+    the chunk-B behavior unchanged."""
 
     family: str
     pair: str
     params: Mapping[str, float]
+    short: bool = False
+    leverage: float = 1.0
 
 
 def validate(genome: Genome) -> None:
@@ -125,12 +140,32 @@ def validate(genome: Genome) -> None:
     legs = genome.pair.split("/")
     if len(legs) != 2 or not all(legs):
         raise ValueError(f"pair must be BASE/QUOTE, got {genome.pair!r}")
+    if not LEVERAGE.low <= genome.leverage <= LEVERAGE.high:
+        raise ValueError(
+            f"leverage={genome.leverage} outside [{LEVERAGE.low}, {LEVERAGE.high}]"
+        )
 
 
 def decode(genome: Genome) -> Callable[[], Strategy]:
     """Turn a genome into a zero-arg factory of FRESH strategies — the exact ``make_strategy``
     contract ``evaluate_fitness`` and the engine already consume. Each call builds a new instance
-    (strategies carry rolling state, so folds and stress runs must not share one)."""
+    (strategies carry rolling state, so folds and stress runs must not share one). A ``short``
+    genome wraps the family in ``ShortWhenFlat`` so its exit-to-cash becomes a short — pair this
+    with ``decode_portfolio``'s perp book to actually profit from the drop."""
     validate(genome)
     family = FAMILIES[genome.family]
+    if genome.short:
+        return lambda: ShortWhenFlat(family.build(genome.params))
     return lambda: family.build(genome.params)
+
+
+def decode_portfolio(genome: Genome) -> Callable[[float, float], Portfolio]:
+    """Turn a genome into a ``(cash, taker_fee) -> Portfolio`` factory — the book the genome trades
+    in. A ``short`` genome trades a leveraged ``PerpPortfolio`` (the bearish leg); otherwise the
+    long/flat ``SpotPortfolio``. Separate from ``decode`` because the eval rig builds the strategy
+    and the book at different points (fold loop, fragility, holdout) with different capital."""
+    validate(genome)
+    if genome.short:
+        leverage = genome.leverage
+        return lambda cash, fee: PerpPortfolio(cash, fee, leverage)
+    return lambda cash, fee: SpotPortfolio(cash, fee)

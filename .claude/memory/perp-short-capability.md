@@ -44,9 +44,24 @@ still thinks it holds; portfolio refuses to trade) — practically the run just 
 equity, which is the honest outcome. The eval rig (OOS fitness + fragility + holdout) is what
 punishes reckless leverage, not a hand-tuned cap.
 
-**Next — chunk G2 (the wide-blast-radius half, deferred):** let the GA *choose* directionality —
-genome genes for portfolio type / leverage / short-enable, which means `decode` must also yield a
-**portfolio factory** (today it returns only a strategy factory; `evaluate_fitness`, `search/runner`,
-`graduation`, CLI all build `SpotPortfolio` themselves). Then re-run a live search whose winner can
-finally **GO** on the downtrend holdout (short the drop → absolutely positive). Tie back to
-[[build-roadmap]].
+**Chunk K2 — direction is a gene (LANDED 2026-06-28, 113 tests green, ruff clean).** The GA now
+*chooses* directionality. `Genome` gained `short: bool` + `leverage: float` (both default to the
+long/flat spot book, so a chunk-B genome is byte-unchanged); `LEVERAGE = ParamSpec(1.0, 5.0)` is the
+modest sampled range (the eval rig prunes reckless leverage, not a hand cap). `decode` wraps the
+family in `ShortWhenFlat` when `short`; a NEW sibling `decode_portfolio(genome) -> (cash, fee) ->
+Portfolio` yields the perp-vs-spot book (kept separate from `decode` because the rig builds strategy
+and book at different points/capital). Threaded the factory through everything that used to hard-build
+`SpotPortfolio`: `evaluate_fitness` gained an optional `make_portfolio=` (defaults to spot →
+back-compat for tests/walk-forward), and `search/runner` (`_score_genome` + the fragility post-filter)
++ `graduation` now pass `decode_portfolio(genome)`. GA `random_genome`/`mutate`/`crossover` sample and
+move the direction genes; `_key` includes them so a long and a short twin don't collide in the fitness
+memo. Report summaries print `[Lx perp short | long/flat spot]`. CLI `search` explores direction by
+default — no new flag. Synthetic proof test: the same RSI genome run as a 2x perp short out-returns
+its spot twin and graduates **GO** on a downtrend.
+
+**Still open (user run, not code):** the *real* downtrend-holdout GO is unproven against the live DB —
+`coinmon search --timeframe 1d --holdout 0.2 --stress 80` (Docker DB up). Note: a clean synthetic
+mean-reverter still profits long at zero fees, so the unit test asserts "short out-returns long + GOs"
+rather than forcing the long to NO-GO; the documented long-NO-GO was on real data
+([[first-live-search-graduation]]). Tie back to [[build-roadmap]] — chunk K is now done; next is
+chunk **G** (suggestions service), *blocked on delivery channel*.

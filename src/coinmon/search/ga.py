@@ -5,7 +5,7 @@ import statistics
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from coinmon.search.genome import FAMILIES, UNIVERSE, Genome, ParamSpec
+from coinmon.search.genome import FAMILIES, LEVERAGE, UNIVERSE, Genome, ParamSpec
 
 # Chunk C: the evolutionary search. This module is the GA *mechanics* only — purely a function
 # of a seeded ``random.Random`` and a caller-supplied ``fitness(genome) -> float`` — so it carries
@@ -29,12 +29,16 @@ def _clamp(value: float, spec: ParamSpec) -> float:
 
 
 def random_genome(rng: random.Random) -> Genome:
-    """A uniformly-sampled valid genome: random family, random pair from the UNIVERSE pool, and
-    each param drawn within its spec. Used to seed the initial population."""
+    """A uniformly-sampled valid genome: random family, random pair from the UNIVERSE pool, each
+    param drawn within its spec, and a coin-flip direction gene (long/flat spot vs a leveraged
+    perp short) with leverage drawn within its range. Used to seed the initial population."""
     family = rng.choice(list(FAMILIES))
     spec = FAMILIES[family]
     params = {name: _sample_param(s, rng) for name, s in spec.params.items()}
-    return Genome(family, rng.choice(UNIVERSE), params)
+    pair = rng.choice(UNIVERSE)
+    short = rng.random() < 0.5
+    leverage = _sample_param(LEVERAGE, rng)
+    return Genome(family, pair, params, short, leverage)
 
 
 def mutate(
@@ -49,12 +53,20 @@ def mutate(
     (resampling that family's params, keeping the pair) so neither family can go extinct mid-run.
     Otherwise each param is jittered with probability ``rate`` by a Gaussian step of ``sigma`` of
     its range (then clamped/rounded to stay valid), and the pair gene is re-rolled with the same
-    probability — pair choice dominated in chunk A, so it must stay mobile."""
+    probability — pair choice dominated in chunk A, so it must stay mobile. The direction genes
+    (short on/off, leverage) also mutate at ``rate`` so the GA can flip a strategy bearish (or
+    dial its leverage) without waiting for a fresh random genome; both survive a family switch."""
+    short = (not genome.short) if rng.random() < rate else genome.short
+    leverage = (
+        _clamp(genome.leverage + rng.gauss(0.0, sigma * (LEVERAGE.high - LEVERAGE.low)), LEVERAGE)
+        if rng.random() < rate
+        else genome.leverage
+    )
     if FAMILIES.keys() - {genome.family} and rng.random() < family_switch_rate:
         new_family = rng.choice([f for f in FAMILIES if f != genome.family])
         spec = FAMILIES[new_family]
         params = {name: _sample_param(s, rng) for name, s in spec.params.items()}
-        return Genome(new_family, genome.pair, params)
+        return Genome(new_family, genome.pair, params, short, leverage)
 
     family = FAMILIES[genome.family]
     params = dict(genome.params)
@@ -63,13 +75,13 @@ def mutate(
             step = rng.gauss(0.0, sigma * (spec.high - spec.low))
             params[name] = _clamp(params[name] + step, spec)
     pair = rng.choice(UNIVERSE) if rng.random() < rate else genome.pair
-    return Genome(genome.family, pair, params)
+    return Genome(genome.family, pair, params, short, leverage)
 
 
 def crossover(a: Genome, b: Genome, rng: random.Random) -> Genome:
     """Uniform crossover. Across different families the param schemas are incompatible, so one
-    parent is inherited wholesale; within a family each param and the pair gene are picked
-    independently from either parent."""
+    parent is inherited wholesale (with its direction genes); within a family each param, the pair
+    gene and the direction genes are picked independently from either parent."""
     if a.family != b.family:
         return a if rng.random() < 0.5 else b
     family = FAMILIES[a.family]
@@ -77,7 +89,9 @@ def crossover(a: Genome, b: Genome, rng: random.Random) -> Genome:
         name: (a.params[name] if rng.random() < 0.5 else b.params[name]) for name in family.params
     }
     pair = a.pair if rng.random() < 0.5 else b.pair
-    return Genome(a.family, pair, params)
+    short = a.short if rng.random() < 0.5 else b.short
+    leverage = a.leverage if rng.random() < 0.5 else b.leverage
+    return Genome(a.family, pair, params, short, leverage)
 
 
 def tournament_select(
@@ -116,8 +130,15 @@ class GAResult:
 
 
 def _key(genome: Genome) -> tuple:
-    """Hashable identity for fitness memoization (``params`` is an unhashable dict)."""
-    return (genome.family, genome.pair, tuple(sorted(genome.params.items())))
+    """Hashable identity for fitness memoization (``params`` is an unhashable dict). Includes the
+    direction genes so a long and a short variant of the same family/pair/params don't collide."""
+    return (
+        genome.family,
+        genome.pair,
+        tuple(sorted(genome.params.items())),
+        genome.short,
+        genome.leverage,
+    )
 
 
 def evolve(

@@ -8,7 +8,7 @@ from dataclasses import dataclass
 import pandas as pd
 
 from coinmon.backtest.engine import BacktestEngine
-from coinmon.backtest.portfolio import SpotPortfolio
+from coinmon.backtest.portfolio import Portfolio, SpotPortfolio
 from coinmon.strategies.base import Strategy
 
 # The scalar a search (the GA north star) maximizes per candidate genome. It is built to make
@@ -88,6 +88,7 @@ def evaluate_fitness(
     make_strategy: Callable[[], Strategy],
     taker_fee: float,
     *,
+    make_portfolio: Callable[[float, float], Portfolio] | None = None,
     folds: int = 4,
     embargo_bars: int = 0,
     initial_capital: float = 10_000.0,
@@ -107,9 +108,14 @@ def evaluate_fitness(
     well-populated edge. Crucially the penalty is DOWNSIDE, not symmetric std: a genome that is
     positive in every fold pays zero instability — fixing the chunk-A miscalibration where a
     green-every-fold pair (XRP/ETH) scored below zero purely for varying.
+
+    ``make_portfolio`` is a ``(cash, taker_fee) -> Portfolio`` factory; it defaults to the long/flat
+    ``SpotPortfolio`` so existing callers are unchanged, but a directional genome supplies a
+    leveraged ``PerpPortfolio`` factory (chunk K2) so the same OOS rig scores a short.
     """
     if folds < 1:
         raise ValueError(f"need at least 1 fold, got {folds}")
+    build_portfolio = make_portfolio or (lambda cash, fee: SpotPortfolio(cash, fee))
     n = len(candles)
     if n // folds <= embargo_bars:
         raise ValueError(
@@ -121,7 +127,7 @@ def evaluate_fitness(
     for start, end in _fold_bounds(n, folds, embargo_bars):
         segment = candles.iloc[start:end].reset_index(drop=True)
         result = BacktestEngine(
-            make_strategy(), SpotPortfolio(initial_capital, taker_fee)
+            make_strategy(), build_portfolio(initial_capital, taker_fee)
         ).run(segment)
         fold_returns.append(result.metrics["total_return"])
         fold_trades.append(int(result.metrics["trades"]))

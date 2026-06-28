@@ -3,9 +3,10 @@ import pytest
 
 from coinmon.backtest.engine import BacktestEngine
 from coinmon.backtest.fitness import evaluate_fitness
-from coinmon.backtest.portfolio import SpotPortfolio
+from coinmon.backtest.portfolio import PerpPortfolio, SpotPortfolio
 from coinmon.feed import CostModel
-from coinmon.search.genome import FAMILIES, Genome, decode, validate
+from coinmon.search.genome import FAMILIES, Genome, decode, decode_portfolio, validate
+from coinmon.strategies.directional import ShortWhenFlat
 from coinmon.strategies.ema_crossover import EMACrossover
 from coinmon.strategies.rsi_meanreversion import RSIMeanReversion
 
@@ -99,3 +100,61 @@ def test_decode_validates_before_building():
     )
     with pytest.raises(ValueError):
         decode(bad)
+
+
+# --- chunk K2: direction is a gene ---------------------------------------------------------
+
+
+def test_genome_defaults_to_long_spot():
+    # A genome built the chunk-B way (no direction genes) is still long/flat spot — backward compat.
+    g = _rsi_genome()
+    assert g.short is False
+    assert g.leverage == 1.0
+    assert isinstance(decode_portfolio(g)(10_000.0, 0.001), SpotPortfolio)
+    assert not isinstance(decode(g)(), ShortWhenFlat)
+
+
+def test_short_genome_decodes_to_short_wrapped_strategy_and_perp_book():
+    g = Genome(
+        "rsi_meanreversion", "XRP/ETH", {"period": 14, "oversold": 30.0, "exit_level": 50.0},
+        short=True, leverage=3.0,
+    )
+    assert isinstance(decode(g)(), ShortWhenFlat)  # exit-to-cash becomes a short
+    book = decode_portfolio(g)(10_000.0, 0.001)
+    assert isinstance(book, PerpPortfolio)
+    assert book.leverage == 3.0
+
+
+def test_validate_rejects_out_of_range_leverage():
+    bad = Genome(
+        "rsi_meanreversion", "ETH/BTC", {"period": 14, "oversold": 30.0, "exit_level": 50.0},
+        short=True, leverage=99.0,
+    )
+    with pytest.raises(ValueError):
+        validate(bad)
+
+
+def test_evaluate_fitness_uses_the_genome_portfolio_factory():
+    # A short genome on a falling series must score differently from the same genome left on spot:
+    # proof the portfolio factory actually reaches the fold loop.
+    closes = [float(100 - i) for i in range(80)]
+    candles = pd.DataFrame(
+        {
+            "open_time": range(80),
+            "open": closes,
+            "high": [c + 1 for c in closes],
+            "low": [c - 1 for c in closes],
+            "close": closes,
+            "volume": [1.0] * 80,
+        }
+    )
+    g = Genome(
+        "rsi_meanreversion", "XRP/ETH", {"period": 5, "oversold": 30.0, "exit_level": 55.0},
+        short=True, leverage=2.0,
+    )
+    spot = evaluate_fitness(candles, decode(g), taker_fee=0.0, folds=2, min_trades=0)
+    perp = evaluate_fitness(
+        candles, decode(g), taker_fee=0.0, make_portfolio=decode_portfolio(g),
+        folds=2, min_trades=0,
+    )
+    assert perp.fold_returns != spot.fold_returns

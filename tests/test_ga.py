@@ -25,6 +25,24 @@ def test_mutate_keeps_genome_valid():
         validate(g)
 
 
+def test_random_genomes_explore_both_directions():
+    # chunk K2: the direction gene must actually vary, or the GA can never reach a short.
+    rng = random.Random(11)
+    genomes = [random_genome(rng) for _ in range(200)]
+    assert any(g.short for g in genomes)
+    assert any(not g.short for g in genomes)
+    assert len({round(g.leverage, 3) for g in genomes}) > 1  # leverage spreads across its range
+
+
+def test_mutate_can_flip_direction():
+    rng = random.Random(12)
+    g = Genome(
+        "rsi_meanreversion", "XRP/ETH", {"period": 14, "oversold": 30.0, "exit_level": 50.0},
+        short=False, leverage=1.0,
+    )
+    assert any(mutate(g, rng).short for _ in range(200))  # flat genome can become a short
+
+
 def test_crossover_within_family_is_valid_and_inherits_from_parents():
     rng = random.Random(3)
     a = Genome("rsi_meanreversion", "XRP/ETH", {"period": 5, "oversold": 20.0, "exit_level": 60.0})

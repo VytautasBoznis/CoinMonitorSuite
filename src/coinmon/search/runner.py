@@ -6,11 +6,10 @@ from dataclasses import dataclass
 import pandas as pd
 
 from coinmon.backtest.fitness import FitnessResult, evaluate_fitness
-from coinmon.backtest.portfolio import SpotPortfolio
 from coinmon.backtest.stress import MonteCarloResult, run_monte_carlo
 from coinmon.data.candles import load_candles, split_holdout
 from coinmon.search.ga import GAConfig, GAResult, evolve
-from coinmon.search.genome import Genome, decode
+from coinmon.search.genome import Genome, decode, decode_portfolio
 from coinmon.search.graduation import GraduationReport, graduate
 
 # Chunk C orchestration: glue the pure GA (search/ga.py) to real data and the honest score.
@@ -62,8 +61,11 @@ class SearchReport:
 
     def summary(self) -> str:
         p = ", ".join(f"{k}={v:g}" for k, v in sorted(self.best.params.items()))
+        book = (
+            f"{self.best.leverage:.1f}x perp short" if self.best.short else "long/flat spot"
+        )
         lines = [
-            f"best genome: {self.best.family} on {self.best.pair} ({p})",
+            f"best genome: {self.best.family} on {self.best.pair} [{book}] ({p})",
             "",
             self.fitness.summary(),
             "",
@@ -86,6 +88,7 @@ def _score_genome(
         candles,
         decode(genome),
         taker_fee,
+        make_portfolio=decode_portfolio(genome),
         folds=fp.folds,
         embargo_bars=fp.embargo_bars,
         min_trades=fp.min_trades,
@@ -152,9 +155,10 @@ def run_search(
             min_trades=graduate_min_trades,
         )
     elif fragility_runs:
+        build_portfolio = decode_portfolio(ga.best)
         fragility = run_monte_carlo(
             decode(ga.best),
-            lambda: SpotPortfolio(INITIAL_CAPITAL, taker_fee),
+            lambda: build_portfolio(INITIAL_CAPITAL, taker_fee),
             cache.get(ga.best.pair),
             runs=fragility_runs,
         )

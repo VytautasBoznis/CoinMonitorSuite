@@ -32,6 +32,12 @@ def _uptrend(n=300):
     return _frame([100.0 + 0.5 * i for i in range(n)])
 
 
+def _downtrend(n=300):
+    # A falling mean with strong oscillation: RSI trades both legs, but holding long through the
+    # drift bleeds on spot — the case the perp short exists to win (see perp-short-capability).
+    return _frame([100.0 - 0.25 * i + 12.0 * math.sin(i / 5.0) for i in range(n)])
+
+
 # pair is irrelevant to graduate() — it scores the holdout frame it is handed directly.
 _RSI = Genome(
     family="rsi_meanreversion",
@@ -47,6 +53,32 @@ def test_graduate_passes_a_robust_edge():
     assert report.holdout_return > 0
     assert report.holdout_trades >= 5
     assert report.fragility.runs == 30
+
+
+def test_short_genome_outprofits_the_long_one_and_graduates_on_a_downtrend():
+    # The chunk-K payoff: on a falling market the SAME family/params run as a leveraged perp short
+    # captures the drift the long/flat book leaves on the table, so it both out-returns the spot
+    # genome and clears the absolute graduation gate. (On real downtrend data the long genome went
+    # outright NO-GO — see first-live-search-graduation; the gate stayed absolute and a bearish leg
+    # was added instead of softening it. A clean synthetic mean-reverter still profits long at zero
+    # fees, so here we assert the robust relationship rather than forcing the long to lose.)
+    holdout = _downtrend()
+    long_genome = Genome(
+        family="rsi_meanreversion", pair="BTC/USDC",
+        params={"period": 14, "oversold": 30.0, "exit_level": 55.0},
+    )
+    short_genome = Genome(
+        family="rsi_meanreversion", pair="BTC/USDC",
+        params={"period": 14, "oversold": 30.0, "exit_level": 55.0},
+        short=True, leverage=2.0,
+    )
+    long_report = graduate(long_genome, holdout, taker_fee=0.0, fragility_runs=30)
+    short_report = graduate(short_genome, holdout, taker_fee=0.0, fragility_runs=30)
+
+    assert short_report.holdout_return > long_report.holdout_return  # the short wins the downtrend
+    assert short_report.holdout_return > 0
+    assert short_report.passed  # the perp short graduates GO
+    assert short_report.reasons == ()
 
 
 def test_graduate_rejects_a_genome_that_does_not_trade():

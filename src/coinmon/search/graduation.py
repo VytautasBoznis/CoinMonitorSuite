@@ -5,9 +5,8 @@ from dataclasses import dataclass
 import pandas as pd
 
 from coinmon.backtest.engine import BacktestEngine
-from coinmon.backtest.portfolio import SpotPortfolio
 from coinmon.backtest.stress import MonteCarloResult, run_monte_carlo
-from coinmon.search.genome import Genome, decode
+from coinmon.search.genome import Genome, decode, decode_portfolio
 
 # Chunk D: the graduation gate — the ONLY path from "GA winner" to "live-eligible". The GA's
 # winner was chosen on the search span; here it faces a final holdout span the search never saw
@@ -35,8 +34,11 @@ class GraduationReport:
 
     def summary(self) -> str:
         verdict = "GO" if self.passed else "NO-GO"
+        book = (
+            f"{self.genome.leverage:.1f}x perp short" if self.genome.short else "long/flat spot"
+        )
         lines = [
-            f"graduation gate [{verdict}] — {self.genome.family} on {self.genome.pair}",
+            f"graduation gate [{verdict}] — {self.genome.family} on {self.genome.pair} [{book}]",
             f"  holdout span     {self.holdout_bars} bars (never seen by the search)",
             f"  holdout return   {self.holdout_return:+.2%}  "
             f"(buy & hold {self.benchmark_return:+.2%})",
@@ -64,7 +66,8 @@ def graduate(
     luck, and stays positive under the fragility kill-filter. ``fragility_runs`` must be >= 1 —
     the gate is incomplete without the stress test."""
     factory = decode(genome)
-    result = BacktestEngine(factory(), SpotPortfolio(INITIAL_CAPITAL, taker_fee)).run(holdout)
+    build_portfolio = decode_portfolio(genome)
+    result = BacktestEngine(factory(), build_portfolio(INITIAL_CAPITAL, taker_fee)).run(holdout)
     holdout_return = result.metrics["total_return"]
     holdout_trades = int(result.metrics["trades"])
     # B&H over the holdout span, gross of the entry fee (matches the walk-forward benchmark).
@@ -72,7 +75,7 @@ def graduate(
 
     fragility = run_monte_carlo(
         factory,
-        lambda: SpotPortfolio(INITIAL_CAPITAL, taker_fee),
+        lambda: build_portfolio(INITIAL_CAPITAL, taker_fee),
         holdout,
         runs=fragility_runs,
         benchmark_return=benchmark_return,

@@ -4,7 +4,12 @@ import statistics
 import pandas as pd
 import pytest
 
-from coinmon.backtest.fitness import _downside_dev, _fold_bounds, evaluate_fitness
+from coinmon.backtest.fitness import (
+    _downside_dev,
+    _fold_bounds,
+    _robust_center,
+    evaluate_fitness,
+)
 from coinmon.strategies.rsi_meanreversion import RSIMeanReversion
 
 
@@ -42,6 +47,7 @@ def test_fitness_arithmetic_matches_its_components():
 
     assert len(r.fold_returns) == 4
     assert r.total_trades == sum(r.fold_trades)
+    assert r.median_oos_return == pytest.approx(statistics.median(r.fold_returns))
     assert r.mean_oos_return == pytest.approx(statistics.fmean(r.fold_returns))
     assert r.return_std == pytest.approx(statistics.pstdev(r.fold_returns))
     assert r.downside_dev == pytest.approx(_downside_dev(r.fold_returns))
@@ -49,7 +55,7 @@ def test_fitness_arithmetic_matches_its_components():
     expected_trade_pen = max(0.0, 1.0 - r.total_trades / 20)
     assert r.trade_penalty == pytest.approx(expected_trade_pen)
     assert r.fitness == pytest.approx(
-        r.mean_oos_return - r.instability_penalty - r.trade_penalty
+        r.median_oos_return - r.instability_penalty - r.trade_penalty
     )
 
 
@@ -84,6 +90,15 @@ def test_instability_weight_docks_downside_genomes_more():
         assert heavy.fitness < light.fitness
     else:
         assert heavy.fitness == pytest.approx(light.fitness)
+
+
+def test_robust_center_ignores_a_single_lucky_fold():
+    # The live-search overfit: a +355% fold dragged the mean to +94% while the median stays sober.
+    assert _robust_center([0.19, -0.35, 0.39, 3.55]) == pytest.approx((0.19 + 0.39) / 2)
+    # One extreme fold cannot move the median off the body of the distribution.
+    assert _robust_center([0.10, 0.10, 0.10, 100.0]) == pytest.approx(0.10)
+    # A genome positive in every fold is rewarded its typical fold, not dampened.
+    assert _robust_center([0.20, 0.20, 0.20, 0.20]) == pytest.approx(0.20)
 
 
 def test_embargo_too_large_for_fold_size_raises():

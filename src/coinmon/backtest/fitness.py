@@ -13,16 +13,17 @@ from coinmon.strategies.base import Strategy
 
 # The scalar a search (the GA north star) maximizes per candidate genome. It is built to make
 # the overfit the grid search already demonstrated HARD to repeat: a genome is scored across
-# several out-of-sample folds (never one in-sample number), and the raw mean return is then
-# docked for (a) losing money in any fold (downside, not mere variation) and (b) trading too
-# rarely to be anything but noise.
+# several out-of-sample folds (never one in-sample number), the MEDIAN fold return (robust to a
+# single lucky fold) is rewarded, and it is then docked for (a) losing money in any fold
+# (downside, not mere variation) and (b) trading too rarely to be anything but noise.
 # See docs/lessons-learned.md "the search overfits, the fixed params survive".
 
 
 @dataclass(frozen=True)
 class FitnessResult:
-    fitness: float  # mean_oos_return - instability_penalty - trade_penalty (the GA objective)
-    mean_oos_return: float  # mean of the per-fold returns, before penalties
+    fitness: float  # median_oos_return - instability_penalty - trade_penalty (the GA objective)
+    median_oos_return: float  # median of the per-fold returns — the central tendency rewarded
+    mean_oos_return: float  # mean of the per-fold returns (informational; outlier-sensitive)
     return_std: float  # spread of per-fold returns (informational; not penalized)
     downside_dev: float  # RMS of the negative fold returns — the inconsistency the penalty bites
     total_trades: int  # closed round-trips summed across all folds
@@ -36,13 +37,15 @@ class FitnessResult:
             f"{r:+.2%}({t}t)"
             for r, t in zip(self.fold_returns, self.fold_trades, strict=True)
         )
+        folds = len(self.fold_returns)
         return (
-            f"  fitness          {self.fitness:+.4f}\n"
-            f"  mean OOS return  {self.mean_oos_return:+.2%}  over {len(self.fold_returns)} folds\n"
-            f"  downside dev     {self.downside_dev:.2%}  (-{self.instability_penalty:.4f})\n"
-            f"  return std       {self.return_std:.2%}  (spread; not penalized)\n"
-            f"  total trades     {self.total_trades}  (-{self.trade_penalty:.4f})\n"
-            f"  per fold         {per_fold}"
+            f"  fitness            {self.fitness:+.4f}\n"
+            f"  median OOS return  {self.median_oos_return:+.2%}  over {folds} folds (drives it)\n"
+            f"  mean OOS return    {self.mean_oos_return:+.2%}  (informational)\n"
+            f"  downside dev       {self.downside_dev:.2%}  (-{self.instability_penalty:.4f})\n"
+            f"  return std         {self.return_std:.2%}  (spread; not penalized)\n"
+            f"  total trades       {self.total_trades}  (-{self.trade_penalty:.4f})\n"
+            f"  per fold           {per_fold}"
         )
 
 
@@ -60,6 +63,16 @@ def _fold_bounds(n: int, folds: int, embargo_bars: int) -> list[tuple[int, int]]
             start += embargo_bars
         bounds.append((start, end))
     return bounds
+
+
+def _robust_center(returns: list[float]) -> float:
+    """Median of the per-fold returns — the central tendency the fitness rewards. Robust to a
+    single outsized fold: with 4 folds it is the mean of the middle two, so neither the best nor
+    the worst fold can carry a genome. The plain mean could not: a live search topped its
+    population with a genome whose +94% mean was one +355% fold among +19% / -35% / +39% — the
+    graduation gate then rejected it OOS. Rewarding the median makes the search spend its budget
+    on steadily-positive genomes instead of one-lucky-fold spikes."""
+    return statistics.median(returns)
 
 
 def _downside_dev(returns: list[float]) -> float:
@@ -85,13 +98,15 @@ def evaluate_fitness(
     """Score a single fixed genome (``make_strategy``) out-of-sample across ``folds`` segments.
 
     The genome is never *fitted* here — it is proposed (by a GA, later) and this measures how
-    robustly it generalizes. ``fitness = mean_oos_return - instability_weight * downside_dev -
+    robustly it generalizes. ``fitness = median_oos_return - instability_weight * downside_dev -
     trade_penalty``, where ``downside_dev = sqrt(mean(min(0, fold_return)^2))`` and
-    ``trade_penalty = trade_penalty_weight * max(0, 1 - total_trades / min_trades)``. A genome
-    that bleeds in some folds (deep downside) or barely trades (noise-dominated) is docked below
-    one with a steady, well-populated edge. Crucially the penalty is DOWNSIDE, not symmetric std:
-    a genome that is positive in every fold pays zero instability — fixing the chunk-A
-    miscalibration where a green-every-fold pair (XRP/ETH) scored below zero purely for varying.
+    ``trade_penalty = trade_penalty_weight * max(0, 1 - total_trades / min_trades)``. The central
+    term is the MEDIAN fold return, not the mean, so a single outsized fold cannot carry a genome
+    (the mean let a +355% fold do exactly that in a live search). A genome that bleeds in some
+    folds (deep downside) or barely trades (noise-dominated) is docked below one with a steady,
+    well-populated edge. Crucially the penalty is DOWNSIDE, not symmetric std: a genome that is
+    positive in every fold pays zero instability — fixing the chunk-A miscalibration where a
+    green-every-fold pair (XRP/ETH) scored below zero purely for varying.
     """
     if folds < 1:
         raise ValueError(f"need at least 1 fold, got {folds}")
@@ -111,6 +126,7 @@ def evaluate_fitness(
         fold_returns.append(result.metrics["total_return"])
         fold_trades.append(int(result.metrics["trades"]))
 
+    median_return = _robust_center(fold_returns)
     mean_return = statistics.fmean(fold_returns)
     return_std = statistics.pstdev(fold_returns)  # population: well-defined for a single fold
     downside = _downside_dev(fold_returns)
@@ -120,10 +136,11 @@ def evaluate_fitness(
     # min_trades <= 0 disables the trade-count floor (no penalty, no division).
     undertraded = max(0.0, 1.0 - total_trades / min_trades) if min_trades > 0 else 0.0
     trade_penalty = trade_penalty_weight * undertraded
-    fitness = mean_return - instability_penalty - trade_penalty
+    fitness = median_return - instability_penalty - trade_penalty
 
     return FitnessResult(
         fitness=fitness,
+        median_oos_return=median_return,
         mean_oos_return=mean_return,
         return_std=return_std,
         downside_dev=downside,

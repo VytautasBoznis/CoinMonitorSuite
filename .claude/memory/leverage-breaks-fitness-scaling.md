@@ -72,3 +72,15 @@ ForwardRunner; default None keeps the spot/perp path byte-unchanged (parity). En
 downtrend-GO proof is the next user `search --timeframe 1d --holdout 0.2 --stress 80`: expect the GA to keep
 leverage but pair it with a protective stop and graduate GO. If the gate still won't close, the fallback is
 the risk-adjusted (return/drawdown) fold metric.
+
+**RESOLVED 2026-06-28 — leverage fix VALIDATED live; the remaining NO-GO is a different problem.** Re-ran
+`search --timeframe 1d --holdout 0.2 --stress 80`: GA winner flipped from `4.6x perp short` to a SANE
+`atr_channel ETH/USDC long/flat spot` (no leverage, no stop), worst-fold DD 100%→33%, per-fold noise
+`+169/-100/+1046/+1784%` → `+27/-3/+45/+81%`. **The reckless-leverage attractor is dead** — Part B's drawdown
+penalty + Part A's stop gene reshaped selection exactly as intended. This memory's core problem is fixed.
+BUT the winner still graduated NO-GO (holdout -45.7%). Diagnostic (graduated every directional variant on the
+same holdout) overturned the "downtrend → short profits" intuition: ETH/USDC's recent-20% holdout is a -57%
+*choppy* crash, and ATR-channel SHORTS lose MORE (-78%/-93%, whipsawed by bear rallies) than the long that
+sidesteps. No config of this family survives → the gate correctly rejects all. So the leverage/brake story is
+closed; the new blocker is **regime non-stationarity + zero GOs across all live runs so far** → next is to
+prove the gate is even passable. See [[chunk-l-live-validation]].

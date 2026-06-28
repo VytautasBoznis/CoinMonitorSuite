@@ -5,7 +5,16 @@ import statistics
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from coinmon.search.genome import FAMILIES, LEVERAGE, STOP, UNIVERSE, Genome, ParamSpec
+from coinmon.search.genome import (
+    DIRECTIONS,
+    FAMILIES,
+    LEVERAGE,
+    STOP,
+    TREND,
+    UNIVERSE,
+    Genome,
+    ParamSpec,
+)
 
 # Chunk C: the evolutionary search. This module is the GA *mechanics* only — purely a function
 # of a seeded ``random.Random`` and a caller-supplied ``fitness(genome) -> float`` — so it carries
@@ -37,17 +46,18 @@ def _sample_stop(rng: random.Random) -> float | None:
 
 def random_genome(rng: random.Random) -> Genome:
     """A uniformly-sampled valid genome: random family, random pair from the UNIVERSE pool, each
-    param drawn within its spec, a coin-flip direction gene (long/flat spot vs a leveraged perp
-    short) with leverage drawn within its range, and a coin-flip intrabar stop gene. Used to seed
-    the initial population."""
+    param drawn within its spec, a direction gene (long/flat spot vs a regime-adaptive perp) with
+    leverage and a regime window drawn within their ranges, and a coin-flip intrabar stop gene. Used
+    to seed the initial population."""
     family = rng.choice(list(FAMILIES))
     spec = FAMILIES[family]
     params = {name: _sample_param(s, rng) for name, s in spec.params.items()}
     pair = rng.choice(UNIVERSE)
-    short = rng.random() < 0.5
+    direction = rng.choice(DIRECTIONS)
     leverage = _sample_param(LEVERAGE, rng)
+    trend_period = _sample_param(TREND, rng)
     stop_pct = _sample_stop(rng)
-    return Genome(family, pair, params, short, leverage, stop_pct)
+    return Genome(family, pair, params, direction, leverage, trend_period, stop_pct)
 
 
 def mutate(
@@ -63,21 +73,30 @@ def mutate(
     Otherwise each param is jittered with probability ``rate`` by a Gaussian step of ``sigma`` of
     its range (then clamped/rounded to stay valid), and the pair gene is re-rolled with the same
     probability — pair choice dominated in chunk A, so it must stay mobile. The direction genes
-    (short on/off, leverage) and the stop gene also mutate at ``rate`` so the GA can flip a strategy
-    bearish, dial its leverage, or arm/disarm its stop without waiting for a fresh random genome;
-    all survive a family switch."""
-    short = (not genome.short) if rng.random() < rate else genome.short
+    (long/adaptive, leverage, regime window) and the stop gene also mutate at ``rate`` so the GA can
+    flip a strategy regime-adaptive, dial its leverage or regime window, or arm/disarm its stop
+    without waiting for a fresh random genome; all survive a family switch."""
+    direction = (
+        rng.choice([d for d in DIRECTIONS if d != genome.direction])
+        if rng.random() < rate
+        else genome.direction
+    )
     leverage = (
         _clamp(genome.leverage + rng.gauss(0.0, sigma * (LEVERAGE.high - LEVERAGE.low)), LEVERAGE)
         if rng.random() < rate
         else genome.leverage
+    )
+    trend_period = (
+        _clamp(genome.trend_period + rng.gauss(0.0, sigma * (TREND.high - TREND.low)), TREND)
+        if rng.random() < rate
+        else genome.trend_period
     )
     stop_pct = _mutate_stop(genome.stop_pct, rng, rate, sigma)
     if FAMILIES.keys() - {genome.family} and rng.random() < family_switch_rate:
         new_family = rng.choice([f for f in FAMILIES if f != genome.family])
         spec = FAMILIES[new_family]
         params = {name: _sample_param(s, rng) for name, s in spec.params.items()}
-        return Genome(new_family, genome.pair, params, short, leverage, stop_pct)
+        return Genome(new_family, genome.pair, params, direction, leverage, trend_period, stop_pct)
 
     family = FAMILIES[genome.family]
     params = dict(genome.params)
@@ -86,7 +105,7 @@ def mutate(
             step = rng.gauss(0.0, sigma * (spec.high - spec.low))
             params[name] = _clamp(params[name] + step, spec)
     pair = rng.choice(UNIVERSE) if rng.random() < rate else genome.pair
-    return Genome(genome.family, pair, params, short, leverage, stop_pct)
+    return Genome(genome.family, pair, params, direction, leverage, trend_period, stop_pct)
 
 
 def _mutate_stop(
@@ -115,10 +134,11 @@ def crossover(a: Genome, b: Genome, rng: random.Random) -> Genome:
         name: (a.params[name] if rng.random() < 0.5 else b.params[name]) for name in family.params
     }
     pair = a.pair if rng.random() < 0.5 else b.pair
-    short = a.short if rng.random() < 0.5 else b.short
+    direction = a.direction if rng.random() < 0.5 else b.direction
     leverage = a.leverage if rng.random() < 0.5 else b.leverage
+    trend_period = a.trend_period if rng.random() < 0.5 else b.trend_period
     stop_pct = a.stop_pct if rng.random() < 0.5 else b.stop_pct
-    return Genome(a.family, pair, params, short, leverage, stop_pct)
+    return Genome(a.family, pair, params, direction, leverage, trend_period, stop_pct)
 
 
 def tournament_select(
@@ -158,14 +178,15 @@ class GAResult:
 
 def _key(genome: Genome) -> tuple:
     """Hashable identity for fitness memoization (``params`` is an unhashable dict). Includes the
-    direction and stop genes so long/short or stopped/unstopped variants of the same family/pair/
-    params don't collide."""
+    direction, regime and stop genes so long/adaptive or stopped/unstopped variants of the same
+    family/pair/params don't collide."""
     return (
         genome.family,
         genome.pair,
         tuple(sorted(genome.params.items())),
-        genome.short,
+        genome.direction,
         genome.leverage,
+        genome.trend_period,
         genome.stop_pct,
     )
 

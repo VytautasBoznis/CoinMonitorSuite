@@ -4,7 +4,7 @@ from coinmon.data.models import Candle
 from coinmon.feed import BarView, CostModel
 from coinmon.strategies.atr_channel import ATRChannelBreakout
 from coinmon.strategies.base import Strategy
-from coinmon.strategies.directional import ShortWhenFlat
+from coinmon.strategies.directional import RegimeAdaptive, ShortWhenFlat
 from coinmon.strategies.ema_crossover import EMACrossover
 from coinmon.strategies.rsi_meanreversion import RSIMeanReversion
 from coinmon.strategies.stop_loss import StopLoss
@@ -160,6 +160,26 @@ def test_short_when_flat_turns_cash_into_short():
     w = ShortWhenFlat(inner)
     assert [w.on_bar(_bar(100.0)) for _ in inner.targets] == [1, -1, -1]
     assert inner.calls == 3  # consulted on every bar
+
+
+def test_regime_adaptive_stays_long_flat_in_an_uptrend():
+    # In a rising market the regime is up every bar, so the base signal passes straight through and
+    # NO bar is shorted — the exact mistake (shorting a rising holdout) the regime gene removes.
+    inner = _ScriptedInner([1, 0, 1, 0, 1])
+    s = RegimeAdaptive(inner, trend_period=3)
+    closes = [10.0, 11.0, 12.0, 13.0, 14.0]
+    assert [s.on_bar(_bar(c)) for c in closes] == [1, 0, 1, 0, 1]
+    assert inner.calls == 5  # base consulted exactly once per bar
+
+
+def test_regime_adaptive_shorts_the_would_be_flat_in_a_downtrend():
+    # Warmup (first trend_period bars) stays long/flat; once the down-regime is established each
+    # exit-to-cash becomes a short, so the falling market is ridden instead of merely sidestepped.
+    inner = _ScriptedInner([1, 0, 1, 0, 0])
+    s = RegimeAdaptive(inner, trend_period=3)
+    closes = [14.0, 13.0, 12.0, 11.0, 10.0]
+    assert [s.on_bar(_bar(c)) for c in closes] == [1, 0, 1, -1, -1]
+    assert inner.calls == 5  # base consulted exactly once per bar (warmup, up, or down branch)
 
 
 def test_precomputed_features_bypass_internal_compute():

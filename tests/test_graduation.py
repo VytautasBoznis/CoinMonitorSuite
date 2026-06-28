@@ -55,30 +55,30 @@ def test_graduate_passes_a_robust_edge():
     assert report.fragility.runs == 30
 
 
-def test_short_genome_outprofits_the_long_one_and_graduates_on_a_downtrend():
-    # The chunk-K payoff: on a falling market the SAME family/params run as a leveraged perp short
-    # captures the drift the long/flat book leaves on the table, so it both out-returns the spot
-    # genome and clears the absolute graduation gate. (On real downtrend data the long genome went
-    # outright NO-GO — see first-live-search-graduation; the gate stayed absolute and a bearish leg
-    # was added instead of softening it. A clean synthetic mean-reverter still profits long at zero
-    # fees, so here we assert the robust relationship rather than forcing the long to lose.)
+def test_adaptive_genome_outprofits_the_long_one_and_graduates_on_a_downtrend():
+    # The regime-adaptive payoff: on a falling market the SAME family/params run as a leveraged
+    # regime-adaptive perp read the down-regime and short the would-be-flat legs, capturing the
+    # drift the long/flat book leaves on the table — so it both out-returns the spot genome and
+    # clears the absolute graduation gate. Unlike a fixed short, direction here comes from the
+    # holdout's own measured trend, not an in-sample gene (see direction-gene-overfits-regime).
     holdout = _downtrend()
     long_genome = Genome(
         family="rsi_meanreversion", pair="BTC/USDC",
         params={"period": 14, "oversold": 30.0, "exit_level": 55.0},
     )
-    short_genome = Genome(
+    adaptive_genome = Genome(
         family="rsi_meanreversion", pair="BTC/USDC",
         params={"period": 14, "oversold": 30.0, "exit_level": 55.0},
-        short=True, leverage=2.0,
+        direction="adaptive", leverage=2.0, trend_period=20.0,
     )
     long_report = graduate(long_genome, holdout, taker_fee=0.0, fragility_runs=30)
-    short_report = graduate(short_genome, holdout, taker_fee=0.0, fragility_runs=30)
+    adaptive_report = graduate(adaptive_genome, holdout, taker_fee=0.0, fragility_runs=30)
 
-    assert short_report.holdout_return > long_report.holdout_return  # the short wins the downtrend
-    assert short_report.holdout_return > 0
-    assert short_report.passed  # the perp short graduates GO
-    assert short_report.reasons == ()
+    # the regime-adaptive genome wins the downtrend
+    assert adaptive_report.holdout_return > long_report.holdout_return
+    assert adaptive_report.holdout_return > 0
+    assert adaptive_report.passed  # the regime-adaptive perp graduates GO
+    assert adaptive_report.reasons == ()
 
 
 def test_graduate_rejects_a_genome_that_does_not_trade():

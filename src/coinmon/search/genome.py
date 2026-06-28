@@ -7,7 +7,7 @@ from coinmon.backtest.portfolio import PerpPortfolio, Portfolio, SpotPortfolio
 from coinmon.feed import CostModel
 from coinmon.strategies.atr_channel import ATRChannelBreakout
 from coinmon.strategies.base import Strategy
-from coinmon.strategies.directional import ShortWhenFlat
+from coinmon.strategies.directional import RegimeAdaptive
 from coinmon.strategies.ema_crossover import EMACrossover
 from coinmon.strategies.rsi_meanreversion import RSIMeanReversion
 
@@ -97,14 +97,23 @@ UNIVERSE: tuple[str, ...] = (
     "XRP/ETH", "SOL/ETH", "BNB/ETH",
 )
 
-# Chunk K2: directionality is a gene. ``short`` flips the account from long/flat spot to an
-# always-directional leveraged perp (the bearish leg — see [[perp-short-capability]]): the strategy
-# is wrapped in ``ShortWhenFlat`` so its exit-to-cash becomes a short, and the book becomes a
-# ``PerpPortfolio`` at ``leverage``. The GA chooses whether to short and how hard; the OOS fitness +
-# fragility + holdout gate is what punishes reckless leverage, not a hand-tuned cap. The leverage
-# range stays modest (a wider band just gets pruned out-of-sample). When ``short`` is False the
-# leverage gene is inert and the spot path is byte-unchanged (parity preserved).
+# Directionality is a gene, but NOT a fixed direction. A fixed per-genome ``short`` was the overfit
+# vector — chosen in-sample, blind to the holdout regime, so it bet the wrong way every live run
+# ([[direction-gene-overfits-regime]]). ``direction`` instead picks between:
+#   "long"     — long/flat spot (the chunk-B default; ``leverage``/``trend_period`` are inert).
+#   "adaptive" — a regime-adaptive leveraged perp (the bearish leg, [[perp-short-capability]]): the
+#                strategy is wrapped in ``RegimeAdaptive`` so it longs a rising market and shorts a
+#                falling one by reading the CURRENT-bar trend; the book is a ``PerpPortfolio`` at
+#                ``leverage``. The GA chooses whether to go adaptive and how hard to lever; the OOS
+#                fitness + fragility + holdout gate punishes reckless leverage, not a cap.
+# When ``direction`` is "long" the perp genes are inert and the spot path is byte-unchanged.
+DIRECTIONS: tuple[str, ...] = ("long", "adaptive")
 LEVERAGE = ParamSpec(1.0, 5.0)
+
+# The regime gene: the SMA window ``RegimeAdaptive`` uses to call up- vs down-regime. A slow range,
+# so it defines a *regime*, not noise — but a gene, not a hand-picked constant, so the OOS fitness
+# rejects a too-fast/whippy window rather than a tight prior choosing for us. Inert unless adaptive.
+TREND = ParamSpec(20, 200, integer=True)
 
 # Chunk L Part A: an intrabar stop-loss is a gene — the brake that lets the search keep leverage a
 # free gene without the ruin it caused ([[leverage-breaks-fitness-scaling]]). ``stop_pct`` is the
@@ -119,16 +128,18 @@ STOP = ParamSpec(0.02, 0.50)
 @dataclass(frozen=True)
 class Genome:
     """One search candidate: trade ``pair`` with strategy ``family`` configured by ``params``,
-    either long/flat on spot or (``short``) always-directional on a ``leverage``-x perp, optionally
-    braked by an intrabar ``stop_pct``. Frozen so a generation is a stable snapshot; ``params`` is a
-    plain dict (genomes aren't hashed). ``short``/``leverage``/``stop_pct`` default to long/flat
-    spot with no stop, so a genome built without them is the chunk-B behavior unchanged."""
+    either long/flat on spot (``direction="long"``) or regime-adaptive on a ``leverage``-x perp
+    with a ``trend_period`` regime window (``direction="adaptive"``), optionally braked by an
+    intrabar ``stop_pct``. Frozen so a generation is a stable snapshot; ``params`` is a plain dict
+    (genomes aren't hashed). The perp/regime/stop genes default to long/flat spot with no stop, so a
+    genome built without them is the chunk-B behavior unchanged."""
 
     family: str
     pair: str
     params: Mapping[str, float]
-    short: bool = False
+    direction: str = "long"
     leverage: float = 1.0
+    trend_period: float = 50.0
     stop_pct: float | None = None
 
 
@@ -150,10 +161,14 @@ def validate(genome: Genome) -> None:
     legs = genome.pair.split("/")
     if len(legs) != 2 or not all(legs):
         raise ValueError(f"pair must be BASE/QUOTE, got {genome.pair!r}")
+    if genome.direction not in DIRECTIONS:
+        raise ValueError(f"direction must be one of {DIRECTIONS}, got {genome.direction!r}")
     if not LEVERAGE.low <= genome.leverage <= LEVERAGE.high:
         raise ValueError(
             f"leverage={genome.leverage} outside [{LEVERAGE.low}, {LEVERAGE.high}]"
         )
+    if not TREND.low <= genome.trend_period <= TREND.high:
+        raise ValueError(f"trend_period={genome.trend_period} outside [{TREND.low}, {TREND.high}]")
     if genome.stop_pct is not None and not STOP.low <= genome.stop_pct <= STOP.high:
         raise ValueError(f"stop_pct={genome.stop_pct} outside [{STOP.low}, {STOP.high}]")
 
@@ -161,23 +176,24 @@ def validate(genome: Genome) -> None:
 def decode(genome: Genome) -> Callable[[], Strategy]:
     """Turn a genome into a zero-arg factory of FRESH strategies — the exact ``make_strategy``
     contract ``evaluate_fitness`` and the engine already consume. Each call builds a new instance
-    (strategies carry rolling state, so folds and stress runs must not share one). A ``short``
-    genome wraps the family in ``ShortWhenFlat`` so its exit-to-cash becomes a short — pair this
-    with ``decode_portfolio``'s perp book to actually profit from the drop."""
+    (strategies carry rolling state, so folds and stress runs must not share one). An ``adaptive``
+    genome wraps the family in ``RegimeAdaptive`` so it longs a rising market and shorts a falling
+    one by the current-bar trend — pair this with ``decode_portfolio``'s perp book to profit from
+    the drop."""
     validate(genome)
     family = FAMILIES[genome.family]
-    if genome.short:
-        return lambda: ShortWhenFlat(family.build(genome.params))
+    if genome.direction == "adaptive":
+        return lambda: RegimeAdaptive(family.build(genome.params), int(genome.trend_period))
     return lambda: family.build(genome.params)
 
 
 def decode_portfolio(genome: Genome) -> Callable[[float, float], Portfolio]:
     """Turn a genome into a ``(cash, taker_fee) -> Portfolio`` factory — the book the genome trades
-    in. A ``short`` genome trades a leveraged ``PerpPortfolio`` (the bearish leg); otherwise the
+    in. An ``adaptive`` genome trades a leveraged ``PerpPortfolio`` (it may short); otherwise the
     long/flat ``SpotPortfolio``. Separate from ``decode`` because the eval rig builds the strategy
     and the book at different points (fold loop, fragility, holdout) with different capital."""
     validate(genome)
-    if genome.short:
+    if genome.direction == "adaptive":
         leverage = genome.leverage
         return lambda cash, fee: PerpPortfolio(cash, fee, leverage)
     return lambda cash, fee: SpotPortfolio(cash, fee)

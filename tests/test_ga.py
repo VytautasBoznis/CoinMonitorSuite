@@ -26,21 +26,23 @@ def test_mutate_keeps_genome_valid():
 
 
 def test_random_genomes_explore_both_directions():
-    # chunk K2: the direction gene must actually vary, or the GA can never reach a short.
+    # the direction gene must actually vary, or the GA can never reach the regime-adaptive book.
     rng = random.Random(11)
     genomes = [random_genome(rng) for _ in range(200)]
-    assert any(g.short for g in genomes)
-    assert any(not g.short for g in genomes)
+    assert any(g.direction == "adaptive" for g in genomes)
+    assert any(g.direction == "long" for g in genomes)
     assert len({round(g.leverage, 3) for g in genomes}) > 1  # leverage spreads across its range
+    assert len({g.trend_period for g in genomes}) > 1  # the regime window spreads too
 
 
 def test_mutate_can_flip_direction():
     rng = random.Random(12)
     g = Genome(
         "rsi_meanreversion", "XRP/ETH", {"period": 14, "oversold": 30.0, "exit_level": 50.0},
-        short=False, leverage=1.0,
+        direction="long", leverage=1.0,
     )
-    assert any(mutate(g, rng).short for _ in range(200))  # flat genome can become a short
+    # a long genome can become regime-adaptive
+    assert any(mutate(g, rng).direction == "adaptive" for _ in range(200))
 
 
 def test_random_genomes_explore_stop_on_and_off():

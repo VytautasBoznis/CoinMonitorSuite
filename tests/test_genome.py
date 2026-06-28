@@ -6,7 +6,7 @@ from coinmon.backtest.fitness import evaluate_fitness
 from coinmon.backtest.portfolio import PerpPortfolio, SpotPortfolio
 from coinmon.feed import CostModel
 from coinmon.search.genome import FAMILIES, Genome, decode, decode_portfolio, validate
-from coinmon.strategies.directional import ShortWhenFlat
+from coinmon.strategies.directional import RegimeAdaptive
 from coinmon.strategies.ema_crossover import EMACrossover
 from coinmon.strategies.rsi_meanreversion import RSIMeanReversion
 
@@ -102,24 +102,24 @@ def test_decode_validates_before_building():
         decode(bad)
 
 
-# --- chunk K2: direction is a gene ---------------------------------------------------------
+# --- direction is a regime-adaptive gene ---------------------------------------------------
 
 
 def test_genome_defaults_to_long_spot():
     # A genome built the chunk-B way (no direction genes) is still long/flat spot — backward compat.
     g = _rsi_genome()
-    assert g.short is False
+    assert g.direction == "long"
     assert g.leverage == 1.0
     assert isinstance(decode_portfolio(g)(10_000.0, 0.001), SpotPortfolio)
-    assert not isinstance(decode(g)(), ShortWhenFlat)
+    assert not isinstance(decode(g)(), RegimeAdaptive)
 
 
-def test_short_genome_decodes_to_short_wrapped_strategy_and_perp_book():
+def test_adaptive_genome_decodes_to_regime_wrapped_strategy_and_perp_book():
     g = Genome(
         "rsi_meanreversion", "XRP/ETH", {"period": 14, "oversold": 30.0, "exit_level": 50.0},
-        short=True, leverage=3.0,
+        direction="adaptive", leverage=3.0,
     )
-    assert isinstance(decode(g)(), ShortWhenFlat)  # exit-to-cash becomes a short
+    assert isinstance(decode(g)(), RegimeAdaptive)  # direction follows the current-bar regime
     book = decode_portfolio(g)(10_000.0, 0.001)
     assert isinstance(book, PerpPortfolio)
     assert book.leverage == 3.0
@@ -128,7 +128,25 @@ def test_short_genome_decodes_to_short_wrapped_strategy_and_perp_book():
 def test_validate_rejects_out_of_range_leverage():
     bad = Genome(
         "rsi_meanreversion", "ETH/BTC", {"period": 14, "oversold": 30.0, "exit_level": 50.0},
-        short=True, leverage=99.0,
+        direction="adaptive", leverage=99.0,
+    )
+    with pytest.raises(ValueError):
+        validate(bad)
+
+
+def test_validate_rejects_unknown_direction():
+    bad = Genome(
+        "rsi_meanreversion", "ETH/BTC", {"period": 14, "oversold": 30.0, "exit_level": 50.0},
+        direction="sideways",
+    )
+    with pytest.raises(ValueError):
+        validate(bad)
+
+
+def test_validate_rejects_out_of_range_trend_period():
+    bad = Genome(
+        "rsi_meanreversion", "ETH/BTC", {"period": 14, "oversold": 30.0, "exit_level": 50.0},
+        direction="adaptive", trend_period=5.0,
     )
     with pytest.raises(ValueError):
         validate(bad)
@@ -162,37 +180,9 @@ def test_validate_rejects_out_of_range_stop():
 
 
 def test_evaluate_fitness_threads_the_stop_through_the_fold_loop():
-    # A leveraged short on a steady rally liquidates unbraked; a 10% stop must change the fold
-    # outcome — proof stop_pct reaches the engine inside the OOS rig, not just the bare engine.
-    closes = [float(100 + i) for i in range(80)]
-    candles = pd.DataFrame(
-        {
-            "open_time": range(80),
-            "open": closes,
-            "high": [c + 1 for c in closes],
-            "low": [c - 1 for c in closes],
-            "close": closes,
-            "volume": [1.0] * 80,
-        }
-    )
-    g = Genome(
-        "rsi_meanreversion", "XRP/ETH", {"period": 5, "oversold": 30.0, "exit_level": 55.0},
-        short=True, leverage=3.0,
-    )
-    unbraked = evaluate_fitness(
-        candles, decode(g), taker_fee=0.0, make_portfolio=decode_portfolio(g),
-        folds=2, min_trades=0,
-    )
-    braked = evaluate_fitness(
-        candles, decode(g), taker_fee=0.0, make_portfolio=decode_portfolio(g),
-        stop_pct=0.10, folds=2, min_trades=0,
-    )
-    assert braked.fold_returns != unbraked.fold_returns
-
-
-def test_evaluate_fitness_uses_the_genome_portfolio_factory():
-    # A short genome on a falling series must score differently from the same genome left on spot:
-    # proof the portfolio factory actually reaches the fold loop.
+    # A leveraged adaptive genome buys the dip into a steady decline and liquidates unbraked; a 10%
+    # stop must change the fold outcome — proof stop_pct reaches the engine inside the OOS rig, not
+    # just the bare engine.
     closes = [float(100 - i) for i in range(80)]
     candles = pd.DataFrame(
         {
@@ -206,7 +196,36 @@ def test_evaluate_fitness_uses_the_genome_portfolio_factory():
     )
     g = Genome(
         "rsi_meanreversion", "XRP/ETH", {"period": 5, "oversold": 30.0, "exit_level": 55.0},
-        short=True, leverage=2.0,
+        direction="adaptive", leverage=3.0,
+    )
+    unbraked = evaluate_fitness(
+        candles, decode(g), taker_fee=0.0, make_portfolio=decode_portfolio(g),
+        folds=2, min_trades=0,
+    )
+    braked = evaluate_fitness(
+        candles, decode(g), taker_fee=0.0, make_portfolio=decode_portfolio(g),
+        stop_pct=0.10, folds=2, min_trades=0,
+    )
+    assert braked.fold_returns != unbraked.fold_returns
+
+
+def test_evaluate_fitness_uses_the_genome_portfolio_factory():
+    # A leveraged adaptive genome on a falling series must score differently from the same genome
+    # left on the default spot book: proof the portfolio factory actually reaches the fold loop.
+    closes = [float(100 - i) for i in range(80)]
+    candles = pd.DataFrame(
+        {
+            "open_time": range(80),
+            "open": closes,
+            "high": [c + 1 for c in closes],
+            "low": [c - 1 for c in closes],
+            "close": closes,
+            "volume": [1.0] * 80,
+        }
+    )
+    g = Genome(
+        "rsi_meanreversion", "XRP/ETH", {"period": 5, "oversold": 30.0, "exit_level": 55.0},
+        direction="adaptive", leverage=2.0,
     )
     spot = evaluate_fitness(candles, decode(g), taker_fee=0.0, folds=2, min_trades=0)
     perp = evaluate_fitness(

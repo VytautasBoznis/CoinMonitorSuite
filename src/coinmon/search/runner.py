@@ -62,7 +62,9 @@ class SearchReport:
     def summary(self) -> str:
         p = ", ".join(f"{k}={v:g}" for k, v in sorted(self.best.params.items()))
         book = (
-            f"{self.best.leverage:.1f}x perp short" if self.best.short else "long/flat spot"
+            f"{self.best.leverage:.1f}x perp regime-adaptive (MA{int(self.best.trend_period)})"
+            if self.best.direction == "adaptive"
+            else "long/flat spot"
         )
         stop = f", {self.best.stop_pct:.0%} stop" if self.best.stop_pct is not None else ""
         lines = [

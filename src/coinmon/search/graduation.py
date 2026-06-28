@@ -35,7 +35,9 @@ class GraduationReport:
     def summary(self) -> str:
         verdict = "GO" if self.passed else "NO-GO"
         book = (
-            f"{self.genome.leverage:.1f}x perp short" if self.genome.short else "long/flat spot"
+            f"{self.genome.leverage:.1f}x perp regime-adaptive (MA{int(self.genome.trend_period)})"
+            if self.genome.direction == "adaptive"
+            else "long/flat spot"
         )
         stop = f", {self.genome.stop_pct:.0%} stop" if self.genome.stop_pct is not None else ""
         lines = [

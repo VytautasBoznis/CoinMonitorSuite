@@ -148,6 +148,20 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
   --stress 80`): expect the GA to pair leverage with a protective stop and finally graduate GO. A
   risk-adjusted (return/drawdown) fold metric stays a fallback if the stop alone doesn't close it.
 
+- [x] **M — Regime-adaptive direction.** (2026-06-28) The fix for [[direction-gene-overfits-regime]]:
+  the fixed `short` gene was chosen in-sample and blind to the holdout regime, so every live NO-GO was a
+  wrong-direction bet. User decided: REPLACE `short: bool` with `direction ∈ {long, adaptive}` (overfit
+  vector removed, not just reachable) and make the regime window a searchable gene. New
+  `strategies/directional.RegimeAdaptive(base, trend_period)` reads a point-in-time SMA of seen closes —
+  up-regime (close ≥ SMA) runs the base long/flat (won't short a rising holdout), down-regime applies
+  `ShortWhenFlat` (shorts the would-be-flat legs, rides a falling holdout); reuses the same ShortWhenFlat
+  instance and calls the base exactly once/bar. `Genome.direction`/`trend_period` (TREND=ParamSpec(20,200),
+  inert when long); `decode`→RegimeAdaptive+perp; GA sample/mutate/cross + `_key`; summaries say
+  "Lx perp regime-adaptive (MA…)". `direction="long"` is byte-unchanged spot (parity). 131 tests green
+  (+4), ruff clean (only pre-existing walkforward/viewer E501s). **Live downtrend-GO proof is the next user
+  run** (`search --timeframe 1d --holdout 0.2 --stress 80`): does reading the holdout's own regime finally
+  graduate GO where the fixed gene NO-GO'd? Caveat: not guaranteed on a *choppy* crash ([[chunk-l-live-validation]]).
+
 - [ ] **G — Phase 2: suggestions service.** Service runs the graduated strategy live (paper) and
   emits trade suggestions; no execution. Dockerized; FastAPI control-plane begins.
   *Blocked on: how suggestions are delivered (log/webhook/Telegram/UI).* Verify: emits a correct

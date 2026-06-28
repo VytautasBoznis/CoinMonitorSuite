@@ -184,11 +184,21 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
     Strategy object). 145 tests green (+14: bit-parity vs full-series recompute, exact `==`, periods 2–40).
     **Measured: 5380× faster at n=4000** (gap widens with n; O(n²)→O(n)), bit-parity confirmed. Changed files
     ruff-clean (pre-existing walkforward B905 + walkforward/viewer E501 untouched). Next: N2 (CPU multiprocessing).
-  - **N2 — CPU multiprocessing.** Population/folds/fragility/seeds are embarrassingly parallel. Fan the per-genome
-    fitness map across cores (the Ryzen). MUST stay deterministic: parallelize the pure `genome→float`, never the
-    RNG stream. Windows = spawn (picklable workers / reload candles from DB). Verify: identical results to serial,
-    ~Ncores× faster. (GPU/4060 deferred — it needs a vectorized batch-engine rewrite that breaks live-parity; only
-    worth it after O(n²) is gone and we're still compute-bound at 100k-genome scale.)
+  - [x] **N2 — CPU multiprocessing.** (2026-06-28) Fanned the per-genome fitness map across a process pool while
+    keeping the GA's RNG stream serial in the parent — `ga.evolve` gained an optional `score_batch` (default = serial
+    map; the GA still memoizes + intra-batch dedups, so workers never re-score a known genome), and `search/parallel.py`
+    (`ParallelScorer`/`WorkerContext`/`_score_one`) runs a `ProcessPoolExecutor` whose order-preserving `map` makes
+    parallel **bit-identical to serial** (proven by a real-spawn test). Windows spawn handled by preloading the whole
+    UNIVERSE in the parent and shipping the picklable candle dict to each worker via the pool initializer (no DB/conn
+    in workers); the worker reuses the runner's exact `_score_genome`. `run_search(workers=…)` (0 = all cores, 1 =
+    byte-unchanged serial) + CLI `search --workers N`. 148 tests green (+3), ruff clean. **Measured (12 cores):**
+    speedup depends entirely on per-genome cost now that N1 made it cheap — at small/daily scale spawn+IPC overhead
+    makes parallel *slower* (~0.4×), but at a heavy load (6000 bars, pop 80, gens 12, 8 folds) it's **2.61× faster**,
+    identical results. Sub-linear because of Windows spawn cost, the per-generation serial barrier (RNG selection idles
+    workers between gens), and memoization shrinking the parallelizable set. **So default stays serial; the win is
+    reserved for the heavy regimes N4 (100 pairs) and Q (tree-GP) push toward.** See [[n2-parallelism-overhead]].
+    (GPU/4060 deferred — it needs a vectorized batch-engine rewrite that breaks live-parity; only worth it after O(n²)
+    is gone and we're still compute-bound at 100k-genome scale.)
   - **N3 — Stricter gate: min-trades → 15.** Trivial (`graduate_min_trades` default), high signal: the sweep's
     GOs were thin-trade (5–7) low-evidence genomes; 15 forces real sample size. "Maybe more later."
   - **N4 — Expand the pair universe (~12 → ~100).** REALITY: ~100 pairs = scrape ~12–15 base coins, then ratios

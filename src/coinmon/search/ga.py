@@ -196,23 +196,40 @@ def evolve(
     config: GAConfig,
     *,
     rng: random.Random | None = None,
+    score_batch: Callable[[list[Genome]], list[float]] | None = None,
 ) -> GAResult:
     """Run the GA: random initial population, then ``generations`` rounds of elitism + tournament
     selection + crossover + mutation, maximizing ``fitness``. Returns the best genome and the
     per-generation fitness history. Fitness is memoized by genome identity so the expensive
     backtest isn't repeated for carried-over elites or duplicate children — perf is the binding
-    GA constraint (see [[chunk-a-findings]])."""
+    GA constraint (see [[chunk-a-findings]]).
+
+    The RNG stream (population, mutation, crossover, selection) is serial and seed-deterministic;
+    only the per-genome fitness MAP is parallelizable. ``score_batch`` (chunk N2) scores a list of
+    genomes at once — a process pool can fan it across cores. Because each fitness is a pure,
+    RNG-free ``genome -> float``, an order-preserving parallel map is bit-identical to serial, so
+    determinism holds regardless of ``score_batch``. Default: a serial map over ``fitness``."""
     rng = rng or random.Random(config.seed)
     cache: dict[tuple, float] = {}
+    if score_batch is None:
+        def score_batch(genomes: list[Genome]) -> list[float]:
+            return [fitness(g) for g in genomes]
 
     def score(genomes: list[Genome]) -> list[tuple[Genome, float]]:
-        out = []
+        # Score only the genomes not already memoized, deduped within this batch, then map them in
+        # one call so the batch scorer can parallelize. Results stay aligned with ``pending`` order
+        # (the map is order-preserving), so the cache fills correctly and the run is deterministic.
+        pending: list[Genome] = []
+        seen: set[tuple] = set()
         for g in genomes:
             key = _key(g)
-            if key not in cache:
-                cache[key] = fitness(g)
-            out.append((g, cache[key]))
-        return out
+            if key not in cache and key not in seen:
+                seen.add(key)
+                pending.append(g)
+        if pending:
+            for g, f in zip(pending, score_batch(pending), strict=True):
+                cache[_key(g)] = f
+        return [(g, cache[_key(g)]) for g in genomes]
 
     population = [random_genome(rng) for _ in range(config.population)]
     scored = sorted(score(population), key=lambda sg: sg[1], reverse=True)

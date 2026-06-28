@@ -204,6 +204,7 @@ def _search(args: argparse.Namespace) -> None:
             fragility_runs=args.stress,
             holdout_fraction=args.holdout,
             graduate_min_trades=args.graduate_min_trades,
+            workers=args.workers,
         )
     finally:
         conn.close()
@@ -335,6 +336,14 @@ def build_parser() -> argparse.ArgumentParser:
         default=5,
         metavar="N",
         help="minimum holdout trades for the graduation gate to pass (with --holdout)",
+    )
+    p_search.add_argument(
+        "--workers",
+        type=int,
+        default=1,
+        metavar="N",
+        help="CPU processes for the per-genome fitness map (0 = all cores; 1 = serial, default). "
+        "Identical results to serial — only the pure genome scoring is parallelized.",
     )
     p_search.set_defaults(func=_search)
 

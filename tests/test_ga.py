@@ -2,6 +2,7 @@ import random
 
 from coinmon.search.ga import (
     GAConfig,
+    _key,
     crossover,
     evolve,
     mutate,
@@ -136,6 +137,33 @@ def test_evolve_history_length_matches_generations():
 
     result = evolve(fitness, GAConfig(population=6, generations=4, seed=1))
     assert [h.index for h in result.history] == [0, 1, 2, 3]
+
+
+def test_evolve_score_batch_matches_serial_fitness():
+    # Chunk N2: scoring through a batch map (what the parallel scorer plugs into) must reproduce the
+    # default serial path exactly — the RNG stream is unchanged, so only the fitness map differs.
+    def fitness(g):
+        return float(g.params.get("period", g.params.get("fast", 0)))
+
+    cfg = GAConfig(population=12, generations=6, seed=7)
+    serial = evolve(fitness, cfg)
+    batched = evolve(fitness, cfg, score_batch=lambda gs: [fitness(g) for g in gs])
+    assert batched.best == serial.best
+    assert batched.best_fitness == serial.best_fitness
+    assert [h.best_fitness for h in batched.history] == [h.best_fitness for h in serial.history]
+
+
+def test_evolve_score_batch_sees_each_genome_at_most_once():
+    # Memoization + intra-batch dedup means the expensive scorer never re-runs a genome it already
+    # scored — so a process pool isn't handed redundant work across generations.
+    seen: list[tuple] = []
+
+    def score_batch(genomes):
+        seen.extend(_key(g) for g in genomes)
+        return [0.0] * len(genomes)  # constant => elites/duplicates recur
+
+    evolve(lambda g: 0.0, GAConfig(population=10, generations=10, seed=2), score_batch=score_batch)
+    assert len(seen) == len(set(seen))
 
 
 def test_evolve_memoizes_fitness_calls():

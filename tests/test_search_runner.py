@@ -53,6 +53,18 @@ def test_run_search_is_deterministic_for_a_seed():
     assert a.fitness.fitness == b.fitness.fitness
 
 
+def test_run_search_parallel_matches_serial():
+    # Chunk N2: fanning the per-genome fitness map across processes must yield the IDENTICAL run as
+    # serial — only the pure genome->float is parallelized, never the seeded RNG stream.
+    serial = run_search(_read, taker_fee=0.0, config=_CFG, fitness_params=_FP)
+    parallel = run_search(_read, taker_fee=0.0, config=_CFG, fitness_params=_FP, workers=2)
+    assert parallel.best == serial.best
+    assert parallel.fitness.fitness == serial.fitness.fitness
+    assert [h.best_fitness for h in parallel.ga.history] == [
+        h.best_fitness for h in serial.ga.history
+    ]
+
+
 def test_run_search_runs_fragility_gate_when_requested():
     report = run_search(
         _read, taker_fee=0.0, config=_CFG, fitness_params=_FP, fragility_runs=10

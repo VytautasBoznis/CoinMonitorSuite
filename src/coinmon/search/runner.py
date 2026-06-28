@@ -9,7 +9,7 @@ from coinmon.backtest.fitness import FitnessResult, evaluate_fitness
 from coinmon.backtest.stress import MonteCarloResult, run_monte_carlo
 from coinmon.data.candles import load_candles, split_holdout
 from coinmon.search.ga import GAConfig, GAResult, evolve
-from coinmon.search.genome import Genome, decode, decode_portfolio
+from coinmon.search.genome import UNIVERSE, Genome, decode, decode_portfolio
 from coinmon.search.graduation import GraduationReport, graduate
 
 # Chunk C orchestration: glue the pure GA (search/ga.py) to real data and the honest score.
@@ -106,6 +106,41 @@ def fragility_verdict(result: MonteCarloResult, min_fraction_positive: float) ->
     return result.fraction_positive >= min_fraction_positive
 
 
+def _preload_universe(cache: CandleCache) -> dict[str, pd.DataFrame]:
+    """Resolve every UNIVERSE pair up front so the per-pair frames can be shipped to worker
+    processes (the serial path loads them lazily; parallel needs them all). A pair that fails to
+    load becomes an empty frame, which the worker maps to ``-inf`` — the same result the serial
+    fitness gives when ``load_candles`` raises."""
+    empty = pd.DataFrame({c: [] for c in ("open_time", "open", "high", "low", "close", "volume")})
+    frames: dict[str, pd.DataFrame] = {}
+    for pair in UNIVERSE:
+        try:
+            frames[pair] = cache.get(pair)
+        except (ValueError, KeyError):
+            frames[pair] = empty
+    return frames
+
+
+def _evolve(
+    fitness: Callable[[Genome], float],
+    config: GAConfig,
+    cache: CandleCache,
+    taker_fee: float,
+    fitness_params: FitnessParams,
+    holdout_fraction: float,
+    workers: int,
+) -> GAResult:
+    """Run the GA serially (``workers == 1``) or fan the fitness map across a process pool. Import
+    of the parallel scorer is deferred so the serial path carries no multiprocessing dependency."""
+    from coinmon.search.parallel import ParallelScorer, WorkerContext, resolve_workers
+
+    if resolve_workers(workers) == 1:
+        return evolve(fitness, config)
+    ctx = WorkerContext(_preload_universe(cache), taker_fee, fitness_params, holdout_fraction)
+    with ParallelScorer(ctx, workers) as scorer:
+        return evolve(fitness, config, score_batch=scorer)
+
+
 def run_search(
     read: Callable[[str], pd.DataFrame],
     taker_fee: float,
@@ -116,6 +151,7 @@ def run_search(
     fragility_min_positive: float = 0.9,
     holdout_fraction: float = 0.0,
     graduate_min_trades: int = 5,
+    workers: int = 1,
 ) -> SearchReport:
     """Run the GA over genomes scored by OOS fitness, then gate the winner.
 
@@ -125,7 +161,11 @@ def run_search(
     *before* evolution, the GA scores only the search head, and the winner is graduated on the
     never-seen holdout tail (full fragility + go/no-go). The fragility post-filter is skipped in
     this mode — graduation supersedes it. A genome whose pair has too little data (or any scoring
-    error) is assigned ``-inf`` so the GA discards it rather than crashing the run."""
+    error) is assigned ``-inf`` so the GA discards it rather than crashing the run.
+
+    ``workers`` (chunk N2) fans the per-genome fitness map across CPU cores (``<= 0`` = all cores);
+    ``1`` (default) keeps the serial path byte-unchanged. The result is identical regardless of
+    worker count — only the pure ``genome -> float`` is parallelized, never the RNG stream."""
     cache = CandleCache(read)
 
     def search_span(pair: str) -> pd.DataFrame:
@@ -139,7 +179,7 @@ def run_search(
         except (ValueError, KeyError):  # too few bars for the folds/embargo, or missing legs
             return float("-inf")
 
-    ga = evolve(fitness, config)
+    ga = _evolve(fitness, config, cache, taker_fee, fitness_params, holdout_fraction, workers)
     if ga.best_fitness == float("-inf"):
         raise SystemExit("no genome could be scored — is the candle data present for the UNIVERSE?")
 

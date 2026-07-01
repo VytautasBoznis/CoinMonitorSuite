@@ -9,6 +9,7 @@ This file indexes all memory files for the CoinMonitorSuite project.
 - [fragility-stress-test](fragility-stress-test.md) — Monte Carlo latency/slippage stress test as a kill-filter for thin-margin strategies before live
 - [blackbox-evolutionary-vision](blackbox-evolutionary-vision.md) — north star: engine = live-compatible black-box exchange; sequential non-atomic legs; evolutionary/GA search is the long-term path to alpha
 - [user-quant-background](user-quant-background.md) — user has limited quant math; relies on the eval rig + search, not hand-derived strategies
+- [no-strategy-preference](no-strategy-preference.md) — user has ZERO strategy/indicator preference (RSI anchoring was a past model's error); only "winnable/certified" matters — never favor a family from a mention, let the certificate decide
 - [deployment-target-k8s](deployment-target-k8s.md) — runs in a Kubernetes cluster; every component must ship as a Docker image; config via env/ConfigMaps
 - [feature-store-seam](feature-store-seam.md) — BarView point-in-time feature-snapshot contract; future post-scraper indicator engine (compute-sharing for many bots), kept as cache not contract; engine itself deferred
 - [backtester-reads-timescaledb](backtester-reads-timescaledb.md) — backtester loads candles from TimescaleDB (db.read_candles), not Parquet; store.py/fetch-data retired (brief said Parquet, reality is the scraper's Timescale)
@@ -33,6 +34,7 @@ This file indexes all memory files for the CoinMonitorSuite project.
 - [first-golden-structural-edge](first-golden-structural-edge.md) — the 30-seed grind (pop300/80gens): FIRST GOLDEN — rsi_meanreversion BNB/ETH adaptive 2x; looked like a structural edge, but REFUTED by the nested holdout below (regime-specific artifact)
 - [nested-holdout-refutes-golden](nested-holdout-refutes-golden.md) — strict temporal nested holdout REFUTES the golden edge: move the holdout regime and 0 golden appear / RSI(2) genome never recurs / dev-GO genomes go 0/2 OOS (lose to B&H). Confirms overfitting; gate is defensive but 'passed gate' != 'persistent edge'
 - [walk-forward-stability-harness](walk-forward-stability-harness.md) — chunk S: `coinmon stability` re-runs the full search on rolling windows + measures selection agreement (winners recur?) + forward persistence (a window's GO survive the next window's unseen bars?); rolling generalization of the nested-holdout refutation, diagnostic only
+- [alpha-definition-edge-certificate](alpha-definition-edge-certificate.md) — THE definition of alpha (the "≥51%"): pooled-OOS-ledger Edge Certificate (N≥300 trades, Wilson bound >0.50, expectancy CI >0, beats nulls, ≥2 regimes); plan in .claude/plans/alpha-hunt.md, chunks T–Y
 - [build-roadmap](build-roadmap.md) — the chunked plan to finish the project (one chunk ≈ one session); source of truth for what's next
 - [session-build-loop](session-build-loop.md) — how each session runs: read memory → do next roadmap chunk → ask blockers → deliver a commit message
 - [user-commits-themselves](user-commits-themselves.md) — never run git commit; hand over a commit message and stop

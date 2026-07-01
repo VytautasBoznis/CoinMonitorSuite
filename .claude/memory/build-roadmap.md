@@ -356,6 +356,41 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
   the old RSI walk-forward) and the current 5-base DB gives only ~3 windows on one broad regime — a
   cleaner read needs more scraped bases ([[nested-holdout-refutes-golden]] prerequisite still holds).
 
+- [ ] **T→Y — THE ALPHA HUNT (current focus; full plan in `.claude/plans/alpha-hunt.md`).**
+  (2026-07-02) The nested holdout ([[nested-holdout-refutes-golden]]) proved the judge works but
+  the questions are unanswerable: verdicts ride on 13–20 holdout trades (win-rate SE ~11pp — the
+  noise floor is 10× a 51% edge), the gate scores one-regime equity (a regime bet, not an edge),
+  the families never left the RSI/price-shape valley, and no explicit null prices the
+  multiple-comparisons burden. Alpha is REDEFINED as the **Edge Certificate**
+  ([[alpha-definition-edge-certificate]]): pooled OOS trade ledger, N ≥ 300, win rate ≥ 51% with
+  Wilson 95% lower bound > 0.50, expectancy bootstrap-CI > 0, beats a 3-null distribution,
+  positive in ≥ 2 regimes, fragility intact. Chunks (one per session, in order):
+  - [ ] **T — Data expansion.** ~25–30 USDC bases (→ 300+ auto-built pairs), 1d + 4h, funding-rate
+    history table; then finally run `coinmon stability` live (chunk S, built, never run).
+  - [ ] **U — Trade ledger + Edge Certificate.** Expose per-trade records in `BacktestResult`;
+    `search/evidence.py` (pooling across decorrelated pairs × rolling-window holdouts, Wilson
+    bound, block-bootstrap expectancy CI); CLI `coinmon certify`; acceptance = the refuted
+    BNB/ETH RSI(2) golden must NOT certify.
+  - [ ] **V — Null calibration.** `search/nullmodel.py`: random-genome null, exposure-matched
+    random-entry null, joint-block-bootstrap surrogate-data null (full search on signal-destroyed
+    data); CLI `coinmon nullcheck`; C4 of the certificate consumes these.
+  - [ ] **W — New signal families (escape the RSI valley).** W1 `ratio_momentum` (cross-coin
+    relative strength — the documented effect), W2 weekday/hour seasonality modifier gene,
+    W3 `funding_carry` (needs T), W4 `donchian_breakout`, W5 cross-sectional top-k rotation
+    (design-only, gated on W1 certifying). **T0 probe results (2026-07-02, `probes/`, frozen
+    rules in the plan §1.5): H1 ratio momentum PASS** (5/8 series positive median OOS, 56% of
+    32 pooled folds, ~440 pooled trades — W1 promoted to right after U), **H6 funding carry
+    PASS on the carry leg** (BTC +4.6%/yr, ETH +5.7%/yr to shorts, IC≈0 → W3 reshaped as
+    carry CAPTURE, not an entry signal), **H2 weekday FAIL** (1/35 significant = chance, W2
+    last), **H4 BTC→alt lead-lag FAIL decisively** (lag-1 ≈ −0.03 all alts → family dropped).
+    H3 (4h fees) and H5 (pooling floor) pending 4h scrape / U1 ledger.
+  - [ ] **X — 4h evidence multiplication.** Same pipeline at 4h (≈6× bars/trades; net-of-cost
+    ledger prices the fee risk honestly).
+  - [ ] **Y — The certified sweep + ensemble (payoff).** Heavy multi-seed sweep over everything;
+    certify winners AND the top-k-decorrelated ensemble; two honest outcomes — a CERTIFIED
+    strategy (→ chunk G forward paper, unpark Q) or a calibrated negative (nulls explain all →
+    pivot to carry/cross-sectional/alt-data, stop burning compute in the valley).
+
 - [ ] **Q — Full tree-GP (the endpoint).** Genomes = typed expression trees over the indicator pool + operators /
   constants / price-fields; a strongly-typed grammar so crossover can't make `RSI(close > 30)` garbage; subtree
   crossover + subtree/point mutation; **bloat control** (depth/size caps + parsimony pressure in fitness — the
@@ -366,6 +401,10 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
   O (GP is a vastly stronger overfitting engine; the single-holdout gate validated against a 6-gene GA would get
   rubber-stamped to death without the meaner judge) AND ideally P's evidence that the gate scales. Nothing here is
   architecturally blocked today — the blocker is JUDGE-READINESS + SPEED, not plumbing.
+  **(2026-07-02) Additionally gated on chunk Y:** tree-GP only unparks if the Edge Certificate +
+  null machinery (T→Y above) demonstrably hold against the existing families first — a vastly
+  stronger overfitting engine pointed at an uncalibrated target would just re-manufacture the
+  refuted-golden failure at scale.
 
 - [ ] **R — Tiered, regime-conditional allocation (deployment policy).** (user idea) A multi-strategy book on top
   of the O tags: a `golden` (structural) CORE plus `specialist` (pair-tailored) sleeves, with capital allocated by

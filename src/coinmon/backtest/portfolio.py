@@ -41,6 +41,11 @@ class Portfolio(ABC):
         """Mark-to-market account value at the given price."""
         raise NotImplementedError
 
+    def apply_funding(self, rate: float, price: float) -> None:
+        """Apply one bar's perp funding cashflow to the open position. Spot pays no funding, so
+        the default is a no-op; only ``PerpPortfolio`` overrides it (chunk W3)."""
+        return None
+
 
 class SpotPortfolio(Portfolio):
     """Long/flat spot account. A rotation is two sequential taker fills, both charged.
@@ -97,8 +102,9 @@ class PerpPortfolio(Portfolio):
     trade, the account dead for the rest of the run). Simplifications kept honest for a first
     model: liquidation is checked on the bar CLOSE only (an intrabar wick that liquidates then
     recovers is missed), no maintenance-margin buffer (liq at mark <= 0, marginally generous),
-    and no funding. The eval rig (OOS fitness + fragility + holdout) is what punishes reckless
-    leverage — not a hand-tuned cap here.
+    and funding is charged per bar as an aggregate of the 8h settlements (``apply_funding``,
+    chunk W3) rather than at each settlement's own price. The eval rig (OOS fitness + fragility +
+    holdout) is what punishes reckless leverage — not a hand-tuned cap here.
     """
 
     def __init__(self, cash: float, taker_fee: float, leverage: float = 1.0) -> None:
@@ -147,3 +153,16 @@ class PerpPortfolio(Portfolio):
             self._liquidated = True
             return 0.0
         return mark
+
+    def apply_funding(self, rate: float, price: float) -> None:
+        """Debit/credit one bar's funding cashflow on the open position. When ``rate`` > 0 longs
+        pay shorts, so the holder's cash changes by ``-units * price * rate`` (``units`` signed): a
+        long (units > 0) bleeds, a short (units < 0) collects — the documented carry premium
+        (chunk W3, probe H6). Applied once per bar to the position held at the bar close, on a
+        rate that is the sum of the bar's 8h settlements (the granularity the backtest's bar prices
+        support, like the close-only liquidation check). Funding is a realized cashflow into
+        ``cash``, so it flows into equity, the round-trip PnL, and can tip an over-levered position
+        into liquidation — no separate accounting needed. No-op when flat or already liquidated."""
+        if self._liquidated or self._target == 0:
+            return
+        self.cash -= self.units * price * rate

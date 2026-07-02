@@ -484,6 +484,17 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
     that test's budget to pop40/gens20 (converges on all 8 probed seeds — robust to family count, not a
     lucky seed), NOT by cherry-picking. 333 tests green (+16 donchian, mirrors the W1 file), ruff clean.
     Engine smoke: enters on gap-up breakouts, exits on the ATR stop. Not yet run live. See [[build-roadmap]] W.
+    **W3 step 1 DONE (2026-07-02):** W3 (`funding_carry`) is NOT registration-only — H6 reshaped it to
+    carry CAPTURE (funding is a collectible premium, IC≈0), which needs structural seams, so the user
+    split it into sessions. Step 1 = honest funding cashflow: `PerpPortfolio.apply_funding(rate, price)`
+    (`cash -= units*price*rate`; rate>0 ⇒ long pays / short collects; no-op flat/liquidated; base
+    `Portfolio.apply_funding` a concrete NO-OP so spot inherits "no funding") + `BarStepper.step(candle,
+    funding_rate=None)` / `BacktestEngine.run(candles, funding=None)` charging the held position AND
+    exposing `funding_rate` as a BarView feature; `None` = byte-unchanged (parity preserved). Per-bar
+    aggregate of the 8h settlements at bar close (backtest granularity). 342 tests green (+10), ruff clean.
+    Funding flows into cash ⇒ equity/PnL/liquidation automatically. **Step 2 (next): alignment helper
+    (8h `db.read_funding` → per-bar array) + runner/live wiring + the `funding_carry` FAMILY + hedged
+    carry structure.** See [[w3-funding-cashflow]].
   - [ ] **X — 4h evidence multiplication.** Same pipeline at 4h (≈6× bars/trades; net-of-cost
     ledger prices the fee risk honestly).
   - [ ] **Y — The certified sweep + ensemble (payoff).** Heavy multi-seed sweep over everything;

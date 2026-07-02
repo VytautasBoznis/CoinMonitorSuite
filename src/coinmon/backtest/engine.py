@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 import pandas as pd
@@ -56,10 +57,15 @@ class BarStepper:
         self._harvested = 0  # closed_trades already turned into records (chunk-U ledger)
         self.trades: list[TradeRecord] = []  # per-trade ledger, one record per closed round-trip
 
-    def step(self, candle: Candle) -> StepResult:
+    def step(self, candle: Candle, funding_rate: float | None = None) -> StepResult:
         """Advance one closed bar: fill last bar's order at this open, enforce the intrabar stop,
-        mark equity at this close, then ask the strategy for the next target. Mirrors one iteration
-        of ``BacktestEngine.run``.
+        charge this bar's perp funding, mark equity at this close, then ask the strategy for the
+        next target. Mirrors one iteration of ``BacktestEngine.run``.
+
+        ``funding_rate`` (chunk W3) is this bar's aggregated perp funding rate: it is charged to
+        the held position (``apply_funding`` — a no-op for spot) and exposed to the strategy as the
+        ``funding_rate`` feature so a carry family can read it point-in-time. ``None`` (the default)
+        leaves the path byte-unchanged — no feature, no cashflow.
         """
         filled = False
         if self._pending is not None and self._pending != self._position:
@@ -81,9 +87,15 @@ class BarStepper:
                 filled = True
 
         stopped = self._stop_check(candle)
+        if funding_rate is not None:  # charge the bar's funding on the position held into the close
+            self.portfolio.apply_funding(funding_rate, candle.close)
         equity = self.portfolio.equity(candle.close)
         self._harvest(candle.open_time)  # catch any stop-out / liquidation close this bar
-        self._pending = self._guard_reentry(self.strategy.on_bar(BarView(candle=candle)))
+        if funding_rate is None:
+            view = BarView(candle=candle)  # byte-unchanged default: no funding feature
+        else:
+            view = BarView(candle=candle, features={"funding_rate": funding_rate})
+        self._pending = self._guard_reentry(self.strategy.on_bar(view))
         return StepResult(
             open_time=candle.open_time,
             close=candle.close,
@@ -172,21 +184,29 @@ class BacktestEngine:
         self.execution = execution or IdealExecution()
         self.stop_pct = stop_pct
 
-    def run(self, candles: pd.DataFrame) -> BacktestResult:
+    def run(
+        self, candles: pd.DataFrame, funding: Sequence[float] | None = None
+    ) -> BacktestResult:
         """Replay ``candles`` → equity curve + metrics.
 
         The no-lookahead discipline is the bar boundary: the strategy decides on the CLOSED
         bar ``t`` and that order only fills at the OPEN of bar ``t+1`` (via the execution
         model). So the final bar's signal never trades — you can't act on a bar still forming.
         Equity is marked to each bar's close after that bar's fill is applied.
+
+        ``funding`` (chunk W3), when given, is a per-bar perp funding rate aligned 1:1 with
+        ``candles`` (each bar's aggregated 8h settlements); it is charged to the position and
+        exposed as the ``funding_rate`` feature. ``None`` (default) leaves the run byte-unchanged.
         """
         if candles.empty:
             raise ValueError("cannot backtest an empty candle frame")
+        if funding is not None and len(funding) != len(candles):
+            raise ValueError("funding must align 1:1 with candles")
 
         stepper = BarStepper(self.strategy, self.portfolio, self.execution, self.stop_pct)
         equity = []
         bars_in_market = 0
-        for row in candles.itertuples(index=False):
+        for i, row in enumerate(candles.itertuples(index=False)):
             candle = Candle(
                 open_time=int(row.open_time),
                 open=float(row.open),
@@ -195,7 +215,8 @@ class BacktestEngine:
                 close=float(row.close),
                 volume=float(row.volume),
             )
-            result = stepper.step(candle)
+            rate = None if funding is None else float(funding[i])
+            result = stepper.step(candle, rate)
             equity.append(result.equity)
             bars_in_market += abs(result.position)  # held a position when +1 long or -1 short
 

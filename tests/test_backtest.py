@@ -276,6 +276,98 @@ def test_stop_suppresses_reentry_until_the_signal_resets():
     assert positions == [0, 0, 0, 0, 0, 1]
 
 
+# --- Chunk W3: perp funding cashflow -----------------------------------------------------------
+
+
+def test_perp_funding_long_pays_short_receives():
+    # rate > 0 => longs pay shorts. Charge = units * price * rate = 10 * 10 * 0.01 = 1.0.
+    long = PerpPortfolio(cash=100.0, taker_fee=0.0, leverage=1.0)
+    long.rebalance(1, price=10.0)  # units = +10
+    long.apply_funding(rate=0.01, price=10.0)
+    assert long.equity(10.0) == pytest.approx(99.0)  # long bled the funding
+    short = PerpPortfolio(cash=100.0, taker_fee=0.0, leverage=1.0)
+    short.rebalance(-1, price=10.0)  # units = -10
+    short.apply_funding(rate=0.01, price=10.0)
+    assert short.equity(10.0) == pytest.approx(101.0)  # short collected the funding
+
+
+def test_perp_funding_is_a_noop_when_flat_or_liquidated():
+    flat = PerpPortfolio(cash=100.0, taker_fee=0.0)
+    flat.apply_funding(rate=0.5, price=10.0)  # no open position -> no cashflow
+    assert flat.equity(10.0) == pytest.approx(100.0)
+    dead = PerpPortfolio(cash=100.0, taker_fee=0.0, leverage=3.0)
+    dead.rebalance(-1, price=10.0)
+    dead.equity(14.0)  # ~40% rally wipes the 3x collateral -> liquidated
+    dead.apply_funding(rate=-0.5, price=14.0)  # funding must not resurrect the dead account
+    assert dead.equity(14.0) == pytest.approx(0.0)
+
+
+def test_spot_funding_is_a_noop():
+    p = SpotPortfolio(cash=100.0, taker_fee=0.0)
+    p.rebalance(1, price=10.0)
+    p.apply_funding(rate=0.5, price=10.0)  # spot pays no funding
+    assert p.equity(10.0) == pytest.approx(100.0)
+
+
+def test_perp_funding_flows_into_the_round_trip_pnl():
+    # Open and close at the same price: the only PnL is the funding paid while held.
+    p = PerpPortfolio(cash=100.0, taker_fee=0.0, leverage=1.0)
+    p.rebalance(1, price=10.0)
+    p.apply_funding(rate=0.01, price=10.0)  # pays 1.0
+    p.rebalance(0, price=10.0)
+    assert p.trades == [pytest.approx(-1.0)]  # the round-trip lost exactly the funding paid
+
+
+def test_perp_funding_can_trigger_liquidation():
+    # A short bleeding to negative funding: enough charges push collateral below zero -> liq.
+    p = PerpPortfolio(cash=100.0, taker_fee=0.0, leverage=3.0)
+    p.rebalance(-1, price=10.0)  # units = -30
+    p.apply_funding(rate=-0.2, price=10.0)  # short pays: cash 100 -> 40
+    assert p.equity(10.0) == pytest.approx(40.0)
+    p.apply_funding(rate=-0.2, price=10.0)  # cash 40 -> -20
+    assert p.equity(10.0) == pytest.approx(0.0)  # collateral gone -> liquidated
+    assert p.trades == [pytest.approx(-100.0)]
+
+
+def test_engine_zero_funding_matches_no_funding():
+    # Parity: an all-zero funding series charges nothing and must reproduce the no-funding run.
+    candles = _candles([(10.0, 10.0), (10.0, 12.0), (12.0, 8.0), (8.0, 9.0)])
+    base = BacktestEngine(_AlwaysLong(), PerpPortfolio(100.0, 0.0)).run(candles)
+    zero = BacktestEngine(_AlwaysLong(), PerpPortfolio(100.0, 0.0)).run(candles, funding=[0.0] * 4)
+    assert list(zero.equity_curve) == pytest.approx(list(base.equity_curve))
+
+
+def test_engine_funding_bleeds_a_held_perp_long():
+    # Flat price, constant +1% funding: a 1x long held on bars 1-3 pays 10*10*0.01 = 1.0 each.
+    candles = _candles([(10.0, 10.0)] * 4)
+    engine = BacktestEngine(_AlwaysLong(), PerpPortfolio(100.0, 0.0))
+    result = engine.run(candles, funding=[0.01] * 4)
+    assert result.equity_curve.iloc[-1] == pytest.approx(97.0)  # 100 - 3 funding charges
+
+
+def test_engine_exposes_funding_rate_as_a_feature():
+    rates = [0.001, -0.002, 0.003, 0.0]
+
+    class _FundingSpy(Strategy):
+        def __init__(self):
+            self.seen: list[float | None] = []
+
+        def on_bar(self, view: BarView) -> int:
+            self.seen.append(view.feature("funding_rate"))
+            return 0
+
+    spy = _FundingSpy()
+    candles = _candles([(10.0, 10.0)] * 4)
+    BacktestEngine(spy, SpotPortfolio(100.0, 0.0)).run(candles, funding=rates)
+    assert spy.seen == pytest.approx(rates)  # point-in-time, one per bar, in order
+
+
+def test_engine_funding_length_mismatch_raises():
+    candles = _candles([(10.0, 10.0)] * 4)
+    with pytest.raises(ValueError, match="align"):
+        BacktestEngine(_AlwaysLong(), PerpPortfolio(100.0, 0.0)).run(candles, funding=[0.01] * 3)
+
+
 def test_load_candles_usdc_pair_reads_directly():
     seen = []
 

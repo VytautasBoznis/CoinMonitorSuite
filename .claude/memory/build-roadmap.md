@@ -387,10 +387,29 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
     for Binance 4h (real 2018 downtime gaps). NOTE: stability ran on the USDC set — negligible
     contamination (selected nothing) but confirms U must target USDT. See
     [[first-stability-run-expanded-universe]].
-  - [ ] **U — Trade ledger + Edge Certificate.** Expose per-trade records in `BacktestResult`;
-    `search/evidence.py` (pooling across decorrelated pairs × rolling-window holdouts, Wilson
-    bound, block-bootstrap expectancy CI); CLI `coinmon certify`; acceptance = the refuted
-    BNB/ETH RSI(2) golden must NOT certify.
+  - [x] **U — Trade ledger + Edge Certificate.** (2026-07-02) Per-trade ledger is now exposed:
+    `TradeRecord(entry_time, exit_time, direction, net_return_pct)` on `BacktestResult.trades`,
+    filled by a `BarStepper._harvest` that pairs the portfolio's new `ClosedTrade(direction,
+    net_return_pct)` economics (recorded in lockstep with the PnL `trades` floats, so metrics stay
+    byte-identical) with the bar times the engine knows — robust to flips/stops/liquidation, and
+    `len(trades) == metrics["trades"]`. `search/evidence.py` implements the certificate:
+    `wilson_lower_bound` (C2, one-sided 95%), `block_bootstrap_ci` (C3, moving circular blocks
+    ~√N over the time-ordered pooled returns → expectancy CI + `t_exp`), `_regime_expectancies`
+    (C5, disjoint equal-time buckets by entry_time), `build_evidence` (pure, testable on synthetic
+    ledgers), `certify` (six criteria → CERTIFIED/UNPROVEN/REFUTED; C4 null + C6 fragility optional
+    = PENDING → blocks CERTIFIED but never forces REFUTED, deferred to chunk V/sweep), and
+    `pool_trades`/`select_eval_pairs` (reuse chunk O `pick_decorrelated_pairs` + chunk S
+    `window_bounds` + chunk D `split_holdout` to pool a frozen genome's strictly-OOS ledger across
+    decorrelated pairs × rolling-window holdouts). CLI `coinmon certify --family --pair --params …`
+    (genome given on the CLI — no winner-file persistence yet). 264 tests green (+18: ledger
+    times/direction/return/count-invariant/stop-out; Wilson known value 165/300≈0.5025; bootstrap
+    sanity; certify verdicts incl. 55%@N300 CERTIFIED, 50%@N300 REFUTED, small-N UNPROVEN,
+    single-regime + fragility-fail REFUTED, pending-null UNPROVEN; pooling leakage guard), ruff
+    clean (only pre-existing walkforward/viewer E501s). **Acceptance is a LIVE user run** (certify
+    the refuted BNB/ETH RSI(2) golden → must be REFUTED/UNPROVEN). NOTE the [[train-usdt-certify-usdc]]
+    split is honored by CONFIG (run `search` with USDT quote, `certify` with USDC quote) — no single
+    train-USDT/certify-USDC command yet; that fuller plumbing lands with Y. See [[edge-certificate-implemented]].
+    Next: V (null calibration) or W1 (ratio_momentum, T0-promoted).
   - [ ] **V — Null calibration.** `search/nullmodel.py`: random-genome null, exposure-matched
     random-entry null, joint-block-bootstrap surrogate-data null (full search on signal-destroyed
     data); CLI `coinmon nullcheck`; C4 of the certificate consumes these.

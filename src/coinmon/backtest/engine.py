@@ -7,7 +7,7 @@ import pandas as pd
 from coinmon.backtest.execution import ExecutionModel, IdealExecution
 from coinmon.backtest.metrics import summarize
 from coinmon.backtest.portfolio import Portfolio
-from coinmon.backtest.result import BacktestResult
+from coinmon.backtest.result import BacktestResult, TradeRecord
 from coinmon.data.models import Candle
 from coinmon.feed import BarView
 from coinmon.strategies.base import Strategy
@@ -52,6 +52,9 @@ class BarStepper:
         self._pending: int | None = None  # target decided last bar, to fill at this bar's open
         self._entry: float | None = None  # fill price of the open position, the stop's reference
         self._stopped_side = 0  # side just stopped out of; suppresses re-entry until signal resets
+        self._entry_time: int = 0  # open_time of the bar the current position was entered on
+        self._harvested = 0  # closed_trades already turned into records (chunk-U ledger)
+        self.trades: list[TradeRecord] = []  # per-trade ledger, one record per closed round-trip
 
     def step(self, candle: Candle) -> StepResult:
         """Advance one closed bar: fill last bar's order at this open, enforce the intrabar stop,
@@ -66,12 +69,20 @@ class BarStepper:
             fill = self.execution.fill_price(side, candle.open)
             if fill is not None:  # a None fill = order didn't execute; position unchanged
                 self.portfolio.rebalance(self._pending, fill)
+                # A flip closes the old position here — record it under its OWN entry time
+                # before the new leg's entry overwrites it.
+                self._harvest(candle.open_time)
                 self._position = self._pending
-                self._entry = fill if self._position != 0 else None
+                if self._position != 0:
+                    self._entry = fill
+                    self._entry_time = candle.open_time
+                else:
+                    self._entry = None
                 filled = True
 
         stopped = self._stop_check(candle)
         equity = self.portfolio.equity(candle.close)
+        self._harvest(candle.open_time)  # catch any stop-out / liquidation close this bar
         self._pending = self._guard_reentry(self.strategy.on_bar(BarView(candle=candle)))
         return StepResult(
             open_time=candle.open_time,
@@ -81,6 +92,25 @@ class BarStepper:
             target=self._pending,
             equity=equity,
         )
+
+    def _harvest(self, exit_time: int) -> None:
+        """Turn any portfolio round-trips closed since the last call into ledger records (chunk U),
+        tagged with the current position's entry time and this bar's exit time. Called at each
+        point a close can happen (a rebalance flip, a stop-out, a liquidation) so each trade is
+        attributed to the correct entry bar. Pure bookkeeping — it only reads ``closed_trades``,
+        so fills/equity/decisions and thus batch↔live parity are untouched."""
+        closed = self.portfolio.closed_trades
+        while self._harvested < len(closed):
+            econ = closed[self._harvested]
+            self.trades.append(
+                TradeRecord(
+                    entry_time=self._entry_time,
+                    exit_time=exit_time,
+                    direction=econ.direction,
+                    net_return_pct=econ.net_return_pct,
+                )
+            )
+            self._harvested += 1
 
     def _stop_check(self, candle: Candle) -> bool:
         """If a stop is armed and the bar traded through the stop level, force the position flat at
@@ -176,4 +206,4 @@ class BacktestEngine:
         )
         exposure = bars_in_market / len(candles)
         metrics = summarize(curve, self.portfolio.trades, exposure)
-        return BacktestResult(equity_curve=curve, metrics=metrics)
+        return BacktestResult(equity_curve=curve, metrics=metrics, trades=stepper.trades)

@@ -1,6 +1,18 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True, slots=True)
+class ClosedTrade:
+    """The economics of one closed round-trip the portfolio can attribute on its own: the
+    position's ``direction`` (+1 long / -1 short) and ``net_return_pct`` (realized PnL / entry
+    collateral, net of both taker-fee legs). Recorded in lockstep with ``trades``; the engine
+    (which knows the bar times) pairs it into a ``TradeRecord`` for the chunk-U ledger."""
+
+    direction: int
+    net_return_pct: float
 
 
 class Portfolio(ABC):
@@ -14,6 +26,9 @@ class Portfolio(ABC):
     # account currency (fees included). A position still open at the end is not a closed trade
     # and never appears here.
     trades: list[float]
+    # ``closed_trades`` mirrors ``trades`` one-for-one with the (direction, net_return_pct) the
+    # engine needs to build the chunk-U ledger — economics the portfolio knows but times it doesn't.
+    closed_trades: list[ClosedTrade]
 
     @abstractmethod
     def rebalance(self, target: int, price: float) -> None:
@@ -46,6 +61,7 @@ class SpotPortfolio(Portfolio):
         self._target = 0
         self._entry_cash = 0.0  # cash spent opening the current long, to PnL it on exit
         self.trades: list[float] = []
+        self.closed_trades: list[ClosedTrade] = []
 
     def rebalance(self, target: int, price: float) -> None:
         if target == self._target:
@@ -57,7 +73,9 @@ class SpotPortfolio(Portfolio):
         else:  # long -> flat: sell all units back to cash, net of taker fee
             self.cash = self.units * price * (1.0 - self.taker_fee)
             self.units = 0.0
-            self.trades.append(self.cash - self._entry_cash)  # realized round-trip PnL
+            pnl = self.cash - self._entry_cash  # realized round-trip PnL
+            self.trades.append(pnl)
+            self.closed_trades.append(ClosedTrade(1, pnl / self._entry_cash))
         self._target = target
 
     def equity(self, price: float) -> float:
@@ -95,6 +113,7 @@ class PerpPortfolio(Portfolio):
         self._entry_equity = 0.0  # collateral at entry, to PnL the round-trip on close
         self._liquidated = False
         self.trades: list[float] = []
+        self.closed_trades: list[ClosedTrade] = []
 
     def rebalance(self, target: int, price: float) -> None:
         if self._liquidated or target == self._target:
@@ -102,7 +121,10 @@ class PerpPortfolio(Portfolio):
         if self._target != 0:  # close the open position: realize PnL, then pay the exit fee
             self.cash += self.units * (price - self._entry_price)
             self.cash -= abs(self.units) * price * self.taker_fee
-            self.trades.append(self.cash - self._entry_equity)  # realized round-trip PnL
+            pnl = self.cash - self._entry_equity  # realized round-trip PnL
+            self.trades.append(pnl)
+            direction = 1 if self.units > 0 else -1  # captured before the position is zeroed
+            self.closed_trades.append(ClosedTrade(direction, pnl / self._entry_equity))
             self.units = 0.0
         if target != 0:  # open a leveraged position, paying the entry fee on the notional
             self._entry_equity = self.cash
@@ -118,6 +140,7 @@ class PerpPortfolio(Portfolio):
         mark = self.cash + self.units * (price - self._entry_price)
         if mark <= 0.0 and not self._liquidated:  # isolated-margin liquidation: collateral gone
             self.trades.append(-self._entry_equity)
+            self.closed_trades.append(ClosedTrade(1 if self.units > 0 else -1, -1.0))
             self.cash = 0.0
             self.units = 0.0
             self._target = 0

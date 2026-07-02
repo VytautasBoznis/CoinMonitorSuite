@@ -23,7 +23,14 @@ from coinmon.feed import BarView, CostModel
 from coinmon.live.feed import LiveFeed
 from coinmon.live.runner import ForwardRunner
 from coinmon.scraper import service
+from coinmon.search.evidence import (
+    build_evidence,
+    certify,
+    pool_trades,
+    select_eval_pairs,
+)
 from coinmon.search.ga import GAConfig
+from coinmon.search.genome import Genome, validate
 from coinmon.search.runner import (
     CandleCache,
     FitnessParams,
@@ -391,6 +398,49 @@ def _stability(args: argparse.Namespace) -> None:
     print(report.summary())
 
 
+def _certify(args: argparse.Namespace) -> None:
+    # Chunk U: pool a FROZEN genome's per-trade OOS ledger across decorrelated pairs x rolling
+    # window holdouts and judge it against the Edge Certificate (N>=300, Wilson bound > 0.50,
+    # expectancy CI > 0, regime spread). The genome is given on the CLI (no winner-file persistence
+    # yet); the C4 null and C6 fragility stay PENDING until chunks V / the sweep supply them.
+    genome = Genome(
+        family=args.family,
+        pair=args.pair,
+        params=json.loads(args.params),
+        direction=args.direction,
+        leverage=args.leverage,
+        trend_period=args.trend_period,
+        stop_pct=args.stop,
+    )
+    validate(genome)
+    conn = db.connect()
+    try:
+        def read(symbol: str) -> pd.DataFrame:
+            return db.read_candles(conn, settings.exchange, symbol, args.timeframe)
+
+        universe = discover_universe(
+            db.list_series(conn),
+            exchange=settings.exchange,
+            quote=settings.quote_currency,
+            timeframe=args.timeframe,
+        )
+        eval_pairs = select_eval_pairs(
+            genome, read, universe, args.eval_pairs,
+            holdout_fraction=args.holdout, seed=args.seed,
+        )
+        print(f"pooling {genome.family} on {len(eval_pairs)} pairs: {', '.join(eval_pairs)}\n")
+        pooled = pool_trades(
+            genome, read, settings.taker_fee, eval_pairs,
+            window_size=args.window, step=args.step, holdout_fraction=args.holdout,
+        )
+    finally:
+        conn.close()
+
+    evidence = build_evidence(pooled, seed=args.seed, n_regimes=args.regimes)
+    certificate = certify(evidence)
+    print(certificate.summary())
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="coinmon", description="CoinMonitorSuite backtester")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -733,6 +783,41 @@ def build_parser() -> argparse.ArgumentParser:
         help="CPU processes for the per-genome fitness map (0 = all cores; 1 = serial, default)",
     )
     p_stab.set_defaults(func=_stability)
+
+    p_cert = sub.add_parser(
+        "certify",
+        help="Pool a frozen genome's per-trade OOS ledger across pairs x windows and judge it "
+        "against the Edge Certificate (N>=300, Wilson bound, expectancy CI, regimes) (chunk U)",
+    )
+    p_cert.add_argument("--timeframe", default="1d")
+    p_cert.add_argument("--family", required=True, help="strategy family, e.g. rsi_meanreversion")
+    p_cert.add_argument("--pair", required=True, help="the genome's own pair, e.g. BNB/ETH")
+    p_cert.add_argument(
+        "--params", required=True, metavar="JSON", help='family params as JSON, e.g. \'{"period":2,'
+        '"oversold":10,"exit_level":60}\''
+    )
+    p_cert.add_argument("--direction", default="long", choices=("long", "adaptive"))
+    p_cert.add_argument("--leverage", type=float, default=1.0, metavar="X")
+    p_cert.add_argument("--trend-period", type=float, default=50.0, metavar="BARS")
+    p_cert.add_argument(
+        "--stop", type=float, default=None, metavar="PCT", help="intrabar stop fraction (def none)"
+    )
+    p_cert.add_argument("--seed", type=int, default=0, help="seeds the eval-pair pick + bootstrap")
+    p_cert.add_argument(
+        "--eval-pairs", type=int, default=8, metavar="N",
+        help="decorrelated peer pairs to pool alongside the genome's own pair (default 8)",
+    )
+    p_cert.add_argument(
+        "--holdout", type=float, default=0.2, metavar="FRACTION",
+        help="each window's OOS holdout tail fraction the ledger is pooled from (default 0.2)",
+    )
+    p_cert.add_argument("--window", type=float, default=0.6, metavar="FRACTION")
+    p_cert.add_argument("--step", type=float, default=0.2, metavar="FRACTION")
+    p_cert.add_argument(
+        "--regimes", type=int, default=2, metavar="N",
+        help="disjoint time regimes to split the pool into for C5 (default 2)",
+    )
+    p_cert.set_defaults(func=_certify)
 
     return parser
 

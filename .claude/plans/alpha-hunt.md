@@ -166,10 +166,19 @@ timeframes, and funding-rate history.**
 5. **Cheap immediate win:** run the already-built-but-never-run `coinmon stability`
    (chunk S) on the expanded data — more bases was its stated prerequisite.
 
-*Optional, user-gated decision (do NOT assume):* longer history via another venue's data
-(e.g. Binance 2017+) for **backtest-only** purposes would triple the regime count. It
-collides with the letter of the USDT ban even though trading stays Bybit/USDC. Ask the
-user; skip if declined.
+*User-gated decision — RESOLVED 2026-07-02 (YES + a stronger split, see
+[[train-usdt-certify-usdc]]):* the quote currency is now the **train/test split**. Search/train
+ONLY on USDT (Bybit USDT + **Binance USDT 2017+**, a backtest-history-only venue that never
+trades — bends the USDT-ban letter for DATA only); keep every **USDC** series pristine and use
+it ONLY at the final Edge-Certificate validation (chunk U/Y). So the search never sees the real
+tradable instrument until certification. **Chunk U/Y must honor this:** build the training
+universe from USDT, reserve USDC for `certify`.
+
+*Code landed 2026-07-02 (Bybit side + venue plumbing):* `coinmon markets` (base discovery,
+`rank_spot`), `funding_rates` table + `BybitAdapter.fetch_funding_history` + scraper
+`ingest_funding` (config `scrape_funding`, off by default), `coinmon coverage` (per-quote
+universe report), `BinanceAdapter` via an extracted `CCXTSpotAdapter` base + one-shot
+`coinmon backfill`. Data run + `stability` are the user's step.
 
 Acceptance: `discover_universe` reports ≥ 200 pairs at 1d; 4h series present; funding table
 populated for ≥ 10 perps; stability run executed and its read recorded.

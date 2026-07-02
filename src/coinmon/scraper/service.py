@@ -51,8 +51,29 @@ def ingest_series(
     return stored
 
 
+def perp_symbol(spot_symbol: str) -> str:
+    """Perp form of a spot symbol: ``BASE/QUOTE`` -> ``BASE/QUOTE:QUOTE`` (USDC-settled linear).
+
+    ccxt's unified id for a USDC-settled perp appends the settle currency, so ``BTC/USDC``
+    becomes ``BTC/USDC:USDC``. Bases without a listed perp raise on fetch and are skipped.
+    """
+    quote = spot_symbol.split("/")[1]
+    return f"{spot_symbol}:{quote}"
+
+
+def ingest_funding(adapter: BybitAdapter, conn: psycopg.Connection, spot_symbol: str) -> int:
+    """Pull funding settlements for a spot symbol's perp from the last stored one (or full
+    history) up to now. Backfill on first call, then only the few new settlements each poll."""
+    perp = perp_symbol(spot_symbol)
+    last = db.last_funding_time(conn, adapter.name, perp)
+    rows = adapter.fetch_funding_history(perp, since=last)
+    if last is not None:
+        rows = [(t, r) for t, r in rows if t > last]
+    return db.insert_funding(conn, adapter.name, perp, rows)
+
+
 def poll_once(adapter: ExchangeAdapter, conn: psycopg.Connection) -> int:
-    """Ingest every configured (symbol, timeframe) series once."""
+    """Ingest every configured (symbol, timeframe) series once (plus funding if enabled)."""
     total = 0
     for symbol in settings.symbols:
         for timeframe in settings.timeframes:
@@ -60,6 +81,13 @@ def poll_once(adapter: ExchangeAdapter, conn: psycopg.Connection) -> int:
             if n:
                 log.info("stored %d candles for %s %s", n, symbol, timeframe)
             total += n
+        if settings.scrape_funding and isinstance(adapter, BybitAdapter):
+            try:
+                f = ingest_funding(adapter, conn, symbol)
+                if f:
+                    log.info("stored %d funding settlements for %s", f, perp_symbol(symbol))
+            except Exception as exc:  # a base without a listed perp, or a transient venue error
+                log.warning("funding skipped for %s: %s", perp_symbol(symbol), exc)
     return total
 
 

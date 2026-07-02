@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from coinmon.data.adapters.base import RawBatch
+from coinmon.data.adapters.binance import BinanceAdapter
 from coinmon.data.adapters.bybit import BybitAdapter
 from coinmon.data.models import CANDLE_COLUMNS
 from coinmon.scraper import service
@@ -35,6 +36,16 @@ def test_to_candles_rejects_gaps():
     raw = RawBatch("bybit", "BTC/USDC", "1h", rows, fetched_at=START + 10 * STEP)
     with pytest.raises(ValueError, match="Non-contiguous"):
         BybitAdapter().to_candles(raw)
+
+
+def test_binance_adapter_shares_the_ccxt_spot_body():
+    # Backtest-history venue: same generic normalization as Bybit, only the venue name differs.
+    adapter = BinanceAdapter()
+    assert adapter.name == "binance"
+    raw = RawBatch("binance", "BTC/USDT", "1h", _rows(4), fetched_at=START + 3 * STEP + 1)
+    df = adapter.to_candles(raw)
+    assert list(df.columns) == list(CANDLE_COLUMNS)
+    assert len(df) == 3  # the unclosed 4th bar is dropped, same as Bybit
 
 
 # --- scraper ingest loop (fake adapter + in-memory store, no network/DB) ---
@@ -100,3 +111,84 @@ def test_ingest_is_idempotent_when_current(store):
     again = service.ingest_series(adapter, conn=None, symbol="BTC/USDC", timeframe="1h")
     assert again == 0
     assert len(store.candles) == 7
+
+
+# --- funding-rate history (backward paging + incremental ingest, no network/DB) ---
+
+FUNDING_STEP = 8 * STEP  # settlements every 8h
+
+
+class FakePerpClient:
+    """Serves canned funding settlements newest-window-first, paging backward via ``until`` —
+    the exact contract the real Bybit endpoint has (H6 probe)."""
+
+    def __init__(self, settlements: list[tuple[int, float]]):
+        self._all = sorted(settlements)  # ascending by timestamp
+
+    def fetch_funding_rate_history(self, symbol, limit=200, params=None):
+        until = (params or {}).get("until")
+        pool = [s for s in self._all if until is None or s[0] <= until]
+        window = pool[-limit:]  # most-recent `limit`, returned oldest-first within the page
+        return [{"timestamp": ts, "fundingRate": r} for ts, r in window]
+
+
+class FundingAdapter(BybitAdapter):
+    name = "fake"
+
+    def __init__(self, settlements):
+        super().__init__()
+        self._fake = FakePerpClient(settlements)
+
+    def _perp_client(self):
+        return self._fake
+
+
+def _settlements(n: int) -> list[tuple[int, float]]:
+    return [(START + i * FUNDING_STEP, 0.0001 * (i % 3)) for i in range(n)]
+
+
+def test_fetch_funding_pages_full_history_backward():
+    # 500 settlements, 200/page -> three pages, all recovered oldest-first with no dupes.
+    adapter = FundingAdapter(_settlements(500))
+    rows = adapter.fetch_funding_history("BTC/USDC:USDC")
+
+    assert len(rows) == 500
+    assert [t for t, _ in rows] == sorted(t for t, _ in rows)
+    assert rows[0][0] == START
+
+
+def test_fetch_funding_stops_at_since():
+    # Incremental: with `since` set, paging stops once a page reaches it (covers > since).
+    adapter = FundingAdapter(_settlements(500))
+    since = START + 450 * FUNDING_STEP
+    rows = adapter.fetch_funding_history("BTC/USDC:USDC", since=since)
+
+    assert rows  # served the recent window
+    assert min(t for t, _ in rows) <= since  # reached back past `since`
+    assert max(t for t, _ in rows) == START + 499 * FUNDING_STEP
+
+
+def test_perp_symbol_appends_settle_currency():
+    assert service.perp_symbol("BTC/USDC") == "BTC/USDC:USDC"
+
+
+def test_ingest_funding_is_incremental(monkeypatch):
+    stored: dict[int, float] = {}
+    monkeypatch.setattr(
+        service.db, "last_funding_time", lambda c, e, s: max(stored) if stored else None
+    )
+
+    def _insert(conn, exchange, symbol, rows):
+        stored.update(dict(rows))
+        return len(rows)
+
+    monkeypatch.setattr(service.db, "insert_funding", _insert)
+
+    adapter = FundingAdapter(_settlements(300))
+    first = service.ingest_funding(adapter, conn=None, spot_symbol="BTC/USDC")
+    assert first == 300
+
+    # Second pass: nothing newer than the last stored settlement -> no new rows.
+    again = service.ingest_funding(adapter, conn=None, spot_symbol="BTC/USDC")
+    assert again == 0
+    assert len(stored) == 300

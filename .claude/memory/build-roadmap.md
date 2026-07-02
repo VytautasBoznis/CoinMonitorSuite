@@ -365,8 +365,21 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
   ([[alpha-definition-edge-certificate]]): pooled OOS trade ledger, N ≥ 300, win rate ≥ 51% with
   Wilson 95% lower bound > 0.50, expectancy bootstrap-CI > 0, beats a 3-null distribution,
   positive in ≥ 2 regimes, fragility intact. Chunks (one per session, in order):
-  - [ ] **T — Data expansion.** ~25–30 USDC bases (→ 300+ auto-built pairs), 1d + 4h, funding-rate
+  - [~] **T — Data expansion.** ~25–30 USDC bases (→ 300+ auto-built pairs), 1d + 4h, funding-rate
     history table; then finally run `coinmon stability` live (chunk S, built, never run).
+    **CODE DONE (2026-07-02):** `coinmon markets` (rank_spot: liquidity-ranked USDC/USDT spot bases →
+    JSON for COINMON_SYMBOLS), `funding_rates` Timescale table + `BybitAdapter.fetch_funding_history`
+    (backward-paged, H6-proven) + scraper `ingest_funding` job (config `scrape_funding`, off by
+    default), `coinmon coverage` (bars/spans + auto-built universe size PER QUOTE), and a
+    `BinanceAdapter` (backtest-history-only venue) via an extracted `CCXTSpotAdapter` shared base +
+    one-shot `coinmon backfill` command. 245 tests green (+14), ruff clean (only pre-existing
+    viewer/walkforward E501s). **KEY DECISION ([[train-usdt-certify-usdc]]):** the quote currency is
+    the train/test split — search/train ONLY on USDT (Bybit USDT + Binance USDT 2017+), keep USDC
+    pristine for the FINAL Edge-Certificate validation only. Binance approved as a data-only venue
+    (never trades) for its deep USDT history. **DATA RUN PENDING (user):** run `coinmon markets` per
+    venue → scrape Bybit USDC+USDT (1d+4h) → `coinmon backfill --exchange binance` for USDT 2017+ →
+    `coinmon coverage` → `coinmon stability`. Acceptance (≥200 pairs, funding ≥10 perps, stability
+    run) is met by that run. **Chunk U must wire the USDT-train / USDC-certify split into the runner.**
   - [ ] **U — Trade ledger + Edge Certificate.** Expose per-trade records in `BacktestResult`;
     `search/evidence.py` (pooling across decorrelated pairs × rolling-window holdouts, Wilson
     bound, block-bootstrap expectancy CI); CLI `coinmon certify`; acceptance = the refuted

@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     poll_interval_seconds: int = 60
     # Earliest bar to backfill (ISO date) when a series has no stored history yet.
     backfill_start: str = "2020-01-01"
+    # Chunk T: also scrape perp funding-rate history for the USDC legs in `symbols` (data-only,
+    # feeds the W3 carry family). Off by default so existing candle-only deployments are unchanged.
+    scrape_funding: bool = False
 
 
 settings = Settings()

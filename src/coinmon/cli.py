@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import time
 from collections.abc import Callable
 from datetime import UTC, datetime
@@ -14,10 +15,14 @@ from coinmon.backtest.stress import run_monte_carlo
 from coinmon.backtest.walkforward import walk_forward
 from coinmon.config import settings
 from coinmon.data import db
+from coinmon.data.adapters.binance import BinanceAdapter
+from coinmon.data.adapters.bybit import BybitAdapter
 from coinmon.data.candles import load_candles
+from coinmon.data.discovery import rank_spot, summarize_coverage
 from coinmon.feed import BarView, CostModel
 from coinmon.live.feed import LiveFeed
 from coinmon.live.runner import ForwardRunner
+from coinmon.scraper import service
 from coinmon.search.ga import GAConfig
 from coinmon.search.runner import (
     CandleCache,
@@ -59,6 +64,57 @@ def _fetch_data(args: argparse.Namespace) -> None:
         "fetch-data is retired: candle ingestion is the scraper service "
         "(coinmon.scraper) writing to TimescaleDB. Run that to populate data."
     )
+
+
+# Backtest-history + trade venues (chunk T). Binance is history-only ([[train-usdt-certify-usdc]]).
+_ADAPTERS = {"bybit": BybitAdapter, "binance": BinanceAdapter}
+
+
+def _markets(args: argparse.Namespace) -> None:
+    # Chunk T: discover candidate spot bases to scrape, ranked by liquidity. Prints a JSON array
+    # ready to paste into COINMON_SYMBOLS. Read-only public data; no keys, no orders.
+    import ccxt
+
+    exchange = getattr(ccxt, args.exchange)({"enableRateLimit": True})
+    markets = exchange.load_markets()
+    tickers = exchange.fetch_tickers()
+    ranked = rank_spot(markets, tickers, args.quote, limit=args.limit)
+
+    print(f"top {len(ranked)} active {args.quote} spot pairs on {args.exchange} by 24h volume:\n")
+    for sym, vol in ranked:
+        print(f"  {sym:<16} 24h quote vol {vol:,.0f}")
+    print("\nCOINMON_SYMBOLS=" + json.dumps([sym for sym, _ in ranked]))
+
+
+def _coverage(args: argparse.Namespace) -> None:
+    # Chunk T: post-scrape report — how many bars and what date span each stored series has, and
+    # the resulting auto-built search universe per quote. Tells the alpha hunt its usable universe.
+    conn = db.connect()
+    try:
+        stats = db.series_stats(conn)
+    finally:
+        conn.close()
+    print(summarize_coverage(stats, min_bars=args.min_bars))
+
+
+def _backfill(args: argparse.Namespace) -> None:
+    # Chunk T: one-shot history backfill for a venue (e.g. Binance USDT 2017+ for training data).
+    # Reuses the scraper's ingest path; no polling loop. Read-only public data; no keys, no orders.
+    if args.since:
+        service.settings.backfill_start = args.since  # ingest_series reads settings.backfill_start
+    adapter = _ADAPTERS[args.exchange]()
+    conn = db.connect()
+    try:
+        db.init_schema(conn)
+        total = 0
+        for symbol in args.symbols:
+            for timeframe in args.timeframes:
+                n = service.ingest_series(adapter, conn, symbol, timeframe)
+                print(f"  {args.exchange} {symbol} {timeframe}: {n} candles")
+                total += n
+    finally:
+        conn.close()
+    print(f"backfilled {total} candles from {args.exchange}")
 
 
 def _make_portfolio() -> SpotPortfolio:
@@ -338,6 +394,57 @@ def build_parser() -> argparse.ArgumentParser:
     p_fetch.add_argument("--timeframe", default="1h")
     p_fetch.add_argument("--days", type=int, default=90)
     p_fetch.set_defaults(func=_fetch_data)
+
+    p_markets = sub.add_parser(
+        "markets",
+        help="Discover candidate spot bases to scrape, ranked by 24h volume (chunk T)",
+    )
+    p_markets.add_argument(
+        "--exchange", default="bybit", choices=sorted(_ADAPTERS), help="venue to query"
+    )
+    p_markets.add_argument(
+        "--quote",
+        default="USDT",
+        help="quote currency to rank (USDT for training history, USDC for the trade venue)",
+    )
+    p_markets.add_argument(
+        "--limit", type=int, default=30, metavar="N", help="how many top pairs to list"
+    )
+    p_markets.set_defaults(func=_markets)
+
+    p_backfill = sub.add_parser(
+        "backfill",
+        help="One-shot history backfill for a venue (e.g. Binance USDT 2017+ training data)",
+    )
+    p_backfill.add_argument(
+        "--exchange", default="binance", choices=sorted(_ADAPTERS), help="venue to backfill from"
+    )
+    p_backfill.add_argument(
+        "--symbols", nargs="+", required=True, metavar="SYM", help="e.g. BTC/USDT ETH/USDT"
+    )
+    p_backfill.add_argument(
+        "--timeframes", nargs="+", default=["1d"], metavar="TF", help="e.g. 1d 4h"
+    )
+    p_backfill.add_argument(
+        "--since",
+        default="",
+        metavar="ISO_DATE",
+        help="earliest bar to fetch (e.g. 2017-01-01); default uses the configured backfill start",
+    )
+    p_backfill.set_defaults(func=_backfill)
+
+    p_cov = sub.add_parser(
+        "coverage",
+        help="Report bars-per-series + date spans + usable universe size for stored candles",
+    )
+    p_cov.add_argument(
+        "--min-bars",
+        type=int,
+        default=800,
+        metavar="N",
+        help="bar count a series must clear to count toward the usable universe (default 800)",
+    )
+    p_cov.set_defaults(func=_coverage)
 
     p_bt = sub.add_parser("backtest", help="Run a strategy over stored candles")
     p_bt.add_argument(

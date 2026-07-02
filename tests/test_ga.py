@@ -124,7 +124,7 @@ def test_evolve_improves_fitness_over_generations():
         pair_bonus = 10.0 if g.pair == "XRP/ETH" else 0.0
         return pair_bonus - abs(g.params["period"] - 30.0)
 
-    result = evolve(fitness, GAConfig(population=20, generations=15, seed=0))
+    result = evolve(fitness, GAConfig(population=40, generations=20, seed=0))
     assert result.history[-1].best_fitness > result.history[0].best_fitness
     assert result.best.family == "rsi_meanreversion"
     assert result.best.pair == "XRP/ETH"

@@ -8,6 +8,7 @@ from coinmon.feed import CostModel
 from coinmon.strategies.atr_channel import ATRChannelBreakout
 from coinmon.strategies.base import Strategy
 from coinmon.strategies.directional import RegimeAdaptive
+from coinmon.strategies.donchian_breakout import DonchianBreakout
 from coinmon.strategies.ema_crossover import EMACrossover
 from coinmon.strategies.indicator_combo import (
     COMBO_FAMILY,
@@ -68,6 +69,12 @@ def _build_ratio_momentum(p: Mapping[str, float]) -> Strategy:
     return RatioMomentum(lookback=int(p["lookback"]), skip=int(p["skip"]), band=p["band"])
 
 
+def _build_donchian(p: Mapping[str, float]) -> Strategy:
+    return DonchianBreakout(
+        channel=int(p["channel"]), atr_period=int(p["atr_period"]), exit_mult=p["exit_mult"]
+    )
+
+
 # The registry of searchable families. Ranges are deliberately broad-but-sane: the OOS fitness +
 # fragility gate (not a tight prior) is what's trusted to reject the junk corners. The soft
 # orderings oversold < exit_level and fast < slow are NOT hard-enforced — a malformed band just
@@ -111,6 +118,19 @@ FAMILIES: dict[str, StrategyFamily] = {
             "band": ParamSpec(0.0, 0.10),
         },
         build=_build_ratio_momentum,
+    ),
+    # Chunk W4: Donchian channel breakout with an ATR-scaled trailing exit — a stop-and-reverse
+    # channel system, mechanically distinct from the moving-average families. Enters on an N-bar
+    # high breakout, exits on a volatility-scaled trailing stop. Broad-but-sane ranges; the OOS
+    # fitness + fragility gate reject the churny/junk corners, not a tight prior.
+    "donchian_breakout": StrategyFamily(
+        name="donchian_breakout",
+        params={
+            "channel": ParamSpec(5, 100, integer=True),
+            "atr_period": ParamSpec(5, 40, integer=True),
+            "exit_mult": ParamSpec(0.5, 6.0),
+        },
+        build=_build_donchian,
     ),
 }
 

@@ -471,6 +471,19 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
     clean. On a ratio pair this IS cross-coin relative momentum — the first family out of the RSI
     valley. **Not yet run live** — the real read is `coinmon search`/`certify` picking momentum and
     the certificate/nulls judging it (the family only makes the effect REACHABLE; alpha is unproven).
+    **W4 DONE (2026-07-02):** `strategies/donchian_breakout.DonchianBreakout` — long/flat: enter when
+    close breaks above the PRIOR `channel`-bar high (Donchian upper, read before appending this bar's
+    high → no self-compare, no lookahead), exit on an ATR-scaled chandelier trailing stop
+    (`close < peak_close_since_entry − exit_mult·ATR`, reuses `StreamingATR`). Bounded `deque(maxlen=
+    channel)` of highs → constant work/bar (N1 discipline; `max()` over a ≤100 fixed window doesn't grow
+    with n). Registered as `genome.FAMILIES["donchian_breakout"]` (channel 5–100 int, atr_period 5–40
+    int, exit_mult 0.5–6.0) — registration-only wiring, whole pipeline (GA/decode/fitness/graduation/
+    cross-pair/certificate/nulls, RegimeAdaptive short side) consumes it unchanged. **Adding the 5th
+    searchable family shifted the GA RNG stream and broke one brittle test** (`test_evolve_improves_
+    fitness_over_generations` no longer reached the XRP/ETH optimum at pop20/gens15) → fixed by raising
+    that test's budget to pop40/gens20 (converges on all 8 probed seeds — robust to family count, not a
+    lucky seed), NOT by cherry-picking. 333 tests green (+16 donchian, mirrors the W1 file), ruff clean.
+    Engine smoke: enters on gap-up breakouts, exits on the ATR stop. Not yet run live. See [[build-roadmap]] W.
   - [ ] **X — 4h evidence multiplication.** Same pipeline at 4h (≈6× bars/trades; net-of-cost
     ledger prices the fee risk honestly).
   - [ ] **Y — The certified sweep + ensemble (payoff).** Heavy multi-seed sweep over everything;

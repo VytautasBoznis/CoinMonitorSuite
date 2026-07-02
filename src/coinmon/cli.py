@@ -103,15 +103,21 @@ def _backfill(args: argparse.Namespace) -> None:
     if args.since:
         service.settings.backfill_start = args.since  # ingest_series reads settings.backfill_start
     adapter = _ADAPTERS[args.exchange]()
+    # Multi-year exchange history has genuine downtime gaps (e.g. Binance early 2018). --allow-gaps
+    # stores the REAL bars across them (never fabricated) instead of rejecting the page.
+    adapter.require_contiguous = not args.allow_gaps
     conn = db.connect()
     try:
         db.init_schema(conn)
         total = 0
         for symbol in args.symbols:
             for timeframe in args.timeframes:
-                n = service.ingest_series(adapter, conn, symbol, timeframe)
-                print(f"  {args.exchange} {symbol} {timeframe}: {n} candles")
-                total += n
+                try:
+                    n = service.ingest_series(adapter, conn, symbol, timeframe)
+                    print(f"  {args.exchange} {symbol} {timeframe}: {n} candles")
+                    total += n
+                except Exception as exc:  # one bad series must not abort the whole backfill
+                    print(f"  {args.exchange} {symbol} {timeframe}: SKIPPED ({exc})")
     finally:
         conn.close()
     print(f"backfilled {total} candles from {args.exchange}")
@@ -430,6 +436,12 @@ def build_parser() -> argparse.ArgumentParser:
         default="",
         metavar="ISO_DATE",
         help="earliest bar to fetch (e.g. 2017-01-01); default uses the configured backfill start",
+    )
+    p_backfill.add_argument(
+        "--allow-gaps",
+        action="store_true",
+        help="store real bars across genuine exchange-downtime gaps instead of rejecting them "
+        "(never fabricates bars; for multi-year history like Binance 2017+)",
     )
     p_backfill.set_defaults(func=_backfill)
 

@@ -48,6 +48,22 @@ def test_binance_adapter_shares_the_ccxt_spot_body():
     assert len(df) == 3  # the unclosed 4th bar is dropped, same as Bybit
 
 
+def test_allow_gaps_stores_real_bars_across_downtime():
+    # A genuine downtime gap (bar 3,4 missing) is rejected by default but tolerated when
+    # require_contiguous is off — storing the REAL bars, never fabricating the missing ones.
+    rows = _rows(3) + [[START + 5 * STEP, 1.0, 2.0, 0.5, 1.5, 10.0]]  # gap after bar 2
+    raw = RawBatch("binance", "BTC/USDT", "1h", rows, fetched_at=START + 10 * STEP)
+
+    with pytest.raises(ValueError, match="Non-contiguous"):
+        BinanceAdapter().to_candles(raw)
+
+    adapter = BinanceAdapter()
+    adapter.require_contiguous = False
+    df = adapter.to_candles(raw)
+    assert len(df) == 4  # the 4 real bars kept; no synthetic bar invented for the gap
+    assert df["open_time"].tolist() == [START + i * STEP for i in (0, 1, 2, 5)]
+
+
 # --- scraper ingest loop (fake adapter + in-memory store, no network/DB) ---
 
 

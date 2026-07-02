@@ -380,6 +380,13 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
     venue → scrape Bybit USDC+USDT (1d+4h) → `coinmon backfill --exchange binance` for USDT 2017+ →
     `coinmon coverage` → `coinmon stability`. Acceptance (≥200 pairs, funding ≥10 perps, stability
     run) is met by that run. **Chunk U must wire the USDT-train / USDC-certify split into the runner.**
+    **DATA RUN + STABILITY DONE (2026-07-02):** universe now **496 pairs** (~31 bases). First-ever
+    live `stability` = clean calibrated NEGATIVE — no GO in any window, winners hop pairs/families,
+    forward persistence 0/2, every winner trade-starved (4-13 trades, under the 15-floor); gate held
+    on 496 pairs. Reinforces §0 (sample starvation → U pooling + X 4h). Backfill needed `--allow-gaps`
+    for Binance 4h (real 2018 downtime gaps). NOTE: stability ran on the USDC set — negligible
+    contamination (selected nothing) but confirms U must target USDT. See
+    [[first-stability-run-expanded-universe]].
   - [ ] **U — Trade ledger + Edge Certificate.** Expose per-trade records in `BacktestResult`;
     `search/evidence.py` (pooling across decorrelated pairs × rolling-window holdouts, Wilson
     bound, block-bootstrap expectancy CI); CLI `coinmon certify`; acceptance = the refuted

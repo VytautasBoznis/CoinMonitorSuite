@@ -312,26 +312,25 @@ def select_eval_pairs(
     return (genome.pair, *peers)
 
 
-def pool_trades(
+def _iter_segments(
     genome: Genome,
     read: Callable[[str], pd.DataFrame],
     taker_fee: float,
     eval_pairs: Sequence[str],
     *,
-    window_size: float = 0.6,
-    step: float = 0.2,
-    n_windows: int | None = None,
-    holdout_fraction: float = 0.2,
-) -> list[TradeRecord]:
-    """Run the frozen ``genome`` (pair gene overridden to each of ``eval_pairs``) over the holdout
-    tail of each rolling window and pool every closed trade — the strictly-OOS ledger the
-    certificate scores. Reuses chunk S's ``window_bounds`` and chunk D's ``split_holdout``: each
-    window's holdout is bars the producing search never touched, so pooling multiplies evidence
-    without leaking. A pair that won't load, or a window too short, is skipped, not crashed on."""
+    window_size: float,
+    step: float,
+    n_windows: int | None,
+    holdout_fraction: float,
+):
+    """Yield ``(holdout_frame, BacktestResult)`` for each (pair, window) OOS slice — the single
+    grid iteration ``pool_trades`` and ``pool_segments`` (chunk V2) share, so the leakage-critical
+    'only strictly-OOS bars' logic lives in ONE place. Each window's holdout is bars the producing
+    search never touched. A pair that won't load, or a window too short, is skipped, not crashed on.
+    """
     factory = decode(genome)
     build_portfolio = decode_portfolio(genome)
     bounds = window_bounds(window_size, step, n_windows)
-    pooled: list[TradeRecord] = []
     for pair in eval_pairs:
         try:
             frame = load_candles(read, pair)
@@ -350,5 +349,79 @@ def pool_trades(
                 build_portfolio(INITIAL_CAPITAL, taker_fee),
                 stop_pct=genome.stop_pct,
             ).run(holdout)
-            pooled.extend(result.trades)
+            yield holdout, result
+
+
+def pool_trades(
+    genome: Genome,
+    read: Callable[[str], pd.DataFrame],
+    taker_fee: float,
+    eval_pairs: Sequence[str],
+    *,
+    window_size: float = 0.6,
+    step: float = 0.2,
+    n_windows: int | None = None,
+    holdout_fraction: float = 0.2,
+) -> list[TradeRecord]:
+    """Run the frozen ``genome`` (pair gene overridden to each of ``eval_pairs``) over the holdout
+    tail of each rolling window and pool every closed trade — the strictly-OOS ledger the
+    certificate scores. Reuses chunk S's ``window_bounds`` and chunk D's ``split_holdout``: each
+    window's holdout is bars the producing search never touched, so pooling multiplies evidence
+    without leaking. A pair that won't load, or a window too short, is skipped, not crashed on."""
+    pooled: list[TradeRecord] = []
+    for _, result in _iter_segments(
+        genome, read, taker_fee, eval_pairs,
+        window_size=window_size, step=step, n_windows=n_windows, holdout_fraction=holdout_fraction,
+    ):
+        pooled.extend(result.trades)
     return pooled
+
+
+@dataclass(frozen=True)
+class EvalSegment:
+    """One (pair, window) holdout slice used for pooling: the OOS price series the genome traded on
+    (``opens``/``closes``, both needed to replay a fill-at-open + mark-at-close round-trip) plus the
+    ``(direction, duration_bars)`` of each closed trade it made there. Chunk V2's exposure-matched
+    null replays random-entry trades of the SAME durations and directions on these same prices."""
+
+    opens: tuple[float, ...]
+    closes: tuple[float, ...]
+    trades: tuple[tuple[int, int], ...]
+
+
+def pool_segments(
+    genome: Genome,
+    read: Callable[[str], pd.DataFrame],
+    taker_fee: float,
+    eval_pairs: Sequence[str],
+    *,
+    window_size: float = 0.6,
+    step: float = 0.2,
+    n_windows: int | None = None,
+    holdout_fraction: float = 0.2,
+) -> list[EvalSegment]:
+    """The same OOS grid as ``pool_trades``, but returning per-segment price series + the
+    (direction, duration-in-bars) of each closed trade — the structure chunk V2's exposure-matched
+    random-entry null needs to place matched-but-randomly-timed trades on the very series the
+    candidate traded. Duration is the bar-index gap between the entry and exit fills (fills land at
+    a bar's open, so both times are in the holdout frame). Segments with no closed trade are
+    dropped (nothing to exposure-match)."""
+    segments: list[EvalSegment] = []
+    for holdout, result in _iter_segments(
+        genome, read, taker_fee, eval_pairs,
+        window_size=window_size, step=step, n_windows=n_windows, holdout_fraction=holdout_fraction,
+    ):
+        if not result.trades:
+            continue
+        idx = {int(t): i for i, t in enumerate(holdout["open_time"].to_numpy())}
+        trades = tuple(
+            (tr.direction, idx[tr.exit_time] - idx[tr.entry_time]) for tr in result.trades
+        )
+        segments.append(
+            EvalSegment(
+                opens=tuple(float(x) for x in holdout["open"].to_numpy()),
+                closes=tuple(float(x) for x in holdout["close"].to_numpy()),
+                trades=trades,
+            )
+        )
+    return segments

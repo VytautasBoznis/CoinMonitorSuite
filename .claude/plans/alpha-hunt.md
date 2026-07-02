@@ -228,6 +228,12 @@ compares against their pooled 95th percentile.
    direction mix, random entry times} on the SAME evaluation series. Candidate expectancy
    must sit ≥ 95th percentile. This kills "profitable by being flat through the bleed /
    long the bull tail" — beta dressed as alpha, the failure mode behind every prior GO.
+   **DONE 2026-07-02:** `nullmodel.random_entry_null` + `null_from_distribution` (direct
+   percentile, no best-of-M) + `_synthetic_return` (replays each matched trade through the
+   genome's OWN `decode_portfolio`, so leverage/fees/liquidation match the engine exactly);
+   `evidence.EvalSegment`/`pool_segments` extract per-segment prices + trade durations via a
+   shared `_iter_segments` (pool_trades byte-unchanged). CLI `nullcheck --mode matched
+   [--resamples]`. 299 tests green (+10), ruff clean. Not yet run live.
 3. **Surrogate-data null (dearest, run last).** Stationary block bootstrap of each USDC
    leg's log returns (block length ~20 bars), resampling time-blocks JOINTLY across all
    legs so cross-pair correlation structure survives while temporal signal dies; rebuild

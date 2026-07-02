@@ -2,12 +2,19 @@ from __future__ import annotations
 
 import math
 import random
+import statistics
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
 import pandas as pd
 
-from coinmon.search.evidence import build_evidence, pool_trades
+from coinmon.backtest.portfolio import Portfolio
+from coinmon.search.evidence import (
+    INITIAL_CAPITAL,
+    EvalSegment,
+    build_evidence,
+    pool_trades,
+)
 from coinmon.search.ga import random_genome
 from coinmon.search.genome import UNIVERSE, Genome
 
@@ -18,17 +25,24 @@ from coinmon.search.genome import UNIVERSE, Genome
 # over correlated pairs manufactures a high score from noise alone; without a null distribution to
 # compare against, "beats zero" is not "beats chance". This module builds that null.
 #
-# THIS FILE = V1, the random-genome null (the cheapest and most fundamental of the plan's three):
-# sample M genomes uniformly at random (no evolution), score each by the SAME pooled-ledger
-# certificate statistic (t_exp) over the SAME evaluation grid, and compare the candidate against
-# the distribution of the BEST-of-M random tries. The real search SELECTS its winner from many
-# genomes, so the fair null for a selected statistic is the distribution of the selected statistic
-# under the null — the maximum, not a single random draw. This same run doubles as the standing
-# "is the GA even beating random search?" audit the plan's §4 demands: at <=10 dims, if evolved
-# winners don't clear best-of-M-random, run random search and save the compute.
+# V1 = the random-genome null (the cheapest and most fundamental of the plan's three): sample M
+# genomes uniformly at random (no evolution), score each by the SAME pooled-ledger certificate
+# statistic (t_exp) over the SAME evaluation grid, and compare the candidate against the
+# distribution of the BEST-of-M random tries. The real search SELECTS its winner from many genomes,
+# so the fair null for a selected statistic is the distribution of the selected statistic under the
+# null — the maximum, not a single random draw (``null_from_scores``). This doubles as the standing
+# "is the GA even beating random search?" audit the plan's §4 demands.
 #
-# (V2 exposure-matched random-entry null and V3 surrogate-data null are separate sub-chunks — they
-# need per-pair duration mechanics / a full re-search on signal-destroyed data respectively.)
+# V2 = the exposure-matched random-entry null (``random_entry_null``): given the candidate's own OOS
+# ledger, replay the SAME number of trades, the SAME holding-duration distribution and the SAME
+# direction mix — but at RANDOM entry times — on the very same OOS series, R times, and ask whether
+# the candidate's expectancy clears the 95th percentile of that matched-random distribution. This is
+# the per-candidate null that kills "beta dressed as alpha" (profitable only by being long through a
+# bull tail / short through a bleed) — the failure mode behind every prior GO. Unlike V1 there is no
+# selection, so the null is the DIRECT distribution's upper tail (``null_from_distribution``), not a
+# best-of-M maximum, and the statistic compared is expectancy (per the plan §V.2), not t_exp.
+#
+# (V3 surrogate-data null — a full re-search on signal-destroyed data — is a separate sub-chunk.)
 
 
 @dataclass(frozen=True)
@@ -56,9 +70,9 @@ class NullResult:
             [
                 f"Null calibration [{self.mode}] - {'BEATS' if self.beaten else 'does NOT beat'} "
                 "the null:",
-                f"  candidate score (t_exp)  {self.candidate_score:+.3f}",
-                f"  random genomes scored     {len(finite)}/{self.n_samples} finite",
-                f"  best random score         {best:+.3f}",
+                f"  candidate score           {self.candidate_score:+.3f}",
+                f"  null samples scored        {len(finite)}/{self.n_samples} finite",
+                f"  best null sample           {best:+.3f}",
                 f"  null {self.quantile:.0%} threshold      {self.percentile:+.3f}",
                 f"  verdict                   candidate {'>' if self.beaten else '<='} threshold "
                 f"-> C4 {'PASS' if self.beaten else 'FAIL'}",
@@ -178,4 +192,100 @@ def random_genome_null(
         seed=boot_seed,
         resamples=boot_resamples,
         quantile=quantile,
+    )
+
+
+def null_from_distribution(
+    candidate_score: float,
+    sample_scores: Sequence[float],
+    *,
+    mode: str = "matched",
+    quantile: float = 0.95,
+) -> NullResult:
+    """Reduce a candidate score + a DIRECT null distribution (chunk V2: one score per matched-random
+    resample) to a verdict. Unlike ``null_from_scores`` there is no best-of-M bootstrap — the
+    candidate wasn't selected from these samples, so the null is the distribution's own ``quantile``
+    upper tail. Pure, so it is unit-testable without any engine. With no finite sample the threshold
+    is +inf (never beaten)."""
+    finite = sorted(s for s in sample_scores if math.isfinite(s))
+    if not finite:
+        return NullResult(
+            mode=mode,
+            candidate_score=candidate_score,
+            null_scores=tuple(sample_scores),
+            percentile=float("inf"),
+            quantile=quantile,
+            beaten=False,
+        )
+    idx = min(len(finite) - 1, int(quantile * len(finite)))
+    percentile = finite[idx]
+    return NullResult(
+        mode=mode,
+        candidate_score=candidate_score,
+        null_scores=tuple(sample_scores),
+        percentile=percentile,
+        quantile=quantile,
+        beaten=candidate_score > percentile,
+    )
+
+
+def _synthetic_return(
+    build_portfolio: Callable[[float, float], Portfolio],
+    taker_fee: float,
+    opens: Sequence[float],
+    closes: Sequence[float],
+    entry_idx: int,
+    duration: int,
+    direction: int,
+) -> float:
+    """Net per-trade return of ONE random-entry trade that enters at ``opens[entry_idx]``, is marked
+    (for liquidation) at each held bar's close, and exits ``duration`` bars later at its open —
+    computed through the genome's OWN portfolio (``build_portfolio``), so leverage, fee legs and
+    isolated-margin liquidation match the engine's economics EXACTLY (no re-derived formula to drift
+    from). Mirrors ``BarStepper``: fill at open, mark closes[entry_idx .. entry_idx+duration-1],
+    then close at the exit bar's open. A fresh portfolio per trade makes the result the scale-free
+    per-collateral return the ledger records."""
+    portfolio = build_portfolio(INITIAL_CAPITAL, taker_fee)
+    portfolio.rebalance(direction, opens[entry_idx])
+    for k in range(entry_idx, entry_idx + duration):
+        portfolio.equity(closes[k])  # latch a liquidation the way the engine marks each bar close
+    portfolio.rebalance(0, opens[entry_idx + duration])
+    return portfolio.closed_trades[-1].net_return_pct
+
+
+def random_entry_null(
+    candidate_expectancy: float,
+    segments: Sequence[EvalSegment],
+    build_portfolio: Callable[[float, float], Portfolio],
+    taker_fee: float,
+    *,
+    resamples: int = 1000,
+    seed: int = 0,
+    quantile: float = 0.95,
+) -> NullResult:
+    """The exposure-matched random-entry null (chunk V2). For each of ``resamples`` draws, replay
+    every one of the candidate's closed trades — keeping its segment, direction and holding duration
+    but drawing a fresh RANDOM entry bar (uniform over the placements that fit the duration) — pool
+    the synthetic per-trade returns, and take that pool's expectancy. The candidate's expectancy
+    must clear the ``quantile`` upper tail of that distribution (via ``null_from_distribution``) to
+    earn C4: an edge that's only market exposure in disguise scores no better than random entry with
+    the same footprint."""
+    rng = random.Random(seed)
+    sample_scores: list[float] = []
+    for _ in range(resamples):
+        rets: list[float] = []
+        for seg in segments:
+            n = len(seg.opens)
+            for direction, duration in seg.trades:
+                entry_idx = rng.randint(0, n - 1 - duration)  # room for the full hold
+                rets.append(
+                    _synthetic_return(
+                        build_portfolio, taker_fee,
+                        seg.opens, seg.closes, entry_idx, duration, direction,
+                    )
+                )
+        if rets:
+            sample_scores.append(statistics.fmean(rets))
+    return null_from_distribution(
+        candidate_expectancy, sample_scores, mode="matched", quantile=quantile
     )

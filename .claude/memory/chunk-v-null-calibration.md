@@ -1,6 +1,6 @@
 ---
 name: chunk-v-null-calibration
-description: "chunk V1 random-genome null — bootstrapped best-of-M null makes the certificate's C4 operational; also the standing GA-vs-random audit; V2/V3 pending"
+description: "chunk V null calibration (certificate C4): V1 random-genome best-of-M null + V2 exposure-matched random-entry null both DONE; V3 surrogate-data pending"
 metadata: 
   node_type: memory
   type: project
@@ -40,10 +40,30 @@ keep certify+nullcheck genomes in lockstep.
 274 tests green (+10, all DB-free), ruff clean. Real pooling path smoke-verified end-to-end on
 synthetic candles (not just the injected scorer).
 
-**Still pending:** V2 exposure-matched random-entry null (per-candidate; needs per-pair
-holding-duration + direction-mix mechanics — kills "beta dressed as alpha": long the bull tail /
-flat through the bleed). V3 surrogate-data null (the definitive "is 51% mined": stationary
-block-bootstrap each leg's log returns JOINTLY across legs so cross-pair correlation survives while
-temporal signal dies, rebuild ratios, re-run the FULL search on ≥20 surrogate universes). Both slot
-into the same `nullcheck --mode` CLI + JSON seam V1 established. Standing discipline: never tune
-anything to pass the null — it is the exam, not the training set ([[search-overfits-not-strategy]]).
+**V2 DONE (2026-07-02) — the exposure-matched random-entry null** (the direct antidote to "beta
+dressed as alpha": profitable only by being long a bull tail / short a bleed — the failure mode
+behind every prior GO). `nullmodel.random_entry_null(candidate_expectancy, segments,
+build_portfolio, taker_fee, resamples=1000)`: for each of R draws, replay every one of the
+candidate's OWN closed trades keeping its **segment + direction + holding-duration** but drawing a
+fresh RANDOM entry bar, pool the synthetic returns, take that pool's expectancy; the candidate's
+expectancy must clear the 95th pct of that distribution.
+- `null_from_distribution` = the DIRECT empirical percentile (NOT V1's best-of-M max): V2 does no
+  selection, so the fair null is the matched distribution's own upper tail. Statistic compared is
+  **expectancy** (per plan §V.2), not `t_exp`.
+- `_synthetic_return` computes each matched trade through the genome's OWN `decode_portfolio` —
+  reuses the real Spot/Perp economics (leverage, both fee legs, isolated-margin liquidation latched
+  on a held bar's close), so NO re-derived return formula can drift from the engine. Fresh portfolio
+  per trade → the scale-free per-collateral return the ledger records. Mirrors `BarStepper`: fill at
+  entry bar's open, mark closes[entry .. entry+dur-1], close at exit bar's open.
+- New `evidence.EvalSegment` (opens, closes, per-trade (direction, duration_bars)) + `pool_segments`.
+  Refactor: `pool_trades` and `pool_segments` now share one private `_iter_segments` grid loop, so
+  the leakage-critical OOS-only slicing lives in ONE place and `pool_trades` output is byte-identical.
+- CLI `nullcheck --mode random|matched` (+ `--resamples`, default 1000); same genome-stamped JSON
+  `certify --null` consumes (C4 is mode-agnostic — just reads `beaten`).
+299 tests green (+10, all DB-free), ruff clean.
+
+**Still pending:** V3 surrogate-data null (the definitive "is 51% mined": stationary block-bootstrap
+each leg's log returns JOINTLY across legs so cross-pair correlation survives while temporal signal
+dies, rebuild ratios, re-run the FULL search on ≥20 surrogate universes). Slots into the same
+`nullcheck --mode` CLI + JSON seam. Standing discipline: never tune anything to pass the null — it is
+the exam, not the training set ([[search-overfits-not-strategy]]).

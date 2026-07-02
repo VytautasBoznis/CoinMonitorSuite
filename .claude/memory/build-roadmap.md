@@ -421,11 +421,25 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
     audit. CLI `coinmon nullcheck` writes a genome-stamped JSON; `certify --null FILE` loads it,
     refuses a mismatched genome/timeframe, and feeds `beaten` into C4 → **C4 is now operational**
     (was permanently PENDING). 274 tests green (+10, all DB-free: injected-scorer + pure-core), ruff
-    clean, real pooling path smoke-verified. **V2 (exposure-matched random-entry, per-candidate,
-    needs per-pair duration mechanics) + V3 (surrogate-data, re-runs the FULL search on
-    block-bootstrapped signal-destroyed legs — the definitive "is 51% mined") remain.** See
-    [[chunk-v-null-calibration]]. Acceptance for the whole chunk (nulls persisted + consumed) is met
-    by V1 for the random mode; V2/V3 add the other two modes to the same `--mode` CLI + JSON seam.
+    clean, real pooling path smoke-verified. **V2 DONE (2026-07-02):** the exposure-matched
+    random-entry null — `random_entry_null` replays the candidate's OWN closed trades (same count,
+    same holding-duration distribution, same direction mix) at RANDOM entry bars on the very same OOS
+    series, R times, and asks whether its expectancy clears the 95th pct of that matched-random
+    distribution (`null_from_distribution` = DIRECT percentile, not V1's best-of-M — there's no
+    selection here). The synthetic per-trade return is computed through the genome's OWN portfolio
+    (`_synthetic_return` reuses `decode_portfolio` → exact leverage/fee/isolated-liquidation
+    economics, no re-derived formula to drift). New `evidence.EvalSegment`/`pool_segments` extract
+    per-segment (opens, closes, per-trade direction+duration-in-bars); `pool_trades`/`pool_segments`
+    now share one `_iter_segments` grid loop so the leakage-critical "OOS-only" logic lives once and
+    `pool_trades` output stays byte-identical. CLI `nullcheck --mode random|matched` (+ `--resamples`)
+    branches to it; same JSON `certify --null` consumes (C4 mode-agnostic). This is the direct
+    antidote to "beta dressed as alpha" (profitable only by being long a bull tail / short a bleed —
+    the failure mode behind every prior GO). 299 tests green (+10: direct-percentile reducer, spot/
+    perp/liquidation synthetic-return economics, flat-series exposure floor, uptrend-beta NOT beaten,
+    determinism, pool_segments↔pool_trades count parity), ruff clean. **V3 (surrogate-data, re-runs
+    the FULL search on block-bootstrapped signal-destroyed legs — the definitive "is 51% mined")
+    remains.** See [[chunk-v-null-calibration]]. Acceptance (nulls persisted + consumed) is met for
+    random + matched modes; V3 adds the last mode to the same `--mode` CLI + JSON seam.
   - [~] **W — New signal families (escape the RSI valley).** W1 `ratio_momentum` (cross-coin
     relative strength — the documented effect), W2 weekday/hour seasonality modifier gene,
     W3 `funding_carry` (needs T), W4 `donchian_breakout`, W5 cross-sectional top-k rotation

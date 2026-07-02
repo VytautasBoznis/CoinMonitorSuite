@@ -6,6 +6,7 @@ from coinmon.search.evidence import (
     block_bootstrap_ci,
     build_evidence,
     certify,
+    pool_segments,
     pool_trades,
     wilson_lower_bound,
 )
@@ -146,3 +147,35 @@ def test_pool_trades_only_evaluates_holdout_bars():
     )
     assert pooled, "expected the genome to trade in the holdout"
     assert min(t.entry_time for t in pooled) >= holdout_start
+
+
+def test_pool_segments_matches_pool_trades_and_records_durations():
+    # pool_segments must see the SAME OOS grid as pool_trades (they share _iter_segments): the total
+    # trade count agrees, and every recorded (direction, duration) is a valid bar-index gap >= 1.
+    n = 120
+    closes = [100 + (8 if i % 2 else -8) for i in range(n)]
+    frame = pd.DataFrame(
+        {
+            "open_time": range(n),
+            "open": closes,
+            "high": [c + 1 for c in closes],
+            "low": [c - 1 for c in closes],
+            "close": closes,
+            "volume": [1.0] * n,
+        }
+    )
+    genome = Genome(
+        family="rsi_meanreversion",
+        pair="AAA/USDC",
+        params={"period": 2, "oversold": 40.0, "exit_level": 60.0},
+    )
+    kwargs = dict(window_size=1.0, step=1.0, holdout_fraction=0.5)
+    pooled = pool_trades(genome, lambda s: frame, 0.0, [genome.pair], **kwargs)
+    segments = pool_segments(genome, lambda s: frame, 0.0, [genome.pair], **kwargs)
+    assert segments
+    assert sum(len(seg.trades) for seg in segments) == len(pooled)
+    for seg in segments:
+        assert len(seg.opens) == len(seg.closes)
+        for direction, duration in seg.trades:
+            assert direction in (-1, 1)
+            assert 1 <= duration < len(seg.opens)

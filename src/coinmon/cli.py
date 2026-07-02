@@ -26,12 +26,13 @@ from coinmon.scraper import service
 from coinmon.search.evidence import (
     build_evidence,
     certify,
+    pool_segments,
     pool_trades,
     select_eval_pairs,
 )
 from coinmon.search.ga import GAConfig
-from coinmon.search.genome import Genome, validate
-from coinmon.search.nullmodel import NullResult, random_genome_null
+from coinmon.search.genome import Genome, decode_portfolio, validate
+from coinmon.search.nullmodel import NullResult, random_entry_null, random_genome_null
 from coinmon.search.runner import (
     CandleCache,
     FitnessParams,
@@ -477,10 +478,12 @@ def _certify(args: argparse.Namespace) -> None:
 
 
 def _nullcheck(args: argparse.Namespace) -> None:
-    # Chunk V1: the random-genome null (C4 of the Edge Certificate). Score the candidate genome by
-    # its pooled-ledger t_exp, then sample N random genomes scored the SAME way over the SAME eval
-    # grid and ask whether the candidate clears the best-of-M null. Writes the result to JSON that
-    # `certify --null` consumes. A data-mined artifact fails to beat the luckiest random try here.
+    # Chunk V: null calibration (C4 of the Edge Certificate). --mode random (V1) scores the
+    # candidate's pooled-ledger t_exp against a best-of-M random-genome null over the SAME grid;
+    # --mode matched (V2) replays the candidate's OWN trades at random entry times (same count,
+    # durations and direction mix) on the SAME series and asks whether its expectancy clears the
+    # matched-random distribution — the "is this beta dressed as alpha?" test. Either writes JSON
+    # `certify --null` consumes; a data-mined / exposure-only artifact fails to beat its null here.
     genome = _genome_from_args(args)
     conn = db.connect()
     try:
@@ -497,10 +500,6 @@ def _nullcheck(args: argparse.Namespace) -> None:
             genome, read, universe, args.eval_pairs,
             holdout_fraction=args.holdout, seed=args.seed,
         )
-        print(
-            f"pooling candidate {genome.family} on {len(eval_pairs)} pairs, then {args.n_genomes} "
-            f"random genomes over the same grid...\n"
-        )
         candidate = build_evidence(
             pool_trades(
                 genome, read, settings.taker_fee, eval_pairs,
@@ -508,21 +507,43 @@ def _nullcheck(args: argparse.Namespace) -> None:
             ),
             seed=args.seed, resamples=args.evidence_resamples, n_regimes=args.regimes,
         )
-        result = random_genome_null(
-            candidate.t_exp,
-            read,
-            settings.taker_fee,
-            eval_pairs,
-            universe=universe,
-            n_genomes=args.n_genomes,
-            sample_seed=args.seed,
-            boot_seed=args.seed,
-            evidence_resamples=args.evidence_resamples,
-            n_regimes=args.regimes,
-            window_size=args.window,
-            step=args.step,
-            holdout_fraction=args.holdout,
-        )
+        if args.mode == "random":
+            print(
+                f"pooling candidate {genome.family} on {len(eval_pairs)} pairs, then "
+                f"{args.n_genomes} random genomes over the same grid...\n"
+            )
+            result = random_genome_null(
+                candidate.t_exp,
+                read,
+                settings.taker_fee,
+                eval_pairs,
+                universe=universe,
+                n_genomes=args.n_genomes,
+                sample_seed=args.seed,
+                boot_seed=args.seed,
+                evidence_resamples=args.evidence_resamples,
+                n_regimes=args.regimes,
+                window_size=args.window,
+                step=args.step,
+                holdout_fraction=args.holdout,
+            )
+        else:  # matched — exposure-matched random-entry null (V2)
+            print(
+                f"pooling candidate {genome.family} on {len(eval_pairs)} pairs, then replaying its "
+                f"trades at random entry times x{args.resamples} on the same series...\n"
+            )
+            segments = pool_segments(
+                genome, read, settings.taker_fee, eval_pairs,
+                window_size=args.window, step=args.step, holdout_fraction=args.holdout,
+            )
+            result = random_entry_null(
+                candidate.expectancy,
+                segments,
+                decode_portfolio(genome),
+                settings.taker_fee,
+                resamples=args.resamples,
+                seed=args.seed,
+            )
     finally:
         conn.close()
 
@@ -921,8 +942,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_null = sub.add_parser(
         "nullcheck",
-        help="Chunk V1: score a frozen genome vs a best-of-M random-genome null over the same "
-        "pooled OOS grid; writes a JSON verdict `certify --null` consumes as C4",
+        help="Chunk V: score a frozen genome vs a null over the same pooled OOS grid (--mode "
+        "random = best-of-M random genomes; matched = exposure-matched random entry); writes a "
+        "JSON verdict `certify --null` consumes as C4",
+    )
+    p_null.add_argument(
+        "--mode", choices=("random", "matched"), default="random",
+        help="random = best-of-M random-genome null (V1); matched = exposure-matched random-entry "
+        "null on the candidate's own ledger (V2, the 'beta dressed as alpha' test)",
     )
     p_null.add_argument("--timeframe", default="1d")
     p_null.add_argument("--family", required=True, help="strategy family, e.g. rsi_meanreversion")
@@ -954,7 +981,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_null.add_argument(
         "--n-genomes", type=int, default=50, metavar="N",
-        help="random genomes to sample for the null (each pooled over the same grid; default 50)",
+        help="[--mode random] random genomes to sample for the null (each pooled over the same "
+        "grid; default 50)",
+    )
+    p_null.add_argument(
+        "--resamples", type=int, default=1000, metavar="N",
+        help="[--mode matched] random-entry resamples of the candidate's own ledger (default 1000)",
     )
     p_null.add_argument(
         "--evidence-resamples", type=int, default=2000, metavar="N",

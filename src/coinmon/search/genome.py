@@ -16,6 +16,7 @@ from coinmon.strategies.indicator_combo import (
     build_combo,
     describe_combo,
 )
+from coinmon.strategies.ratio_momentum import RatioMomentum
 from coinmon.strategies.rsi_meanreversion import RSIMeanReversion
 
 # Chunk B: a Genome is the GA's unit of selection — *what* to trade (the pair, a gene per the
@@ -63,6 +64,10 @@ def _build_atr(p: Mapping[str, float]) -> Strategy:
     return ATRChannelBreakout(period=int(p["period"]), mult=p["mult"])
 
 
+def _build_ratio_momentum(p: Mapping[str, float]) -> Strategy:
+    return RatioMomentum(lookback=int(p["lookback"]), skip=int(p["skip"]), band=p["band"])
+
+
 # The registry of searchable families. Ranges are deliberately broad-but-sane: the OOS fitness +
 # fragility gate (not a tight prior) is what's trusted to reject the junk corners. The soft
 # orderings oversold < exit_level and fast < slow are NOT hard-enforced — a malformed band just
@@ -93,6 +98,19 @@ FAMILIES: dict[str, StrategyFamily] = {
             "mult": ParamSpec(0.5, 4.0),
         },
         build=_build_atr,
+    ),
+    # Chunk W1: cross-coin relative momentum — the one crypto effect with documented
+    # persistence (probe H1 PASS), the first family out of the RSI valley. On a ratio pair
+    # this is one coin's momentum relative to another. Ranges cover fast-to-slow lookbacks; a
+    # churny band=0 corner just scores poorly OOS, so the search finds its own cost hurdle.
+    "ratio_momentum": StrategyFamily(
+        name="ratio_momentum",
+        params={
+            "lookback": ParamSpec(5, 120, integer=True),
+            "skip": ParamSpec(0, 10, integer=True),
+            "band": ParamSpec(0.0, 0.10),
+        },
+        build=_build_ratio_momentum,
     ),
 }
 

@@ -426,7 +426,7 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
     block-bootstrapped signal-destroyed legs — the definitive "is 51% mined") remain.** See
     [[chunk-v-null-calibration]]. Acceptance for the whole chunk (nulls persisted + consumed) is met
     by V1 for the random mode; V2/V3 add the other two modes to the same `--mode` CLI + JSON seam.
-  - [ ] **W — New signal families (escape the RSI valley).** W1 `ratio_momentum` (cross-coin
+  - [~] **W — New signal families (escape the RSI valley).** W1 `ratio_momentum` (cross-coin
     relative strength — the documented effect), W2 weekday/hour seasonality modifier gene,
     W3 `funding_carry` (needs T), W4 `donchian_breakout`, W5 cross-sectional top-k rotation
     (design-only, gated on W1 certifying). **T0 probe results (2026-07-02, `probes/`, frozen
@@ -436,6 +436,18 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
     carry CAPTURE, not an entry signal), **H2 weekday FAIL** (1/35 significant = chance, W2
     last), **H4 BTC→alt lead-lag FAIL decisively** (lag-1 ≈ −0.03 all alts → family dropped).
     H3 (4h fees) and H5 (pooling floor) pending 4h scrape / U1 ledger.
+    **W1 DONE (2026-07-02):** `strategies/ratio_momentum.RatioMomentum` — long when
+    `roc(close, lookback, skip) > band`, flat otherwise (exact probe-H1 logic, the pulse that
+    passed); bounded deque buffer = O(1)/bar (N1 discipline). Registered as an ordinary
+    `genome.FAMILIES["ratio_momentum"]` (lookback 5–120 int, skip 0–10 int, band 0.0–0.10), so
+    the WHOLE pipeline consumes it unchanged (GA sample/mutate/crossover via `rng.choice(FAMILIES)`,
+    decode/decode_portfolio incl. RegimeAdaptive+perp, OOS fitness, graduation, cross-pair,
+    certificate, V1 null) — zero GA/engine edits. 289 tests green (+15: registration, decode==handbuilt,
+    warmup-hold/no-lookahead, rising→long/falling→flat, band gates entry, skip drops recent bars,
+    bounded buffer, GA reaches it, mutate/crossover valid, fitness end-to-end, adaptive wrap), ruff
+    clean. On a ratio pair this IS cross-coin relative momentum — the first family out of the RSI
+    valley. **Not yet run live** — the real read is `coinmon search`/`certify` picking momentum and
+    the certificate/nulls judging it (the family only makes the effect REACHABLE; alpha is unproven).
   - [ ] **X — 4h evidence multiplication.** Same pipeline at 4h (≈6× bars/trades; net-of-cost
     ledger prices the fee risk honestly).
   - [ ] **Y — The certified sweep + ensemble (payoff).** Heavy multi-seed sweep over everything;

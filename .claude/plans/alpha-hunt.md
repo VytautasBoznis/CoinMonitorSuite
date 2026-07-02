@@ -257,6 +257,11 @@ and nulls decide, not curation. Sub-chunks are independent; land in this order:
    provides the short side). Params: `lookback` ParamSpec(5, 120, int), `skip`
    ParamSpec(0, 10, int), `band` ParamSpec(0.0, 0.10). ~40 lines + tests, mirrors
    `rsi_meanreversion.py` structure.
+   **DONE 2026-07-02:** `strategies/ratio_momentum.RatioMomentum` (exact probe-H1 signal,
+   bounded deque = O(1)/bar) + `genome.FAMILIES["ratio_momentum"]`. Registration-only wiring —
+   GA/decode/fitness/graduation/cross-pair/certificate/null all consume it unchanged (no GA or
+   engine edits). 289 tests green (+15), ruff clean. Family makes cross-coin momentum REACHABLE;
+   alpha still unproven pending a live search + certify.
 2. **W2 — calendar/seasonality gene (modifier, like `stop_pct`).** A `day_mask: int`
    gene (7-bit weekday mask; bit set = trading allowed, position forced flat otherwise;
    `None`/all-ones = off). Implemented as a wrapper strategy like `RegimeAdaptive`.

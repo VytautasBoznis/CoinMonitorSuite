@@ -410,9 +410,22 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
     split is honored by CONFIG (run `search` with USDT quote, `certify` with USDC quote) — no single
     train-USDT/certify-USDC command yet; that fuller plumbing lands with Y. See [[edge-certificate-implemented]].
     Next: V (null calibration) or W1 (ratio_momentum, T0-promoted).
-  - [ ] **V — Null calibration.** `search/nullmodel.py`: random-genome null, exposure-matched
+  - [~] **V — Null calibration.** `search/nullmodel.py`: random-genome null, exposure-matched
     random-entry null, joint-block-bootstrap surrogate-data null (full search on signal-destroyed
-    data); CLI `coinmon nullcheck`; C4 of the certificate consumes these.
+    data); CLI `coinmon nullcheck`; C4 of the certificate consumes these. Split into V1/V2/V3
+    (cheapest first, like N). **V1 DONE (2026-07-02):** the random-genome null — `nullmodel.py`
+    (`NullResult` + pure `null_from_scores` = BOOTSTRAPPED-MAX null [White's Reality Check
+    correction: the fair null for a SELECTED winner is the max-of-M, not a single random draw] +
+    `random_genome_null` orchestration that scores M random genomes by the SAME pooled-ledger t_exp
+    over the SAME eval grid as the candidate). Doubles as the plan §4 "is the GA beating random?"
+    audit. CLI `coinmon nullcheck` writes a genome-stamped JSON; `certify --null FILE` loads it,
+    refuses a mismatched genome/timeframe, and feeds `beaten` into C4 → **C4 is now operational**
+    (was permanently PENDING). 274 tests green (+10, all DB-free: injected-scorer + pure-core), ruff
+    clean, real pooling path smoke-verified. **V2 (exposure-matched random-entry, per-candidate,
+    needs per-pair duration mechanics) + V3 (surrogate-data, re-runs the FULL search on
+    block-bootstrapped signal-destroyed legs — the definitive "is 51% mined") remain.** See
+    [[chunk-v-null-calibration]]. Acceptance for the whole chunk (nulls persisted + consumed) is met
+    by V1 for the random mode; V2/V3 add the other two modes to the same `--mode` CLI + JSON seam.
   - [ ] **W — New signal families (escape the RSI valley).** W1 `ratio_momentum` (cross-coin
     relative strength — the documented effect), W2 weekday/hour seasonality modifier gene,
     W3 `funding_carry` (needs T), W4 `donchian_breakout`, W5 cross-sectional top-k rotation

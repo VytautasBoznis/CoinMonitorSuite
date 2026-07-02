@@ -31,6 +31,7 @@ from coinmon.search.evidence import (
 )
 from coinmon.search.ga import GAConfig
 from coinmon.search.genome import Genome, validate
+from coinmon.search.nullmodel import NullResult, random_genome_null
 from coinmon.search.runner import (
     CandleCache,
     FitnessParams,
@@ -398,11 +399,8 @@ def _stability(args: argparse.Namespace) -> None:
     print(report.summary())
 
 
-def _certify(args: argparse.Namespace) -> None:
-    # Chunk U: pool a FROZEN genome's per-trade OOS ledger across decorrelated pairs x rolling
-    # window holdouts and judge it against the Edge Certificate (N>=300, Wilson bound > 0.50,
-    # expectancy CI > 0, regime spread). The genome is given on the CLI (no winner-file persistence
-    # yet); the C4 null and C6 fragility stay PENDING until chunks V / the sweep supply them.
+def _genome_from_args(args: argparse.Namespace) -> Genome:
+    """Build + validate the frozen genome the certify/nullcheck commands take on the CLI."""
     genome = Genome(
         family=args.family,
         pair=args.pair,
@@ -413,6 +411,43 @@ def _certify(args: argparse.Namespace) -> None:
         stop_pct=args.stop,
     )
     validate(genome)
+    return genome
+
+
+def _genome_spec(genome: Genome) -> dict:
+    """A JSON-serializable view of a genome — so a null file records exactly which genome it
+    calibrates, and certify can refuse a null built for a different one."""
+    return {
+        "family": genome.family,
+        "pair": genome.pair,
+        "params": dict(genome.params),
+        "direction": genome.direction,
+        "leverage": genome.leverage,
+        "trend_period": genome.trend_period,
+        "stop_pct": genome.stop_pct,
+    }
+
+
+def _load_null(path: str, genome: Genome, timeframe: str) -> bool:
+    """Load a nullcheck JSON and return its ``beaten`` verdict for C4 — but only after confirming
+    it was built for THIS genome + timeframe, so the wrong null can't be applied by accident."""
+    with open(path) as fh:
+        data = json.load(fh)
+    if data.get("genome") != _genome_spec(genome) or data.get("timeframe") != timeframe:
+        raise SystemExit(
+            f"null file {path} was built for a different genome/timeframe — re-run nullcheck"
+        )
+    return NullResult.from_dict(data["null"]).beaten
+
+
+def _certify(args: argparse.Namespace) -> None:
+    # Chunk U: pool a FROZEN genome's per-trade OOS ledger across decorrelated pairs x rolling
+    # window holdouts and judge it against the Edge Certificate (N>=300, Wilson bound > 0.50,
+    # expectancy CI > 0, regime spread). The genome is given on the CLI (no winner-file persistence
+    # yet). C4's null verdict comes from a nullcheck JSON via --null (chunk V); C6 fragility stays
+    # PENDING until the sweep supplies it.
+    genome = _genome_from_args(args)
+    null_beaten = _load_null(args.null, genome, args.timeframe) if args.null else None
     conn = db.connect()
     try:
         def read(symbol: str) -> pd.DataFrame:
@@ -437,8 +472,68 @@ def _certify(args: argparse.Namespace) -> None:
         conn.close()
 
     evidence = build_evidence(pooled, seed=args.seed, n_regimes=args.regimes)
-    certificate = certify(evidence)
+    certificate = certify(evidence, null_beaten=null_beaten)
     print(certificate.summary())
+
+
+def _nullcheck(args: argparse.Namespace) -> None:
+    # Chunk V1: the random-genome null (C4 of the Edge Certificate). Score the candidate genome by
+    # its pooled-ledger t_exp, then sample N random genomes scored the SAME way over the SAME eval
+    # grid and ask whether the candidate clears the best-of-M null. Writes the result to JSON that
+    # `certify --null` consumes. A data-mined artifact fails to beat the luckiest random try here.
+    genome = _genome_from_args(args)
+    conn = db.connect()
+    try:
+        def read(symbol: str) -> pd.DataFrame:
+            return db.read_candles(conn, settings.exchange, symbol, args.timeframe)
+
+        universe = discover_universe(
+            db.list_series(conn),
+            exchange=settings.exchange,
+            quote=settings.quote_currency,
+            timeframe=args.timeframe,
+        )
+        eval_pairs = select_eval_pairs(
+            genome, read, universe, args.eval_pairs,
+            holdout_fraction=args.holdout, seed=args.seed,
+        )
+        print(
+            f"pooling candidate {genome.family} on {len(eval_pairs)} pairs, then {args.n_genomes} "
+            f"random genomes over the same grid...\n"
+        )
+        candidate = build_evidence(
+            pool_trades(
+                genome, read, settings.taker_fee, eval_pairs,
+                window_size=args.window, step=args.step, holdout_fraction=args.holdout,
+            ),
+            seed=args.seed, resamples=args.evidence_resamples, n_regimes=args.regimes,
+        )
+        result = random_genome_null(
+            candidate.t_exp,
+            read,
+            settings.taker_fee,
+            eval_pairs,
+            universe=universe,
+            n_genomes=args.n_genomes,
+            sample_seed=args.seed,
+            boot_seed=args.seed,
+            evidence_resamples=args.evidence_resamples,
+            n_regimes=args.regimes,
+            window_size=args.window,
+            step=args.step,
+            holdout_fraction=args.holdout,
+        )
+    finally:
+        conn.close()
+
+    print(result.summary())
+    with open(args.out, "w") as fh:
+        json.dump(
+            {"genome": _genome_spec(genome), "timeframe": args.timeframe, "null": result.to_dict()},
+            fh,
+            indent=2,
+        )
+    print(f"\nwrote {args.out} — feed it to `certify --null {args.out}` for C4")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -817,7 +912,58 @@ def build_parser() -> argparse.ArgumentParser:
         "--regimes", type=int, default=2, metavar="N",
         help="disjoint time regimes to split the pool into for C5 (default 2)",
     )
+    p_cert.add_argument(
+        "--null", default=None, metavar="FILE",
+        help="a nullcheck JSON (chunk V) whose verdict supplies C4 (must match this genome); "
+        "without it C4 stays PENDING and the certificate can't reach CERTIFIED",
+    )
     p_cert.set_defaults(func=_certify)
+
+    p_null = sub.add_parser(
+        "nullcheck",
+        help="Chunk V1: score a frozen genome vs a best-of-M random-genome null over the same "
+        "pooled OOS grid; writes a JSON verdict `certify --null` consumes as C4",
+    )
+    p_null.add_argument("--timeframe", default="1d")
+    p_null.add_argument("--family", required=True, help="strategy family, e.g. rsi_meanreversion")
+    p_null.add_argument("--pair", required=True, help="the genome's own pair, e.g. BNB/ETH")
+    p_null.add_argument(
+        "--params", required=True, metavar="JSON", help='family params as JSON, e.g. \'{"period":2,'
+        '"oversold":10,"exit_level":60}\''
+    )
+    p_null.add_argument("--direction", default="long", choices=("long", "adaptive"))
+    p_null.add_argument("--leverage", type=float, default=1.0, metavar="X")
+    p_null.add_argument("--trend-period", type=float, default=50.0, metavar="BARS")
+    p_null.add_argument(
+        "--stop", type=float, default=None, metavar="PCT", help="intrabar stop fraction (def none)"
+    )
+    p_null.add_argument("--seed", type=int, default=0, help="seeds eval-pair pick, sampling + boot")
+    p_null.add_argument(
+        "--eval-pairs", type=int, default=8, metavar="N",
+        help="decorrelated peer pairs to pool alongside the genome's own pair (default 8)",
+    )
+    p_null.add_argument(
+        "--holdout", type=float, default=0.2, metavar="FRACTION",
+        help="each window's OOS holdout tail fraction the ledger is pooled from (default 0.2)",
+    )
+    p_null.add_argument("--window", type=float, default=0.6, metavar="FRACTION")
+    p_null.add_argument("--step", type=float, default=0.2, metavar="FRACTION")
+    p_null.add_argument(
+        "--regimes", type=int, default=2, metavar="N",
+        help="disjoint time regimes for the candidate's evidence (kept equal to certify's, def 2)",
+    )
+    p_null.add_argument(
+        "--n-genomes", type=int, default=50, metavar="N",
+        help="random genomes to sample for the null (each pooled over the same grid; default 50)",
+    )
+    p_null.add_argument(
+        "--evidence-resamples", type=int, default=2000, metavar="N",
+        help="bootstrap resamples for each genome's t_exp; candidate + nulls alike (default 2000)",
+    )
+    p_null.add_argument(
+        "--out", default="null.json", metavar="FILE", help="where to write the verdict JSON",
+    )
+    p_null.set_defaults(func=_nullcheck)
 
     return parser
 

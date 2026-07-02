@@ -410,10 +410,10 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
     split is honored by CONFIG (run `search` with USDT quote, `certify` with USDC quote) — no single
     train-USDT/certify-USDC command yet; that fuller plumbing lands with Y. See [[edge-certificate-implemented]].
     Next: V (null calibration) or W1 (ratio_momentum, T0-promoted).
-  - [~] **V — Null calibration.** `search/nullmodel.py`: random-genome null, exposure-matched
-    random-entry null, joint-block-bootstrap surrogate-data null (full search on signal-destroyed
-    data); CLI `coinmon nullcheck`; C4 of the certificate consumes these. Split into V1/V2/V3
-    (cheapest first, like N). **V1 DONE (2026-07-02):** the random-genome null — `nullmodel.py`
+  - [x] **V — Null calibration (COMPLETE 2026-07-02).** `search/nullmodel.py`: random-genome null,
+    exposure-matched random-entry null, joint-block-bootstrap surrogate-data null (full search on
+    signal-destroyed data); CLI `coinmon nullcheck`; C4 of the certificate consumes these. Split into
+    V1/V2/V3 (cheapest first, like N). **V1 DONE (2026-07-02):** the random-genome null — `nullmodel.py`
     (`NullResult` + pure `null_from_scores` = BOOTSTRAPPED-MAX null [White's Reality Check
     correction: the fair null for a SELECTED winner is the max-of-M, not a single random draw] +
     `random_genome_null` orchestration that scores M random genomes by the SAME pooled-ledger t_exp
@@ -436,10 +436,19 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
     antidote to "beta dressed as alpha" (profitable only by being long a bull tail / short a bleed —
     the failure mode behind every prior GO). 299 tests green (+10: direct-percentile reducer, spot/
     perp/liquidation synthetic-return economics, flat-series exposure floor, uptrend-beta NOT beaten,
-    determinism, pool_segments↔pool_trades count parity), ruff clean. **V3 (surrogate-data, re-runs
-    the FULL search on block-bootstrapped signal-destroyed legs — the definitive "is 51% mined")
-    remains.** See [[chunk-v-null-calibration]]. Acceptance (nulls persisted + consumed) is met for
-    random + matched modes; V3 adds the last mode to the same `--mode` CLI + JSON seam.
+    determinism, pool_segments↔pool_trades count parity), ruff clean. **V3 DONE (2026-07-02):** the
+    surrogate-data null — new `data/surrogate.py` (`block_bootstrap_indices` + `surrogate_legs` = JOINT
+    moving-block bootstrap of the direct legs' returns; ONE block sequence applied to every leg so
+    cross-leg correlation survives while temporal predictability dies; intrabar OHLC shape + real
+    calendar kept; ratios rebuild via `load_candles` → zero search/engine edits) + `nullmodel.surrogate_null`
+    (scores N full re-searches on signal-destroyed universes by pooled `t_exp`, judges the candidate vs
+    the DIRECT 95th pct — each surrogate is already a search-selected max, so `null_from_distribution`,
+    not V1's best-of-M). CLI `nullcheck --mode surrogate` (`--surrogates/--block/--pop/--gens`; search runs
+    holdout=0/fragility-off — only the GA winner is needed, pool_trades carves its own OOS windows). Same
+    JSON `certify --null` seam (C4 mode-agnostic). 317 tests green (+18: test_surrogate.py + surrogate_null),
+    ruff clean; end-to-end verified on synthetic legs (**search mined +2.31 t_exp out of pure noise** — the
+    exact bar a real candidate must clear). Not yet run live. **Chunk V COMPLETE.** See
+    [[chunk-v-null-calibration]]. Acceptance (nulls persisted + consumed) met for all three modes.
   - [~] **W — New signal families (escape the RSI valley).** W1 `ratio_momentum` (cross-coin
     relative strength — the documented effect), W2 weekday/hour seasonality modifier gene,
     W3 `funding_carry` (needs T), W4 `donchian_breakout`, W5 cross-sectional top-k rotation

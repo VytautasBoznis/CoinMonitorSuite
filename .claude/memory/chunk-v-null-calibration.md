@@ -1,6 +1,6 @@
 ---
 name: chunk-v-null-calibration
-description: "chunk V null calibration (certificate C4): V1 random-genome best-of-M null + V2 exposure-matched random-entry null both DONE; V3 surrogate-data pending"
+description: "chunk V null calibration (certificate C4) COMPLETE: V1 random-genome + V2 exposure-matched random-entry + V3 surrogate-data nulls all DONE (search/nullmodel.py, data/surrogate.py, coinmon nullcheck --mode)"
 metadata: 
   node_type: memory
   type: project
@@ -62,8 +62,34 @@ expectancy must clear the 95th pct of that distribution.
   `certify --null` consumes (C4 is mode-agnostic — just reads `beaten`).
 299 tests green (+10, all DB-free), ruff clean.
 
-**Still pending:** V3 surrogate-data null (the definitive "is 51% mined": stationary block-bootstrap
-each leg's log returns JOINTLY across legs so cross-pair correlation survives while temporal signal
-dies, rebuild ratios, re-run the FULL search on ≥20 surrogate universes). Slots into the same
-`nullcheck --mode` CLI + JSON seam. Standing discipline: never tune anything to pass the null — it is
-the exam, not the training set ([[search-overfits-not-strategy]]).
+**V3 DONE (2026-07-02) — the surrogate-data null** (the definitive "is 51% real or MINED?", the
+White's-Reality-Check analogue). New `src/coinmon/data/surrogate.py`:
+- `block_bootstrap_indices(n, block_len, rng)` = moving circular-block index sequence (mirrors
+  `evidence.block_bootstrap_ci`'s block logic): within-block order kept (short-range structure ≤
+  block_len survives), block ORDER randomized (longer-range temporal signal dies).
+- `surrogate_legs(legs, block_len=20, seed=0)` = **JOINT** block bootstrap of the DIRECT legs'
+  returns. Aligns all legs on their shared `open_time`, draws ONE index sequence, applies it to
+  EVERY leg identically → same historical instants copied across all coins at once, so **cross-leg
+  correlation survives** while each leg's temporal predictability is destroyed. Each surrogate bar
+  keeps its source bar's close-to-close return + intrabar OHLC geometry (open/high/low as ratios to
+  its own close) so fills/stops stay realistic; close rebuilt by compounding from the true first
+  close; ORIGINAL calendar open_time kept (window/regime geometry unchanged). Ratios rebuild
+  downstream via `load_candles` → **zero search/engine edits**. Passthrough if <2 shared bars
+  (CAVEAT: legs with disjoint date ranges → tiny/empty common span → degenerate passthrough; a
+  live-run data-quality watch, not a code bug).
+- `nullmodel.surrogate_null(candidate_score, score_surrogate, n_surrogates=20, seed)` reducer:
+  `score_surrogate(seed)->float` runs the FULL search on ONE surrogate universe and returns its
+  winner's pooled `t_exp`; judges the candidate against the **DIRECT** 95th pct of those
+  best-on-noise scores (`null_from_distribution`, like V2 — each surrogate is already a
+  search-SELECTED max, so no extra best-of-M bootstrap). `score_surrogate` injected → DB-free
+  unit-testable.
+- CLI `nullcheck --mode surrogate` (+ `--surrogates` 20, `--block` 20, `--pop` 100, `--gens` 30):
+  loads direct legs once, per surrogate block-bootstraps them, runs `run_search`
+  (holdout_fraction=0, fragility OFF — only need the GA winner; pool_trades carves its own OOS
+  windows, so no 200-run graduation paid per surrogate), pools + scores the winner. Same
+  genome-stamped JSON `certify --null` consumes (C4 mode-agnostic).
+317 tests green (+18: test_surrogate.py 14 + surrogate_null 4), ruff clean. **End-to-end verified
+on synthetic legs** (no DB): the search mined a **+2.31 t_exp out of pure noise** across 4
+surrogates → exactly the point of V3 (a real candidate must clear the score a search extracts from
+signal-destroyed data). **Not yet run live.** Chunk V is now COMPLETE. Standing discipline: never
+tune anything to pass the null — it is the exam, not the training set ([[search-overfits-not-strategy]]).

@@ -19,6 +19,7 @@ from coinmon.data.adapters.binance import BinanceAdapter
 from coinmon.data.adapters.bybit import BybitAdapter
 from coinmon.data.candles import load_candles
 from coinmon.data.discovery import rank_spot, summarize_coverage
+from coinmon.data.surrogate import surrogate_legs
 from coinmon.feed import BarView, CostModel
 from coinmon.live.feed import LiveFeed
 from coinmon.live.runner import ForwardRunner
@@ -32,7 +33,12 @@ from coinmon.search.evidence import (
 )
 from coinmon.search.ga import GAConfig
 from coinmon.search.genome import Genome, decode_portfolio, validate
-from coinmon.search.nullmodel import NullResult, random_entry_null, random_genome_null
+from coinmon.search.nullmodel import (
+    NullResult,
+    random_entry_null,
+    random_genome_null,
+    surrogate_null,
+)
 from coinmon.search.runner import (
     CandleCache,
     FitnessParams,
@@ -527,7 +533,7 @@ def _nullcheck(args: argparse.Namespace) -> None:
                 step=args.step,
                 holdout_fraction=args.holdout,
             )
-        else:  # matched — exposure-matched random-entry null (V2)
+        elif args.mode == "matched":  # exposure-matched random-entry null (V2)
             print(
                 f"pooling candidate {genome.family} on {len(eval_pairs)} pairs, then replaying its "
                 f"trades at random entry times x{args.resamples} on the same series...\n"
@@ -543,6 +549,44 @@ def _nullcheck(args: argparse.Namespace) -> None:
                 settings.taker_fee,
                 resamples=args.resamples,
                 seed=args.seed,
+            )
+        else:  # surrogate — full re-search on signal-destroyed universes (V3)
+            # Load the direct legs once, then for each surrogate block-bootstrap them (destroying
+            # the temporal signal but keeping return distribution + cross-leg correlation), run the
+            # FULL search on the ratios that rebuild from them, and score the winner by the SAME
+            # pooled t_exp as the candidate. Search the full surrogate series (holdout_fraction=0,
+            # fragility off): we only need the GA-selected winner, and pool_trades below carves
+            # its own OOS windows — so no per-surrogate 200-run graduation is paid.
+            legs = [p for p in universe if p.endswith(f"/{settings.quote_currency}")]
+            leg_frames = {leg: f for leg in legs if len(f := read(leg)) >= 2}
+            config = GAConfig(
+                population=args.pop, generations=args.gens, seed=args.seed, universe=universe,
+            )
+            print(
+                f"pooling candidate {genome.family} on {len(eval_pairs)} pairs, then re-running "
+                f"the search on {args.surrogates} surrogate universes "
+                f"(pop {args.pop} x {args.gens} gens, block {args.block})...\n"
+            )
+
+            def score_surrogate(s: int) -> float:
+                sur_read = surrogate_legs(leg_frames, block_len=args.block, seed=s).__getitem__
+                winner = run_search(sur_read, settings.taker_fee, config).best
+                pairs = select_eval_pairs(
+                    winner, sur_read, universe, args.eval_pairs,
+                    holdout_fraction=args.holdout, seed=args.seed,
+                )
+                pooled = pool_trades(
+                    winner, sur_read, settings.taker_fee, pairs,
+                    window_size=args.window, step=args.step, holdout_fraction=args.holdout,
+                )
+                return build_evidence(
+                    pooled, seed=args.seed, resamples=args.evidence_resamples,
+                    n_regimes=args.regimes,
+                ).t_exp
+
+            result = surrogate_null(
+                candidate.t_exp, score_surrogate,
+                n_surrogates=args.surrogates, seed=args.seed,
             )
     finally:
         conn.close()
@@ -943,13 +987,15 @@ def build_parser() -> argparse.ArgumentParser:
     p_null = sub.add_parser(
         "nullcheck",
         help="Chunk V: score a frozen genome vs a null over the same pooled OOS grid (--mode "
-        "random = best-of-M random genomes; matched = exposure-matched random entry); writes a "
-        "JSON verdict `certify --null` consumes as C4",
+        "random = best-of-M random genomes; matched = exposure-matched random entry; surrogate = "
+        "full re-search on signal-destroyed data); writes a JSON verdict `certify --null` consumes "
+        "as C4",
     )
     p_null.add_argument(
-        "--mode", choices=("random", "matched"), default="random",
+        "--mode", choices=("random", "matched", "surrogate"), default="random",
         help="random = best-of-M random-genome null (V1); matched = exposure-matched random-entry "
-        "null on the candidate's own ledger (V2, the 'beta dressed as alpha' test)",
+        "null on the candidate's own ledger (V2, the 'beta dressed as alpha' test); surrogate = "
+        "re-run the FULL search on block-bootstrapped signal-destroyed data (V3, 'is 51% mined?')",
     )
     p_null.add_argument("--timeframe", default="1d")
     p_null.add_argument("--family", required=True, help="strategy family, e.g. rsi_meanreversion")
@@ -987,6 +1033,22 @@ def build_parser() -> argparse.ArgumentParser:
     p_null.add_argument(
         "--resamples", type=int, default=1000, metavar="N",
         help="[--mode matched] random-entry resamples of the candidate's own ledger (default 1000)",
+    )
+    p_null.add_argument(
+        "--surrogates", type=int, default=20, metavar="N",
+        help="[--mode surrogate] signal-destroyed universes to re-search for the null (default 20)",
+    )
+    p_null.add_argument(
+        "--block", type=int, default=20, metavar="BARS",
+        help="[--mode surrogate] block length for the returns block-bootstrap (default 20)",
+    )
+    p_null.add_argument(
+        "--pop", type=int, default=100, metavar="N",
+        help="[--mode surrogate] GA population for each surrogate re-search (default 100)",
+    )
+    p_null.add_argument(
+        "--gens", type=int, default=30, metavar="N",
+        help="[--mode surrogate] GA generations for each surrogate re-search (default 30)",
     )
     p_null.add_argument(
         "--evidence-resamples", type=int, default=2000, metavar="N",

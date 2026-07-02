@@ -12,6 +12,7 @@ from coinmon.search.nullmodel import (
     null_from_scores,
     random_entry_null,
     random_genome_null,
+    surrogate_null,
 )
 
 
@@ -208,3 +209,39 @@ def test_random_entry_null_uptrend_beta_does_not_beat_the_null():
     # the random-entry expectancy is positive (pure beta), so its 95th pct is well above 0
     assert result.percentile > 0
     assert not result.beaten
+
+
+# --- V3: surrogate-data null ---
+
+
+def test_surrogate_null_uses_injected_per_surrogate_scorer():
+    # An injected scorer (no DB / no search): every surrogate scores mediocre, the candidate towers
+    # over them -> beaten; n_samples matches n_surrogates and the mode is tagged surrogate.
+    result = surrogate_null(3.0, lambda s: 0.1, n_surrogates=20, seed=0)
+    assert result.beaten
+    assert result.mode == "surrogate"
+    assert result.n_samples == 20
+
+
+def test_surrogate_null_candidate_inside_the_noise_not_beaten():
+    # If the search mines scores as high as the candidate out of pure noise, the candidate is not a
+    # real edge — a surrogate reaching the candidate's score puts it below the 95th percentile.
+    result = surrogate_null(9.0, lambda s: float(s), n_surrogates=20, seed=0)
+    assert not result.beaten  # surrogate scores 0..19; 95th pct (19) is well above 9
+
+
+def test_surrogate_null_seeds_each_surrogate_distinctly():
+    seen: list[int] = []
+
+    def score(s: int) -> float:
+        seen.append(s)
+        return 0.0
+
+    surrogate_null(1.0, score, n_surrogates=5, seed=100)
+    assert seen == [100, 101, 102, 103, 104]
+
+
+def test_surrogate_null_is_deterministic():
+    a = surrogate_null(2.0, lambda s: (s % 3) * 0.5, n_surrogates=12, seed=1)
+    b = surrogate_null(2.0, lambda s: (s % 3) * 0.5, n_surrogates=12, seed=1)
+    assert a == b

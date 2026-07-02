@@ -42,7 +42,13 @@ from coinmon.search.genome import UNIVERSE, Genome
 # selection, so the null is the DIRECT distribution's upper tail (``null_from_distribution``), not a
 # best-of-M maximum, and the statistic compared is expectancy (per the plan §V.2), not t_exp.
 #
-# (V3 surrogate-data null — a full re-search on signal-destroyed data — is a separate sub-chunk.)
+# V3 = the surrogate-data null (``surrogate_null``): re-run the FULL search on signal-destroyed
+# universes (``data.surrogate.surrogate_legs`` block-bootstraps the legs' returns, destroying the
+# temporal predictability while keeping each leg's return distribution + cross-leg correlation), and
+# ask whether the real winner's certificate score beats the distribution of best-on-noise scores.
+# This is the definitive "is 51% real or mined?" test (the White's-Reality-Check analogue). Like V2
+# there's no extra selection at the reducer — each surrogate run already yields a search-SELECTED
+# maximum — so the null is the DIRECT distribution's upper tail (``null_from_distribution``).
 
 
 @dataclass(frozen=True)
@@ -289,3 +295,23 @@ def random_entry_null(
     return null_from_distribution(
         candidate_expectancy, sample_scores, mode="matched", quantile=quantile
     )
+
+
+def surrogate_null(
+    candidate_score: float,
+    score_surrogate: Callable[[int], float],
+    *,
+    n_surrogates: int = 20,
+    seed: int = 0,
+    quantile: float = 0.95,
+) -> NullResult:
+    """The surrogate-data null reducer (chunk V3). ``score_surrogate(seed) -> float`` runs the FULL
+    search on ONE signal-destroyed universe (built by ``data.surrogate.surrogate_legs``) and returns
+    its winner's pooled-ledger certificate score (``t_exp``); this samples ``n_surrogates`` of them
+    and judges ``candidate_score`` against the DIRECT ``quantile`` percentile of those best-on-noise
+    scores. Each surrogate score is already a search-SELECTED maximum, so the null is the direct
+    distribution (``null_from_distribution``), not V1's best-of-M bootstrap. ``score_surrogate`` is
+    injected (the CLI wires the surrogate build + ``run_search`` + pooling; tests drive it with a
+    pure stub), keeping this reducer DB-free and unit-testable."""
+    scores = [score_surrogate(seed + i) for i in range(n_surrogates)]
+    return null_from_distribution(candidate_score, scores, mode="surrogate", quantile=quantile)

@@ -234,7 +234,16 @@ compares against their pooled 95th percentile.
    `evidence.EvalSegment`/`pool_segments` extract per-segment prices + trade durations via a
    shared `_iter_segments` (pool_trades byte-unchanged). CLI `nullcheck --mode matched
    [--resamples]`. 299 tests green (+10), ruff clean. Not yet run live.
-3. **Surrogate-data null (dearest, run last).** Stationary block bootstrap of each USDC
+3. **Surrogate-data null (dearest, run last). DONE 2026-07-02:** `data/surrogate.py`
+   (`block_bootstrap_indices` + `surrogate_legs` = JOINT moving-block bootstrap of the direct
+   legs' returns — same block sequence applied to every leg, so cross-leg correlation survives
+   while temporal predictability dies; intrabar OHLC shape + real calendar preserved; ratios
+   rebuild via `load_candles`, zero search/engine edits) + `nullmodel.surrogate_null` reducer
+   (scores N re-searches on signal-destroyed universes by pooled `t_exp`, judges the candidate
+   vs the DIRECT 95th pct via `null_from_distribution`). CLI `nullcheck --mode surrogate`
+   (`--surrogates/--block/--pop/--gens`), same JSON `certify --null` seam. 317 tests green (+18),
+   ruff clean; end-to-end verified on synthetic legs (search mined +2.31 t_exp from noise). Not
+   yet run live. **Chunk V complete.** — Original spec: Stationary block bootstrap of each USDC
    leg's log returns (block length ~20 bars), resampling time-blocks JOINTLY across all
    legs so cross-pair correlation structure survives while temporal signal dies; rebuild
    ratios from surrogate legs. Re-run the FULL search (small config: e.g. 10 seeds ×

@@ -11,7 +11,7 @@ import pandas as pd
 from coinmon.backtest.engine import BacktestEngine
 from coinmon.backtest.result import TradeRecord
 from coinmon.data.candles import load_candles, split_holdout
-from coinmon.search.genome import Genome, decode, decode_portfolio
+from coinmon.search.genome import Genome, decode, decode_portfolio, decode_stop
 from coinmon.search.robustness import pick_decorrelated_pairs
 from coinmon.search.stability import window_bounds
 
@@ -330,6 +330,7 @@ def _iter_segments(
     """
     factory = decode(genome)
     build_portfolio = decode_portfolio(genome)
+    stop_pct = decode_stop(genome)
     bounds = window_bounds(window_size, step, n_windows)
     for pair in eval_pairs:
         try:
@@ -347,7 +348,7 @@ def _iter_segments(
             result = BacktestEngine(
                 factory(),
                 build_portfolio(INITIAL_CAPITAL, taker_fee),
-                stop_pct=genome.stop_pct,
+                stop_pct=stop_pct,
             ).run(holdout)
             yield holdout, result
 

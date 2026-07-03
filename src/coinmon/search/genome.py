@@ -3,13 +3,14 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 
-from coinmon.backtest.portfolio import PerpPortfolio, Portfolio, SpotPortfolio
+from coinmon.backtest.portfolio import CarryPortfolio, PerpPortfolio, Portfolio, SpotPortfolio
 from coinmon.feed import CostModel
 from coinmon.strategies.atr_channel import ATRChannelBreakout
 from coinmon.strategies.base import Strategy
 from coinmon.strategies.directional import RegimeAdaptive
 from coinmon.strategies.donchian_breakout import DonchianBreakout
 from coinmon.strategies.ema_crossover import EMACrossover
+from coinmon.strategies.funding_carry import FundingCarry
 from coinmon.strategies.indicator_combo import (
     COMBO_FAMILY,
     INDICATOR_COUNT,
@@ -48,6 +49,11 @@ class StrategyFamily:
     params: Mapping[str, ParamSpec]
     build: Callable[[Mapping[str, float]], Strategy]
     describe: Callable[[Mapping[str, float]], str] | None = None
+    # A market-neutral family (chunk W3: funding_carry) brings its OWN book — a ``CarryPortfolio``
+    # (long spot + short perp), not the direction gene's spot/perp choice — because the book is
+    # intrinsic to the strategy, not a free directional bet. ``None`` (every price-shape family)
+    # means ``decode_portfolio`` uses the direction gene's book instead.
+    portfolio: Callable[[float, float], Portfolio] | None = None
 
 
 def _build_rsi(p: Mapping[str, float]) -> Strategy:
@@ -73,6 +79,10 @@ def _build_donchian(p: Mapping[str, float]) -> Strategy:
     return DonchianBreakout(
         channel=int(p["channel"]), atr_period=int(p["atr_period"]), exit_mult=p["exit_mult"]
     )
+
+
+def _build_carry(p: Mapping[str, float]) -> Strategy:
+    return FundingCarry(window=int(p["window"]), entry_pct=p["entry_pct"])
 
 
 # The registry of searchable families. Ranges are deliberately broad-but-sane: the OOS fitness +
@@ -131,6 +141,21 @@ FAMILIES: dict[str, StrategyFamily] = {
             "exit_mult": ParamSpec(0.5, 6.0),
         },
         build=_build_donchian,
+    ),
+    # Chunk W3: funding carry — a MARKET-NEUTRAL family (long spot + short perp) harvesting the
+    # documented perp funding premium (probe H6: funding is a collectible premium, not a timing
+    # signal). Unlike the price-shape families it is not directional: it supplies its own
+    # ``CarryPortfolio`` (so the direction/leverage/stop genes are inert) and reads the
+    # point-in-time ``funding_rate`` feature to hedge only when funding is richest. Broad-but-sane
+    # ranges; the OOS fitness + gate reject the churny/junk corners, not a tight prior.
+    "funding_carry": StrategyFamily(
+        name="funding_carry",
+        params={
+            "window": ParamSpec(20, 200, integer=True),
+            "entry_pct": ParamSpec(0.0, 1.0),
+        },
+        build=_build_carry,
+        portfolio=lambda cash, fee: CarryPortfolio(cash, fee),
     ),
 }
 
@@ -275,18 +300,34 @@ def decode(genome: Genome) -> Callable[[], Strategy]:
     the drop."""
     validate(genome)
     family = FAMILIES[genome.family]
-    if genome.direction == "adaptive":
+    # A market-neutral family (funding_carry) has no directional side, so it is never wrapped in
+    # RegimeAdaptive — the direction gene is inert; it always trades its own hedged book.
+    if genome.direction == "adaptive" and family.portfolio is None:
         return lambda: RegimeAdaptive(family.build(genome.params), int(genome.trend_period))
     return lambda: family.build(genome.params)
 
 
 def decode_portfolio(genome: Genome) -> Callable[[float, float], Portfolio]:
     """Turn a genome into a ``(cash, taker_fee) -> Portfolio`` factory — the book the genome trades
-    in. An ``adaptive`` genome trades a leveraged ``PerpPortfolio`` (it may short); otherwise the
-    long/flat ``SpotPortfolio``. Separate from ``decode`` because the eval rig builds the strategy
-    and the book at different points (fold loop, fragility, holdout) with different capital."""
+    in. A market-neutral family (funding_carry) brings its OWN ``CarryPortfolio``; otherwise an
+    ``adaptive`` genome trades a leveraged ``PerpPortfolio`` (it may short) and a ``long`` genome
+    the long/flat ``SpotPortfolio``. Separate from ``decode`` because the eval rig builds the
+    strategy and the book at different points (fold loop, fragility, holdout) with different
+    capital."""
     validate(genome)
+    family = FAMILIES[genome.family]
+    if family.portfolio is not None:  # market-neutral family carries its own book (carry)
+        return family.portfolio
     if genome.direction == "adaptive":
         leverage = genome.leverage
         return lambda cash, fee: PerpPortfolio(cash, fee, leverage)
     return lambda cash, fee: SpotPortfolio(cash, fee)
+
+
+def decode_stop(genome: Genome) -> float | None:
+    """The intrabar stop the engine should arm for this genome (chunk L). ``None`` for a
+    market-neutral family (funding_carry): a hedged carry has no price side to stop out, and a
+    price-triggered stop would spuriously tear the hedge apart on a move that never touches its P&L.
+    Otherwise the genome's own ``stop_pct`` gene. Use this at every engine call site instead of
+    reading ``genome.stop_pct`` directly, so the carry book is never handed a price stop."""
+    return None if FAMILIES[genome.family].portfolio is not None else genome.stop_pct

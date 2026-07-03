@@ -9,7 +9,14 @@ from coinmon.backtest.fitness import FitnessResult, evaluate_fitness
 from coinmon.backtest.stress import MonteCarloResult, run_monte_carlo
 from coinmon.data.candles import load_candles, split_holdout
 from coinmon.search.ga import GAConfig, GAResult, evolve
-from coinmon.search.genome import FAMILIES, Genome, build_universe, decode, decode_portfolio
+from coinmon.search.genome import (
+    FAMILIES,
+    Genome,
+    build_universe,
+    decode,
+    decode_portfolio,
+    decode_stop,
+)
 from coinmon.search.graduation import GraduationReport, graduate
 from coinmon.search.robustness import (
     RobustnessReport,
@@ -107,7 +114,7 @@ def _score_genome(
         decode(genome),
         taker_fee,
         make_portfolio=decode_portfolio(genome),
-        stop_pct=genome.stop_pct,
+        stop_pct=decode_stop(genome),
         folds=fp.folds,
         embargo_bars=fp.embargo_bars,
         min_trades=fp.min_trades,
@@ -278,7 +285,7 @@ def run_search(
             lambda: build_portfolio(INITIAL_CAPITAL, taker_fee),
             cache.get(ga.best.pair),
             runs=fragility_runs,
-            stop_pct=ga.best.stop_pct,
+            stop_pct=decode_stop(ga.best),
         )
         passed = fragility_verdict(fragility, fragility_min_positive)
 

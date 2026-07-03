@@ -492,9 +492,19 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
     funding_rate=None)` / `BacktestEngine.run(candles, funding=None)` charging the held position AND
     exposing `funding_rate` as a BarView feature; `None` = byte-unchanged (parity preserved). Per-bar
     aggregate of the 8h settlements at bar close (backtest granularity). 342 tests green (+10), ruff clean.
-    Funding flows into cash ⇒ equity/PnL/liquidation automatically. **Step 2 (next): alignment helper
-    (8h `db.read_funding` → per-bar array) + runner/live wiring + the `funding_carry` FAMILY + hedged
-    carry structure.** See [[w3-funding-cashflow]].
+    Funding flows into cash ⇒ equity/PnL/liquidation automatically. **Step 2a DONE (2026-07-03):**
+    the two pure primitives `CarryPortfolio` (market-neutral long-spot/short-perp, price-independent
+    equity) + `align_funding` (8h `db.read_funding` → per-bar array). **Step 2b DONE (2026-07-03):**
+    the `funding_carry` FAMILY (`FundingCarry(window, entry_pct)` — reads the `funding_rate` feature,
+    rolling percentile → hedge on when funding is richest/positive) + the family→book seam
+    (`StrategyFamily.portfolio` → market-neutral families bring their own `CarryPortfolio`;
+    `decode`/`decode_portfolio` skip RegimeAdaptive/direction; new `decode_stop` nulls the price stop
+    for carry, wired into every genome→engine call site). Registration-only for the GA. 372 tests
+    green (+17), ruff clean; engine-verified (a funding series harvests the premium + a direction-0
+    round-trip). **Step 2c (next): thread REAL funding through the rig** — `CandleCache` load+align
+    per DIRECT USDC perp (funding as a frame COLUMN so fold/holdout/fragility slicing carries it) +
+    CLI `db.read_funding` wiring + parallel worker + live feed. Until 2c carry is REACHABLE but
+    un-searchable (funding=None → always loses to fees). See [[w3-funding-cashflow]].
   - [ ] **X — 4h evidence multiplication.** Same pipeline at 4h (≈6× bars/trades; net-of-cost
     ledger prices the fee risk honestly).
   - [ ] **Y — The certified sweep + ensemble (payoff).** Heavy multi-seed sweep over everything;

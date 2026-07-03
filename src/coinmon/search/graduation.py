@@ -6,7 +6,7 @@ import pandas as pd
 
 from coinmon.backtest.engine import BacktestEngine
 from coinmon.backtest.stress import MonteCarloResult, run_monte_carlo
-from coinmon.search.genome import Genome, decode, decode_portfolio
+from coinmon.search.genome import Genome, decode, decode_portfolio, decode_stop
 
 # Chunk D: the graduation gate — the ONLY path from "GA winner" to "live-eligible". The GA's
 # winner was chosen on the search span; here it faces a final holdout span the search never saw
@@ -71,8 +71,9 @@ def graduate(
     the gate is incomplete without the stress test."""
     factory = decode(genome)
     build_portfolio = decode_portfolio(genome)
+    stop_pct = decode_stop(genome)
     result = BacktestEngine(
-        factory(), build_portfolio(INITIAL_CAPITAL, taker_fee), stop_pct=genome.stop_pct
+        factory(), build_portfolio(INITIAL_CAPITAL, taker_fee), stop_pct=stop_pct
     ).run(holdout)
     holdout_return = result.metrics["total_return"]
     holdout_trades = int(result.metrics["trades"])
@@ -85,7 +86,7 @@ def graduate(
         holdout,
         runs=fragility_runs,
         benchmark_return=benchmark_return,
-        stop_pct=genome.stop_pct,
+        stop_pct=stop_pct,
     )
 
     reasons: list[str] = []

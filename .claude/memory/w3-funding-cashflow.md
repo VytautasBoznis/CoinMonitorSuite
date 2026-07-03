@@ -46,9 +46,28 @@ directional funding bet — H6 says funding is a collectible premium, not a timi
   far-future-beyond-last-bar-spacing dropped). Feeds the step-1 `BacktestEngine.run(funding=...)`.
 355 tests green (+13), ruff clean. Engine/genome UNTOUCHED — pure primitives only.
 
-**Deferred to W3 step 2b:** the `funding_carry` FAMILY (reads the `funding_rate` feature →
-rolling point-in-time percentile → hedge-on/off), genome integration (a carry genome must select
-`CarryPortfolio` — the family→portfolio decoupling breaks, needs a `direction`/family-name seam),
-and threading real funding through the eval rig (fitness folds/holdout/fragility/graduation/
-parallel) + live feed in lockstep with candles (per-pair, direct USDC perps only, not ratios).
+**W3 step 2b DONE (this session):** the `funding_carry` FAMILY + the genome→book/stop seam.
+- `strategies/funding_carry.FundingCarry(window, entry_pct)`: reads the point-in-time
+  `funding_rate` feature, keeps a bounded (N1) rolling window, hedges on (target 1) only when the
+  current rate is POSITIVE and ranks ≥ `entry_pct` quantile of the window (funding at its richest),
+  flat (0) otherwise — never pays to hold. No-funding bars (ratios / `funding=None` runs) → flat.
+- **The family→portfolio decoupling seam:** `StrategyFamily` gained an optional
+  `portfolio: (cash,fee)->Portfolio` factory. A market-neutral family sets it (funding_carry →
+  `CarryPortfolio`); `decode_portfolio` returns it and the direction/leverage genes go inert.
+  `decode` never wraps a market-neutral family in `RegimeAdaptive` (no directional side). New
+  `decode_stop(genome)` returns None for market-neutral families (a hedged carry has no price side
+  to stop out, and a price stop would tear the hedge apart) — wired into EVERY genome→engine call
+  site (runner `_score_genome`+fragility, graduation, evidence/certify) replacing raw
+  `genome.stop_pct`. Registration-only for the GA otherwise (sample/mutate/crossover unchanged).
+- 372 tests green (+17 test_funding_carry.py), ruff clean. Adding the 6th family shifted the GA RNG
+  but the pop40/gens20 improve test (bumped in W4) held. Engine-verified end-to-end:
+  `BacktestEngine.run(candles, funding=[...])` on a carry genome harvests the premium and books a
+  direction-0 round-trip; `funding=None` → flat/0 trades.
+
+**Deferred to W3 step 2c (the integration layer):** thread REAL funding through the search rig —
+`CandleCache` must load+`align_funding` per DIRECT USDC perp (not ratios) and carry it (cleanest:
+a `funding_rate` COLUMN on the candle frame so fold/holdout/fragility slicing carries it for free,
+leaf engine calls extract+pass), CLI wiring of `db.read_funding`, parallel worker funding, + the
+live feed. Until 2c the family is REACHABLE but un-searchable (funding=None → carry always loses
+to fees → GA rejects it), same "registered, alpha unproven" state as W1/W4 but data-gated.
 See [[build-roadmap]] chunk W, `.claude/plans/alpha-hunt.md` §W3.

@@ -145,3 +145,21 @@ def test_embargo_too_large_for_fold_size_raises():
         evaluate_fitness(
             _oscillating_candles(40), _make_rsi, taker_fee=0.0, folds=4, embargo_bars=10
         )
+
+
+def test_fold_geometry_valid_at_4h_bar_counts_with_scaled_embargo():
+    # Chunk X: a 4h series is ~6x the bars of a 1d one and the embargo scales 5 -> 30. The fold
+    # geometry must stay valid at that scale: ordered, non-empty, non-overlapping segments, each
+    # post-first fold purged by exactly the embargo. ~14 months of 4h bars.
+    n, folds, embargo = 10_080, 4, 30
+    bounds = _fold_bounds(n, folds, embargo)
+    assert len(bounds) == folds
+    for start, end in bounds:
+        assert 0 <= start < end <= n  # every fold non-empty and in range
+    for i in range(1, folds):
+        assert bounds[i][0] == bounds[i - 1][1] + embargo  # exactly the embargo gap
+    assert bounds[-1][1] == n  # last fold runs to the end
+    # the guard (n // folds <= embargo) has ample room — the whole point of 4h is more bars/fold
+    evaluate_fitness(
+        _oscillating_candles(n), _make_rsi, taker_fee=0.0, folds=folds, embargo_bars=embargo
+    )

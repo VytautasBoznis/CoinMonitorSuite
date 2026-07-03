@@ -10,12 +10,21 @@ from coinmon.search.runner import (
     CandleCache,
     FitnessParams,
     SweepRow,
+    default_embargo,
     discover_universe,
     fragility_verdict,
     run_search,
     summarize_sweep,
     sweep_row,
 )
+
+
+def test_default_embargo_scales_with_timeframe():
+    # Chunk X: same ~5-day fold purge at every timeframe (1d = 5 bars, 4h = 30 bars).
+    assert default_embargo("1d") == 5
+    assert default_embargo("4h") == 30
+    # an unlisted timeframe falls back to the 1d value (no scaling, byte-unchanged behavior)
+    assert default_embargo("1h") == 5
 
 
 def _read(symbol):

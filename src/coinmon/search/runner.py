@@ -35,6 +35,20 @@ from coinmon.search.robustness import (
 
 INITIAL_CAPITAL = 10_000.0
 
+# Chunk X: the fold embargo purges the autocorrelated bars straddling each fold boundary, so it is
+# a REAL-TIME window expressed in bars — at 4h a 5-bar embargo purges only 20h, 6x too little vs
+# the 1d default's 5 days. The per-timeframe default keeps roughly the same ~5-day purge window;
+# an explicit ``--embargo`` always overrides. Unknown timeframes fall back to the 1d value (no
+# scaling, so every existing call stays byte-unchanged).
+DEFAULT_EMBARGO_BARS = 5
+TIMEFRAME_EMBARGO_BARS = {"1d": 5, "4h": 30}
+
+
+def default_embargo(timeframe: str) -> int:
+    """Per-timeframe default fold embargo in bars (chunk X): the same ~5-day real-time purge at
+    every timeframe. Falls back to the 1d value for an unlisted timeframe."""
+    return TIMEFRAME_EMBARGO_BARS.get(timeframe, DEFAULT_EMBARGO_BARS)
+
 
 class CandleCache:
     """Resolve + cache candles per pair. Genomes reuse pairs heavily across a run, and a pair

@@ -42,6 +42,7 @@ from coinmon.search.nullmodel import (
 from coinmon.search.runner import (
     CandleCache,
     FitnessParams,
+    default_embargo,
     discover_universe,
     run_search,
     summarize_sweep,
@@ -283,6 +284,12 @@ def _funding_reader(conn) -> Callable[[str], pd.DataFrame]:
     return read_funding
 
 
+def _resolve_embargo(args: argparse.Namespace) -> int:
+    """Chunk X: an explicit ``--embargo`` wins; otherwise the per-timeframe default keeps the
+    ~5-day fold purge constant across timeframes (a 4h search needs 30 bars, not 5)."""
+    return args.embargo if args.embargo is not None else default_embargo(args.timeframe)
+
+
 def _search(args: argparse.Namespace) -> None:
     conn = db.connect()
     try:
@@ -295,6 +302,7 @@ def _search(args: argparse.Namespace) -> None:
             timeframe=args.timeframe,
         )
         print(f"universe: {len(universe)} pairs auto-built from stored {args.timeframe} candles\n")
+        embargo = _resolve_embargo(args)
         # The connection stays open for the whole run: CandleCache reads each pair lazily.
         report = run_search(
             lambda s: db.read_candles(conn, settings.exchange, s, args.timeframe),
@@ -306,7 +314,7 @@ def _search(args: argparse.Namespace) -> None:
                 universe=universe,
             ),
             fitness_params=FitnessParams(
-                folds=args.folds, embargo_bars=args.embargo, min_trades=args.min_trades
+                folds=args.folds, embargo_bars=embargo, min_trades=args.min_trades
             ),
             fragility_runs=args.stress,
             holdout_fraction=args.holdout,
@@ -345,6 +353,7 @@ def _sweep(args: argparse.Namespace) -> None:
             lambda s: db.read_candles(conn, settings.exchange, s, args.timeframe),
             _funding_reader(conn),
         )
+        embargo = _resolve_embargo(args)
         rows = []
         for seed in range(args.start_seed, args.start_seed + args.seeds):
             report = run_search(
@@ -357,7 +366,7 @@ def _sweep(args: argparse.Namespace) -> None:
                     universe=universe,
                 ),
                 fitness_params=FitnessParams(
-                    folds=args.folds, embargo_bars=args.embargo, min_trades=args.min_trades
+                    folds=args.folds, embargo_bars=embargo, min_trades=args.min_trades
                 ),
                 fragility_runs=args.stress,
                 holdout_fraction=args.holdout,
@@ -392,6 +401,7 @@ def _stability(args: argparse.Namespace) -> None:
             timeframe=args.timeframe,
         )
         print(f"universe: {len(universe)} pairs auto-built from stored {args.timeframe} candles\n")
+        embargo = _resolve_embargo(args)
         report = run_stability(
             lambda s: db.read_candles(conn, settings.exchange, s, args.timeframe),
             settings.taker_fee,
@@ -406,7 +416,7 @@ def _stability(args: argparse.Namespace) -> None:
             step=args.step,
             n_windows=args.windows,
             fitness_params=FitnessParams(
-                folds=args.folds, embargo_bars=args.embargo, min_trades=args.min_trades
+                folds=args.folds, embargo_bars=embargo, min_trades=args.min_trades
             ),
             fragility_runs=args.stress,
             graduate_min_trades=args.graduate_min_trades,
@@ -773,7 +783,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_search.add_argument("--seed", type=int, default=0)
     p_search.add_argument("--folds", type=int, default=4, metavar="N", help="OOS scoring folds")
     p_search.add_argument(
-        "--embargo", type=int, default=5, metavar="BARS", help="purge between folds"
+        "--embargo", type=int, default=None, metavar="BARS",
+        help="purge between folds (default scales with timeframe: 1d=5, 4h=30)",
     )
     p_search.add_argument(
         "--min-trades",
@@ -844,7 +855,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_sweep.add_argument("--folds", type=int, default=4, metavar="N", help="OOS scoring folds")
     p_sweep.add_argument(
-        "--embargo", type=int, default=5, metavar="BARS", help="purge between folds"
+        "--embargo", type=int, default=None, metavar="BARS",
+        help="purge between folds (default scales with timeframe: 1d=5, 4h=30)",
     )
     p_sweep.add_argument(
         "--min-trades",
@@ -930,7 +942,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_stab.add_argument("--folds", type=int, default=4, metavar="N", help="OOS scoring folds")
     p_stab.add_argument(
-        "--embargo", type=int, default=5, metavar="BARS", help="purge between folds"
+        "--embargo", type=int, default=None, metavar="BARS",
+        help="purge between folds (default scales with timeframe: 1d=5, 4h=30)",
     )
     p_stab.add_argument(
         "--min-trades",

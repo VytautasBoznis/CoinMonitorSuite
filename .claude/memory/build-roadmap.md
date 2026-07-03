@@ -501,12 +501,22 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
     `decode`/`decode_portfolio` skip RegimeAdaptive/direction; new `decode_stop` nulls the price stop
     for carry, wired into every genome→engine call site). Registration-only for the GA. 372 tests
     green (+17), ruff clean; engine-verified (a funding series harvests the premium + a direction-0
-    round-trip). **Step 2c (next): thread REAL funding through the rig** — `CandleCache` load+align
-    per DIRECT USDC perp (funding as a frame COLUMN so fold/holdout/fragility slicing carries it) +
-    CLI `db.read_funding` wiring + parallel worker + live feed. Until 2c carry is REACHABLE but
-    un-searchable (funding=None → always loses to fees). See [[w3-funding-cashflow]].
-  - [ ] **X — 4h evidence multiplication.** Same pipeline at 4h (≈6× bars/trades; net-of-cost
-    ledger prices the fee risk honestly).
+    round-trip). **Step 2c DONE (2026-07-03, committed ed8a75c):** REAL funding threaded through the
+    search+certify rig — `attach_funding` frame COLUMN + `BacktestEngine.run` auto-extract (single
+    seam, every fold/holdout/fragility/pool slice carries funding for free, no-column = byte-unchanged),
+    `CandleCache`/`run_search`/`run_stability`/evidence/nullmodel wiring + CLI `_funding_reader`.
+    Carry is now SEARCHABLE + certifiable; V3 surrogate deliberately gets NO funding. 381 tests green.
+    Live-feed funding (step 2d) deferred, off the alpha-hunt critical path. See [[w3-funding-cashflow]].
+  - [x] **X — 4h evidence multiplication.** (2026-07-03) Same pipeline at 4h — the code turned out
+    thin because the geometry is already timeframe-agnostic: `split_holdout`/`window_bounds` are
+    FRACTION-based (auto-scale) and only the fold `embargo` is bar-denominated, so the one real fix
+    was making it timeframe-aware. `runner.default_embargo(tf)` + `TIMEFRAME_EMBARGO_BARS={1d:5,4h:30}`
+    (same ~5-day real-time fold purge at every tf; unknown tf → 5, byte-unchanged); CLI `search`/
+    `sweep`/`stability` `--embargo` default None → `_resolve_embargo` (explicit flag always wins).
+    Proved the fold/embargo/holdout geometry stays valid at ~10k 4h bars (regression test). 383 tests
+    green (+2), ruff clean; parser+resolution verified (4h→30, 1d→5, explicit override honored). The
+    ≈6× bars/trades PAYOFF is a live user RUN (`search`/`sweep`/`certify --timeframe 4h`, Docker DB
+    up) — momentum families first; MR should die of fees and the net-of-cost ledger will say so.
   - [ ] **Y — The certified sweep + ensemble (payoff).** Heavy multi-seed sweep over everything;
     certify winners AND the top-k-decorrelated ensemble; two honest outcomes — a CERTIFIED
     strategy (→ chunk G forward paper, unpark Q) or a calibrated negative (nulls explain all →

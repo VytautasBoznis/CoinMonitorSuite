@@ -5,7 +5,7 @@ import pytest
 
 from coinmon.backtest.engine import BacktestEngine, BarStepper
 from coinmon.backtest.metrics import summarize
-from coinmon.backtest.portfolio import PerpPortfolio, SpotPortfolio
+from coinmon.backtest.portfolio import CarryPortfolio, PerpPortfolio, SpotPortfolio
 from coinmon.data.candles import load_candles
 from coinmon.data.models import Candle
 from coinmon.feed import BarView
@@ -366,6 +366,62 @@ def test_engine_funding_length_mismatch_raises():
     candles = _candles([(10.0, 10.0)] * 4)
     with pytest.raises(ValueError, match="align"):
         BacktestEngine(_AlwaysLong(), PerpPortfolio(100.0, 0.0)).run(candles, funding=[0.01] * 3)
+
+
+# --- Chunk W3 step 2: market-neutral carry book ------------------------------------------------
+
+
+def test_carry_equity_is_price_independent():
+    # The hedge cancels on price: after entry, equity is the same at any mark (no price PnL).
+    p = CarryPortfolio(cash=100.0, taker_fee=0.0)
+    p.rebalance(1, price=10.0)
+    assert p.equity(10.0) == pytest.approx(100.0)  # no fees, so full capital
+    assert p.equity(20.0) == pytest.approx(100.0)  # 2x rally: spot gain == perp loss, nets zero
+    assert p.equity(5.0) == pytest.approx(100.0)  # halving: same
+
+
+def test_carry_short_leg_collects_positive_funding():
+    # rate > 0 => longs pay shorts. Perp units = -(cash/2)/price = -(50)/10 = -5.
+    # Collected = -perp_units * price * rate = 5 * 10 * 0.01 = 0.5.
+    p = CarryPortfolio(cash=100.0, taker_fee=0.0)
+    p.rebalance(1, price=10.0)
+    p.apply_funding(rate=0.01, price=10.0)
+    assert p.equity(10.0) == pytest.approx(100.5)
+
+
+def test_carry_funding_notional_drifts_with_price():
+    # Same -5 perp units, but funding settles on the CURRENT mark: 5 * 20 * 0.01 = 1.0.
+    p = CarryPortfolio(cash=100.0, taker_fee=0.0)
+    p.rebalance(1, price=10.0)
+    p.apply_funding(rate=0.01, price=20.0)
+    assert p.equity(20.0) == pytest.approx(101.0)
+
+
+def test_carry_charges_four_fee_legs_on_a_round_trip():
+    # Enter+exit at flat price, zero funding: only fees. Each leg notional = cash/2 = 50, four
+    # taker legs at 1% => entry 2*50*0.01 = 1.0, exit 2*50*0.01 = 1.0, total 2.0.
+    p = CarryPortfolio(cash=100.0, taker_fee=0.01)
+    p.rebalance(1, price=10.0)
+    assert p.equity(10.0) == pytest.approx(99.0)  # entry fees only
+    p.rebalance(0, price=10.0)
+    assert p.trades == [pytest.approx(-2.0)]
+    assert p.closed_trades[0].direction == 0  # market-neutral: neither long nor short
+    assert p.closed_trades[0].net_return_pct == pytest.approx(-0.02)
+
+
+def test_carry_funding_is_a_noop_when_flat():
+    p = CarryPortfolio(cash=100.0, taker_fee=0.0)
+    p.apply_funding(rate=0.5, price=10.0)  # no hedge on -> no cashflow
+    assert p.equity(10.0) == pytest.approx(100.0)
+
+
+def test_carry_round_trip_realizes_funding_minus_fees():
+    # A collected 0.5 funding against 2.0 of round-trip fees nets -1.5 on the round-trip.
+    p = CarryPortfolio(cash=100.0, taker_fee=0.01)
+    p.rebalance(1, price=10.0)  # -1.0 entry fees
+    p.apply_funding(rate=0.01, price=10.0)  # +0.5
+    p.rebalance(0, price=10.0)  # -1.0 exit fees
+    assert p.trades == [pytest.approx(-1.5)]
 
 
 def test_load_candles_usdc_pair_reads_directly():

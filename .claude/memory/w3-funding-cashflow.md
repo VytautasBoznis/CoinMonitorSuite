@@ -30,7 +30,25 @@ position + the funding_carry family. User chose to SPLIT W3 into sessions; this 
   (no feature, no cashflow) — parity preserved for every existing run/test.
 - 342 tests green (+10 in test_backtest.py), ruff clean.
 
-**Deferred to W3 step 2:** the alignment helper (8h settlements → per-bar array via
-`db.read_funding`), live/runner wiring, and the `funding_carry` FAMILY + hedged carry structure.
-The engine capability + feed seam landed here; the family that consumes it lands next.
+**W3 step 2 SPLIT again (user chose primitives-first + market-neutral hedged carry over a
+directional funding bet — H6 says funding is a collectible premium, not a timing signal).**
+
+**W3 step 2a DONE (this session):** the two new PURE, unit-tested primitives —
+- `CarryPortfolio` (`backtest/portfolio.py`): market-neutral hedged book, long spot + short perp
+  on the SAME candle series so price legs cancel → `equity()` is price-INDEPENDENT (returns cash);
+  only 4 taker-fee legs (each on cash/2, self-funded 1x) + per-bar funding move it. `target` 1
+  hedge-on / 0 flat. `apply_funding` credits the short (`-perp_units*price*rate`, notional drifts
+  with the mark). No liquidation (no price risk). `ClosedTrade(direction=0)` = market-neutral (2b
+  ledger interprets 0). ~45 lines. Verified end-to-end: price swung 10→20→5→40→10, equity stayed
+  pure-funding.
+- `align_funding(funding_df, candle_times)` (`data/funding.py`): sums 8h settlements into each
+  bar's `[t_i, t_{i+1})` window (settlement on an open-time belongs to that bar; pre-first &
+  far-future-beyond-last-bar-spacing dropped). Feeds the step-1 `BacktestEngine.run(funding=...)`.
+355 tests green (+13), ruff clean. Engine/genome UNTOUCHED — pure primitives only.
+
+**Deferred to W3 step 2b:** the `funding_carry` FAMILY (reads the `funding_rate` feature →
+rolling point-in-time percentile → hedge-on/off), genome integration (a carry genome must select
+`CarryPortfolio` — the family→portfolio decoupling breaks, needs a `direction`/family-name seam),
+and threading real funding through the eval rig (fitness folds/holdout/fragility/graduation/
+parallel) + live feed in lockstep with candles (per-pair, direct USDC perps only, not ratios).
 See [[build-roadmap]] chunk W, `.claude/plans/alpha-hunt.md` §W3.

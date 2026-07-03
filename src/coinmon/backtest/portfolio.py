@@ -166,3 +166,59 @@ class PerpPortfolio(Portfolio):
         if self._liquidated or self._target == 0:
             return
         self.cash -= self.units * price * rate
+
+
+class CarryPortfolio(Portfolio):
+    """Market-neutral funding-carry book: hold long spot + short perp on the SAME coin at matched
+    notional, so the two legs' price PnL cancels exactly and the position only accrues the perp's
+    funding premium (chunk W3, probe H6 — funding is a collectible premium, not a timing signal,
+    so it's captured hedged, not bet on directionally). ``target`` is 1 (hedge on) / 0 (flat).
+
+    Both legs are self-funded 1x: with cash ``C`` the spot buy costs ``C/2`` and the 1x perp short
+    posts ``C/2`` margin, so each leg's notional is ``C/2``. Because the legs offset on price, this
+    can be modeled on the single candle series without a second instrument: equity is
+    price-INDEPENDENT (``equity`` returns cash) — only entry/exit taker fees (four legs, each on
+    ``C/2``) and the per-bar funding cashflow move it. Being market-neutral there is no price
+    liquidation risk, so no liquidation latch. Funding accrues on the perp short: ``rate`` > 0 ⇒
+    the crowded longs pay, the short collects (``apply_funding``).
+
+    ``closed_trades`` records ``direction=0`` (neither long nor short — the position is neutral);
+    the chunk-U ledger wiring (W3 step 2b) interprets 0 as a carry round-trip."""
+
+    def __init__(self, cash: float, taker_fee: float) -> None:
+        self.cash = cash
+        self.taker_fee = taker_fee
+        self._target = 0
+        self._perp_units = 0.0  # signed perp units (short => negative); 0 when flat
+        self._entry_equity = 0.0  # cash committed at entry, to PnL the round-trip on close
+        self.trades: list[float] = []
+        self.closed_trades: list[ClosedTrade] = []
+
+    def rebalance(self, target: int, price: float) -> None:
+        if target == self._target:
+            return
+        if self._target == 1:  # close the hedge: pay the exit taker fee on both legs
+            notional = abs(self._perp_units) * price
+            self.cash -= 2.0 * notional * self.taker_fee
+            pnl = self.cash - self._entry_equity  # realized round-trip PnL (funding - all fees)
+            self.trades.append(pnl)
+            self.closed_trades.append(ClosedTrade(0, pnl / self._entry_equity))
+            self._perp_units = 0.0
+        if target == 1:  # open the hedge: long spot + short perp, each notional = cash / 2
+            self._entry_equity = self.cash
+            notional = self.cash / 2.0
+            self.cash -= 2.0 * notional * self.taker_fee
+            self._perp_units = -notional / price
+        self._target = target
+
+    def equity(self, price: float) -> float:
+        return self.cash  # market-neutral: spot & perp price PnL cancel; only fees/funding move it
+
+    def apply_funding(self, rate: float, price: float) -> None:
+        """Credit/debit the perp short's funding for one bar. ``rate`` > 0 ⇒ longs pay shorts, so
+        the short leg collects ``-perp_units * price * rate`` (``perp_units`` < 0) — the carry the
+        whole structure exists to harvest. No-op when flat. The funding notional drifts with the
+        current ``price`` (the perp mark), like a real settlement."""
+        if self._target == 0:
+            return
+        self.cash -= self._perp_units * price * rate

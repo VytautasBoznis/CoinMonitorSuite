@@ -24,6 +24,7 @@ from coinmon.feed import BarView, CostModel
 from coinmon.live.feed import LiveFeed
 from coinmon.live.runner import ForwardRunner
 from coinmon.scraper import service
+from coinmon.search.ensemble import certify_ensemble
 from coinmon.search.evidence import (
     build_evidence,
     certify,
@@ -462,6 +463,23 @@ def _genome_spec(genome: Genome) -> dict:
     }
 
 
+def _genome_from_spec(spec: dict) -> Genome:
+    """Build + validate a Genome from a ``_genome_spec`` dict (the ensemble genomes-file format).
+    Missing optional keys fall back to the Genome defaults, so a file can list just family/pair/
+    params."""
+    genome = Genome(
+        family=spec["family"],
+        pair=spec["pair"],
+        params=spec["params"],
+        direction=spec.get("direction", "long"),
+        leverage=spec.get("leverage", 1.0),
+        trend_period=spec.get("trend_period", 50.0),
+        stop_pct=spec.get("stop_pct"),
+    )
+    validate(genome)
+    return genome
+
+
 def _load_null(path: str, genome: Genome, timeframe: str) -> bool:
     """Load a nullcheck JSON and return its ``beaten`` verdict for C4 — but only after confirming
     it was built for THIS genome + timeframe, so the wrong null can't be applied by accident."""
@@ -509,6 +527,42 @@ def _certify(args: argparse.Namespace) -> None:
     evidence = build_evidence(pooled, seed=args.seed, n_regimes=args.regimes)
     certificate = certify(evidence, null_beaten=null_beaten)
     print(certificate.summary())
+
+
+def _certify_ensemble(args: argparse.Namespace) -> None:
+    # Chunk Y step 2: certify a PORTFOLIO of frozen winners as its own unit. Reads a JSON list of
+    # genome specs (the sweep's GO winners), keeps a decorrelated top-k, unions their strictly-OOS
+    # ledgers and judges the pool against the same Edge Certificate. Small edges reach the N>=300
+    # floor only aggregated; the ensemble is the deployment unit chunk R allocates.
+    with open(args.genomes) as fh:
+        specs = json.load(fh)
+    candidates = [_genome_from_spec(s) for s in specs]
+    conn = db.connect()
+    try:
+        def read(symbol: str) -> pd.DataFrame:
+            return db.read_candles(conn, settings.exchange, symbol, args.timeframe)
+
+        universe = discover_universe(
+            db.list_series(conn),
+            exchange=settings.exchange,
+            quote=settings.quote_currency,
+            timeframe=args.timeframe,
+        )
+        print(
+            f"certifying an ensemble of {len(candidates)} candidates "
+            f"(top-{args.k} decorrelated)\n"
+        )
+        report = certify_ensemble(
+            candidates, read, settings.taker_fee, universe,
+            k=args.k, eval_pairs=args.eval_pairs, seed=args.seed,
+            window_size=args.window, step=args.step, holdout_fraction=args.holdout,
+            max_corr=args.max_corr, n_regimes=args.regimes,
+            read_funding=_funding_reader(conn),
+        )
+    finally:
+        conn.close()
+
+    print(report.summary())
 
 
 def _nullcheck(args: argparse.Namespace) -> None:
@@ -1021,6 +1075,40 @@ def build_parser() -> argparse.ArgumentParser:
         "without it C4 stays PENDING and the certificate can't reach CERTIFIED",
     )
     p_cert.set_defaults(func=_certify)
+
+    p_ens = sub.add_parser(
+        "certify-ensemble",
+        help="Chunk Y: pool the top-k DECORRELATED members of a genomes JSON file into one ledger "
+        "and certify the portfolio as its own unit (small edges reach N>=300 only aggregated)",
+    )
+    p_ens.add_argument("--timeframe", default="1d")
+    p_ens.add_argument(
+        "--genomes", required=True, metavar="FILE",
+        help="JSON list of genome specs (family/pair/params[/direction/leverage/trend/stop])",
+    )
+    p_ens.add_argument(
+        "--k", type=int, default=5, metavar="N",
+        help="decorrelated members to keep in the ensemble (default 5)",
+    )
+    p_ens.add_argument(
+        "--max-corr", type=float, default=0.7, metavar="R",
+        help="drop a member whose daily-P&L correlation with a kept one exceeds this (default 0.7)",
+    )
+    p_ens.add_argument(
+        "--seed", type=int, default=0, help="seeds each member's eval-pair pick + bootstrap"
+    )
+    p_ens.add_argument(
+        "--eval-pairs", type=int, default=8, metavar="N",
+        help="decorrelated peer pairs pooled per member alongside its own pair (default 8)",
+    )
+    p_ens.add_argument("--holdout", type=float, default=0.2, metavar="FRACTION")
+    p_ens.add_argument("--window", type=float, default=0.6, metavar="FRACTION")
+    p_ens.add_argument("--step", type=float, default=0.2, metavar="FRACTION")
+    p_ens.add_argument(
+        "--regimes", type=int, default=2, metavar="N",
+        help="disjoint time regimes to split the pool into for C5 (default 2)",
+    )
+    p_ens.set_defaults(func=_certify_ensemble)
 
     p_null = sub.add_parser(
         "nullcheck",

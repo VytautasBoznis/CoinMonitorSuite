@@ -517,10 +517,26 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
     green (+2), ruff clean; parser+resolution verified (4h→30, 1d→5, explicit override honored). The
     ≈6× bars/trades PAYOFF is a live user RUN (`search`/`sweep`/`certify --timeframe 4h`, Docker DB
     up) — momentum families first; MR should die of fees and the net-of-cost ledger will say so.
-  - [ ] **Y — The certified sweep + ensemble (payoff).** Heavy multi-seed sweep over everything;
+  - [~] **Y — The certified sweep + ensemble (payoff).** Heavy multi-seed sweep over everything;
     certify winners AND the top-k-decorrelated ensemble; two honest outcomes — a CERTIFIED
     strategy (→ chunk G forward paper, unpark Q) or a calibrated negative (nulls explain all →
     pivot to carry/cross-sectional/alt-data, stop burning compute in the valley).
+    **Ensemble CODE DONE (2026-07-03):** `search/ensemble.py` — `certify_ensemble(candidates, …)`
+    pools the top-`k` DECORRELATED winners into ONE ledger and certifies the PORTFOLIO as its own
+    unit (small edges reach C1's N≥300 only aggregated). Pure composition of existing seams:
+    per-candidate `select_eval_pairs`→`pool_trades` (its own strictly-OOS ledger), rank by
+    individual `t_exp`, `pick_decorrelated_members` greedily drops redundancy on each member's
+    `daily_pnl` stream (realized net return summed into the exit-day, NOT equity level; reuses
+    chunk O `_abs_corr`), union the kept ledgers, `build_evidence`+`certify`. Equal-weight = every
+    trade is one per-trade sample regardless of member (same semantics as chunk-U cross-pair
+    pooling). C4/C6 stay PENDING (ensemble-level null out of scope) so it can't reach CERTIFIED
+    unaided. CLI `coinmon certify-ensemble --genomes FILE --k N` (FILE = JSON list of genome specs,
+    the sweep's GO winners; `_genome_from_spec` fills Genome defaults). 390 tests green (+7:
+    daily_pnl bucketing, best-first decorrelated pick, redundant-member drop, end-to-end pool==union
+    of selected), ruff clean. **STILL the user's payoff RUN:** the heavy sweep (§Y.1), certify each
+    winner + the ensemble, and the two-outcome read are a live run (USDT-train/USDC-certify split,
+    Docker DB up). NOTE: `sweep --certify` ranking (U.3) is still unbuilt — sweep prints GO/NO-GO,
+    the user hand-picks GO genomes into the ensemble file for now.
 
 - [ ] **Q — Full tree-GP (the endpoint).** Genomes = typed expression trees over the indicator pool + operators /
   constants / price-fields; a strongly-typed grammar so crossover can't make `RSI(close > 30)` garbage; subtree

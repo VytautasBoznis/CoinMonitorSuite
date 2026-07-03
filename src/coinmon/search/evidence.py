@@ -282,6 +282,50 @@ def certify(
     return EdgeCertificate(verdict=verdict, evidence=ev, criteria=tuple(criteria))
 
 
+# Chunk U.3 — the sweep's certificate ranking. `coinmon sweep` graduates one winner per seed and
+# ranks them by raw holdout return (one equity curve, the wrong currency — see the alpha-hunt plan).
+# `--certify` replaces that: pool each GO winner's strictly-OOS per-trade ledger and rank by the
+# certificate SCORE (t_exp), the evidence the project actually trusts. The ranked list is what the
+# ensemble file lists best-first, so the user no longer hand-picks GO genomes for the ensemble.
+
+
+@dataclass(frozen=True)
+class CertifiedRow:
+    """A sweep GO winner paired with its pooled-ledger Edge Certificate."""
+
+    genome: Genome
+    certificate: EdgeCertificate
+
+
+def rank_certified(rows: Sequence[CertifiedRow]) -> list[CertifiedRow]:
+    """The GO winners, best certificate score (t_exp) first — the order the ensemble file is written
+    in and the summary prints."""
+    return sorted(rows, key=lambda r: r.certificate.evidence.t_exp, reverse=True)
+
+
+def summarize_certified_sweep(rows: Sequence[CertifiedRow]) -> str:
+    """Rank a sweep's GO winners by Edge-Certificate t_exp (best first) and tally the verdicts. Pure
+    — takes rows, returns text — so it is testable without a DB."""
+    if not rows:
+        return "certified sweep — no GO winners to certify."
+    ranked = rank_certified(rows)
+    lines = ["certified sweep — GO winners ranked by certificate score (t_exp):"]
+    for r in ranked:
+        e = r.certificate.evidence
+        lines.append(
+            f"  [{r.certificate.verdict:<9}] {r.genome.family} on {r.genome.pair} "
+            f"({r.genome.direction})  t_exp {e.t_exp:+.2f}  N {e.n_trades:>4}  "
+            f"win {e.win_rate:.3f} (Wilson {e.wilson_lower:.3f})  exp {e.expectancy:+.4f}"
+        )
+    verdicts = [r.certificate.verdict for r in ranked]
+    lines.append("")
+    lines.append(
+        f"{verdicts.count('CERTIFIED')} CERTIFIED, {verdicts.count('UNPROVEN')} UNPROVEN, "
+        f"{verdicts.count('REFUTED')} REFUTED of {len(ranked)} GO winner(s)"
+    )
+    return "\n".join(lines)
+
+
 def select_eval_pairs(
     genome: Genome,
     read: Callable[[str], pd.DataFrame],

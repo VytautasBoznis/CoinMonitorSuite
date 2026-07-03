@@ -535,8 +535,17 @@ fragility, graduates a survivor through an untouched holdout, emits live trade s
     daily_pnl bucketing, best-first decorrelated pick, redundant-member drop, end-to-end pool==union
     of selected), ruff clean. **STILL the user's payoff RUN:** the heavy sweep (§Y.1), certify each
     winner + the ensemble, and the two-outcome read are a live run (USDT-train/USDC-certify split,
-    Docker DB up). NOTE: `sweep --certify` ranking (U.3) is still unbuilt — sweep prints GO/NO-GO,
-    the user hand-picks GO genomes into the ensemble file for now.
+    Docker DB up). **U.3 `sweep --certify` DONE (2026-07-03):** the sweep now closes the
+    hand-pick gap — `--certify` dedupes the GO winners (same genome class GOs on many seeds),
+    pools each one's strictly-OOS ledger (reuses `select_eval_pairs`/`pool_trades`/`build_evidence`/
+    `certify`, C4 null PENDING — a ranking pass, not a final cert) and ranks them by certificate
+    SCORE (t_exp) instead of raw holdout return; `--certify-out FILE` writes the ranked winners
+    (best-first) as a genomes JSON `certify-ensemble --genomes` consumes, so no more hand-picking.
+    Pure `CertifiedRow`/`rank_certified`/`summarize_certified_sweep` live in `search/evidence.py`
+    (NOT runner — runner→evidence→stability→runner would cycle); CLI `_certify_sweep_winners`/
+    `_dedupe_genomes` + sweep args `--certify/--certify-out/--certify-seed/--eval-pairs/--window/
+    --step/--regimes`. 393 tests green (+3: t_exp ordering, summary tally, empty), ruff clean.
+    Not yet run live — still folds into the user's Y.1 payoff RUN.
 
 - [ ] **Q — Full tree-GP (the endpoint).** Genomes = typed expression trees over the indicator pool + operators /
   constants / price-fields; a strongly-typed grammar so crossover can't make `RSI(close > 30)` garbage; subtree

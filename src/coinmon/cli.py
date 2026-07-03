@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 
 import pandas as pd
@@ -26,11 +26,14 @@ from coinmon.live.runner import ForwardRunner
 from coinmon.scraper import service
 from coinmon.search.ensemble import certify_ensemble
 from coinmon.search.evidence import (
+    CertifiedRow,
     build_evidence,
     certify,
     pool_segments,
     pool_trades,
+    rank_certified,
     select_eval_pairs,
+    summarize_certified_sweep,
 )
 from coinmon.search.ga import GAConfig
 from coinmon.search.genome import Genome, decode_portfolio, validate
@@ -356,6 +359,7 @@ def _sweep(args: argparse.Namespace) -> None:
         )
         embargo = _resolve_embargo(args)
         rows = []
+        go_genomes = []
         for seed in range(args.start_seed, args.start_seed + args.seeds):
             report = run_search(
                 lambda s: db.read_candles(conn, settings.exchange, s, args.timeframe),
@@ -380,10 +384,68 @@ def _sweep(args: argparse.Namespace) -> None:
             print(report.graduation.summary())
             print()
             rows.append(sweep_row(seed, report))
+            if args.certify and report.graduation.passed:
+                go_genomes.append(report.graduation.genome)
+
+        print(summarize_sweep(rows))
+
+        if args.certify:
+            _certify_sweep_winners(conn, args, universe, go_genomes)
     finally:
         conn.close()
 
-    print(summarize_sweep(rows))
+
+def _certify_sweep_winners(
+    conn, args: argparse.Namespace, universe: Sequence[str], go_genomes: Sequence[Genome]
+) -> None:
+    # Chunk U.3: rank the sweep's GO winners by Edge-Certificate score instead of holdout return.
+    # The same genome class often GOs on several seeds, so dedupe first; then pool each winner's
+    # strictly-OOS ledger (chunk U seams) and certify it (C4 null PENDING — this is a ranking pass,
+    # not a final certificate). --certify-out writes the ranked winners as a genomes file that
+    # `certify-ensemble --genomes` consumes, so the user no longer hand-picks GO genomes.
+    def read(symbol: str) -> pd.DataFrame:
+        return db.read_candles(conn, settings.exchange, symbol, args.timeframe)
+
+    unique = _dedupe_genomes(go_genomes)
+    print(f"\ncertifying {len(unique)} distinct GO winner(s)...\n")
+    funding = _funding_reader(conn)
+    rows = []
+    for genome in unique:
+        eval_pairs = select_eval_pairs(
+            genome, read, universe, args.eval_pairs,
+            holdout_fraction=args.holdout, seed=args.certify_seed,
+        )
+        pooled = pool_trades(
+            genome, read, settings.taker_fee, eval_pairs,
+            window_size=args.window, step=args.step, holdout_fraction=args.holdout,
+            read_funding=funding,
+        )
+        evidence = build_evidence(pooled, seed=args.certify_seed, n_regimes=args.regimes)
+        rows.append(CertifiedRow(genome=genome, certificate=certify(evidence, null_beaten=None)))
+
+    print(summarize_certified_sweep(rows))
+
+    if args.certify_out and rows:
+        ranked = rank_certified(rows)
+        with open(args.certify_out, "w") as fh:
+            json.dump([_genome_spec(r.genome) for r in ranked], fh, indent=2)
+        print(
+            f"\nwrote {len(ranked)} winner(s) to {args.certify_out} "
+            f"— feed it to `certify-ensemble --genomes {args.certify_out}`"
+        )
+
+
+def _dedupe_genomes(genomes: Sequence[Genome]) -> list[Genome]:
+    """The distinct genomes, order-preserving. The same winner GOs on many seeds; certifying it once
+    is enough (and keeps the ensemble file free of duplicates)."""
+    seen: list[dict] = []
+    out: list[Genome] = []
+    for g in genomes:
+        spec = _genome_spec(g)
+        if spec not in seen:
+            seen.append(spec)
+            out.append(g)
+    return out
 
 
 def _stability(args: argparse.Namespace) -> None:
@@ -961,6 +1023,44 @@ def build_parser() -> argparse.ArgumentParser:
         default=1,
         metavar="N",
         help="CPU processes for the per-genome fitness map (0 = all cores; 1 = serial, default)",
+    )
+    p_sweep.add_argument(
+        "--certify",
+        action="store_true",
+        help="chunk U.3: after the sweep, pool each GO winner's OOS ledger and rank by Edge-"
+        "Certificate score (t_exp) instead of raw holdout return",
+    )
+    p_sweep.add_argument(
+        "--certify-out",
+        default=None,
+        metavar="FILE",
+        help="with --certify: write the ranked GO winners as a genomes JSON (best-first) for "
+        "`certify-ensemble --genomes`",
+    )
+    p_sweep.add_argument(
+        "--certify-seed",
+        type=int,
+        default=0,
+        metavar="S",
+        help="with --certify: seeds each winner's eval-pair pick + bootstrap (default 0)",
+    )
+    p_sweep.add_argument(
+        "--eval-pairs",
+        type=int,
+        default=8,
+        metavar="N",
+        help="with --certify: decorrelated peer pairs pooled per winner alongside its own pair",
+    )
+    p_sweep.add_argument("--window", type=float, default=0.6, metavar="FRACTION",
+        help="with --certify: rolling window size the OOS ledger is pooled from")
+    p_sweep.add_argument("--step", type=float, default=0.2, metavar="FRACTION",
+        help="with --certify: rolling window step")
+    p_sweep.add_argument(
+        "--regimes",
+        type=int,
+        default=2,
+        metavar="N",
+        help="with --certify: disjoint time regimes for each winner's evidence C5 (default 2)",
     )
     p_sweep.set_defaults(func=_sweep)
 

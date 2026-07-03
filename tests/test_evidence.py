@@ -3,11 +3,14 @@ import pytest
 
 from coinmon.backtest.result import TradeRecord
 from coinmon.search.evidence import (
+    CertifiedRow,
     block_bootstrap_ci,
     build_evidence,
     certify,
     pool_segments,
     pool_trades,
+    rank_certified,
+    summarize_certified_sweep,
     wilson_lower_bound,
 )
 from coinmon.search.genome import Genome
@@ -116,6 +119,35 @@ def test_fragility_failure_refutes():
     evidence = build_evidence(_ledger(_win_loss(300, 0.55)), seed=0, resamples=1000)
     cert = certify(evidence, null_beaten=True, fragility_positive=0.5)
     assert cert.verdict == "REFUTED"
+
+
+# --- chunk U.3: sweep certificate ranking ---
+
+def _certified_row(pair, win_rate):
+    evidence = build_evidence(_ledger(_win_loss(300, win_rate)), seed=0, resamples=500)
+    genome = Genome(family="rsi_meanreversion", pair=pair, params={})
+    return CertifiedRow(genome=genome, certificate=certify(evidence))
+
+
+def test_rank_certified_orders_by_t_exp_best_first():
+    weak = _certified_row("BTC/USDC", 0.51)
+    strong = _certified_row("ETH/USDC", 0.60)
+    ranked = rank_certified([weak, strong])
+    assert [r.genome.pair for r in ranked] == ["ETH/USDC", "BTC/USDC"]
+    assert ranked[0].certificate.evidence.t_exp >= ranked[1].certificate.evidence.t_exp
+
+
+def test_summarize_certified_sweep_lists_and_tallies():
+    rows = [_certified_row("BTC/USDC", 0.51), _certified_row("ETH/USDC", 0.60)]
+    text = summarize_certified_sweep(rows)
+    # both winners listed, and the verdict tally counts all of them
+    assert "BTC/USDC" in text and "ETH/USDC" in text
+    verdicts = [r.certificate.verdict for r in rows]
+    assert f"{verdicts.count('REFUTED')} REFUTED of 2 GO winner(s)" in text
+
+
+def test_summarize_certified_sweep_empty():
+    assert summarize_certified_sweep([]) == "certified sweep — no GO winners to certify."
 
 
 # --- pooling leakage guard ---

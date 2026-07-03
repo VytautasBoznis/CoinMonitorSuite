@@ -30,3 +30,14 @@ meant for a repo-root Parquet store is swallowing a same-named source dir.
 - Immediate unblock for a single file: `git add -f src/coinmon/data/surrogate.py`.
 Verify the top-level Parquet store's real location before anchoring (don't accidentally start
 versioning a large `data/` dataset). See [[build-roadmap]], [[user-commits-themselves]].
+
+**UPDATE 2026-07-03: the predicted disaster happened.** The user's macOS clone at
+`~/Dev/CoinMonitoringSuite/CoinMonitorSuite` is missing the ENTIRE `src/coinmon/data/` package —
+the files were never in any git object, and NO copy exists on the Mac (user confirmed: the
+original working copy lives on a SEPARATE build machine, where the 2026-07-02 sessions ran and
+the files still sit untracked on disk). The `.gitignore` rule is NOW anchored (`data/` → `/data/`)
+in the Mac clone. **Recovery = on the BUILD machine:** apply/pull the anchored gitignore fix,
+`git add src/coinmon/data`, commit, push; then pull on the Mac. Do this BEFORE further build
+sessions — until then every new `src/coinmon/data/` file (e.g. W3 step 2) keeps vanishing from
+commits. Nothing runs on the Mac clone until restored (every module imports `coinmon.data`);
+don't waste time searching the Mac for copies — there are none.

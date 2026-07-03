@@ -16,5 +16,6 @@ dist/
 # Local config / secrets
 .env
 
-# Data (candle Parquet store — fetched, not versioned)
-data/
+# Data (candle Parquet store — fetched, not versioned; anchored so it never
+# swallows the src/coinmon/data/ SOURCE package again)
+/data/

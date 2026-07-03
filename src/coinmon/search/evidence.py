@@ -11,6 +11,7 @@ import pandas as pd
 from coinmon.backtest.engine import BacktestEngine
 from coinmon.backtest.result import TradeRecord
 from coinmon.data.candles import load_candles, split_holdout
+from coinmon.data.funding import attach_funding
 from coinmon.search.genome import Genome, decode, decode_portfolio, decode_stop
 from coinmon.search.robustness import pick_decorrelated_pairs
 from coinmon.search.stability import window_bounds
@@ -322,12 +323,16 @@ def _iter_segments(
     step: float,
     n_windows: int | None,
     holdout_fraction: float,
+    read_funding: Callable[[str], pd.DataFrame] | None = None,
 ):
     """Yield ``(holdout_frame, BacktestResult)`` for each (pair, window) OOS slice — the single
     grid iteration ``pool_trades`` and ``pool_segments`` (chunk V2) share, so the leakage-critical
     'only strictly-OOS bars' logic lives in ONE place. Each window's holdout is bars the producing
     search never touched. A pair that won't load, or a window too short, is skipped, not crashed on.
-    """
+
+    ``read_funding`` (chunk W3 step 2c), when given, attaches the per-bar ``funding_rate`` column so
+    a carry genome's pooled certificate ledger includes real funding; ``None`` keeps frames
+    candle-only (byte-unchanged for every price-shape genome)."""
     factory = decode(genome)
     build_portfolio = decode_portfolio(genome)
     stop_pct = decode_stop(genome)
@@ -337,6 +342,8 @@ def _iter_segments(
             frame = load_candles(read, pair)
         except (ValueError, KeyError):
             continue
+        if read_funding is not None:
+            frame = attach_funding(frame, pair, read_funding)
         n = len(frame)
         for lo, hi in bounds:
             window = frame.iloc[int(n * lo) : int(n * hi)].reset_index(drop=True)
@@ -363,16 +370,20 @@ def pool_trades(
     step: float = 0.2,
     n_windows: int | None = None,
     holdout_fraction: float = 0.2,
+    read_funding: Callable[[str], pd.DataFrame] | None = None,
 ) -> list[TradeRecord]:
     """Run the frozen ``genome`` (pair gene overridden to each of ``eval_pairs``) over the holdout
     tail of each rolling window and pool every closed trade — the strictly-OOS ledger the
     certificate scores. Reuses chunk S's ``window_bounds`` and chunk D's ``split_holdout``: each
     window's holdout is bars the producing search never touched, so pooling multiplies evidence
-    without leaking. A pair that won't load, or a window too short, is skipped, not crashed on."""
+    without leaking. A pair that won't load, or a window too short, is skipped, not crashed on.
+    ``read_funding`` (chunk W3 step 2c) includes real funding for a carry genome; ``None`` =
+    candle-only."""
     pooled: list[TradeRecord] = []
     for _, result in _iter_segments(
         genome, read, taker_fee, eval_pairs,
         window_size=window_size, step=step, n_windows=n_windows, holdout_fraction=holdout_fraction,
+        read_funding=read_funding,
     ):
         pooled.extend(result.trades)
     return pooled
@@ -400,17 +411,20 @@ def pool_segments(
     step: float = 0.2,
     n_windows: int | None = None,
     holdout_fraction: float = 0.2,
+    read_funding: Callable[[str], pd.DataFrame] | None = None,
 ) -> list[EvalSegment]:
     """The same OOS grid as ``pool_trades``, but returning per-segment price series + the
     (direction, duration-in-bars) of each closed trade — the structure chunk V2's exposure-matched
     random-entry null needs to place matched-but-randomly-timed trades on the very series the
     candidate traded. Duration is the bar-index gap between the entry and exit fills (fills land at
     a bar's open, so both times are in the holdout frame). Segments with no closed trade are
-    dropped (nothing to exposure-match)."""
+    dropped (nothing to exposure-match). ``read_funding`` (chunk W3 step 2c) includes real funding
+    for a carry genome; ``None`` = candle-only."""
     segments: list[EvalSegment] = []
     for holdout, result in _iter_segments(
         genome, read, taker_fee, eval_pairs,
         window_size=window_size, step=step, n_windows=n_windows, holdout_fraction=holdout_fraction,
+        read_funding=read_funding,
     ):
         if not result.trades:
             continue

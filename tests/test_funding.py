@@ -2,12 +2,25 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from coinmon.data.funding import align_funding
+from coinmon.data.funding import align_funding, attach_funding
 
 
 def _funding(rows):
     # rows: list of (funding_time, rate)
     return pd.DataFrame(rows, columns=["funding_time", "rate"])
+
+
+def _candles(times):
+    return pd.DataFrame(
+        {
+            "open_time": times,
+            "open": [100.0] * len(times),
+            "high": [101.0] * len(times),
+            "low": [99.0] * len(times),
+            "close": [100.0] * len(times),
+            "volume": [1.0] * len(times),
+        }
+    )
 
 
 def test_settlements_land_in_their_bar_window():
@@ -58,3 +71,33 @@ def test_output_aligns_one_to_one_with_candle_times():
     aligned = align_funding(funding, times)
     assert isinstance(aligned, np.ndarray)
     assert len(aligned) == len(times)
+
+
+# --- attach_funding (chunk W3 step 2c: the searchable-carry seam) --------------------------
+
+
+def test_attach_funding_adds_aligned_column_for_a_direct_perp():
+    frame = _candles([0, 100, 200])
+    funding = _funding([(50, 0.01), (150, 0.02), (250, 0.03)])
+    out = attach_funding(frame, "BTC/USDC", lambda pair: funding)
+    assert "funding_rate" in out.columns
+    assert list(out["funding_rate"]) == pytest.approx([0.01, 0.02, 0.03])
+
+
+def test_attach_funding_skips_ratio_pairs_without_a_lookup():
+    frame = _candles([0, 100, 200])
+    looked_up: list[str] = []
+
+    def read_funding(pair):
+        looked_up.append(pair)
+        return _funding([(50, 0.01)])
+
+    out = attach_funding(frame, "ETH/BTC", read_funding)  # BTC quote != USDC -> not a perp
+    assert "funding_rate" not in out.columns
+    assert looked_up == []  # a ratio is never a perp, so no funding is fetched
+
+
+def test_attach_funding_leaves_frame_unchanged_when_perp_has_no_funding():
+    frame = _candles([0, 100, 200])
+    out = attach_funding(frame, "BTC/USDC", lambda pair: _funding([]))
+    assert "funding_rate" not in out.columns  # byte-unchanged path (no column, no feature)

@@ -64,10 +64,31 @@ directional funding bet — H6 says funding is a collectible premium, not a timi
   `BacktestEngine.run(candles, funding=[...])` on a carry genome harvests the premium and books a
   direction-0 round-trip; `funding=None` → flat/0 trades.
 
-**Deferred to W3 step 2c (the integration layer):** thread REAL funding through the search rig —
-`CandleCache` must load+`align_funding` per DIRECT USDC perp (not ratios) and carry it (cleanest:
-a `funding_rate` COLUMN on the candle frame so fold/holdout/fragility slicing carries it for free,
-leaf engine calls extract+pass), CLI wiring of `db.read_funding`, parallel worker funding, + the
-live feed. Until 2c the family is REACHABLE but un-searchable (funding=None → carry always loses
-to fees → GA rejects it), same "registered, alpha unproven" state as W1/W4 but data-gated.
-See [[build-roadmap]] chunk W, `.claude/plans/alpha-hunt.md` §W3.
+**W3 step 2c DONE (2026-07-03) — carry is now SEARCHABLE + certifiable (user chose the
+search+certify scope; live feed deferred to 2d).** The seam: one reusable primitive
+`data.funding.attach_funding(frame, pair, read_funding)` attaches a per-bar `funding_rate` COLUMN
+to a DIRECT perp frame only (ratios skipped, no-funding perps unchanged), and `BacktestEngine.run`
+AUTO-EXTRACTS that column when no explicit `funding=` is passed — the SINGLE seam, so every
+fold/holdout/fragility/pool `.iloc` slice carries funding for free and no column = byte-unchanged
+(parity; all 372 prior tests stayed green). Wired: `CandleCache(read, read_funding=None)` +
+`run_search(read_funding=)` (parallel workers get it FREE — `_preload_universe` ships the
+funding-bearing frames); `run_stability(read_funding=)` (+ forward-holdout resolver);
+`evidence._iter_segments`/`pool_trades`/`pool_segments(read_funding=)` so `certify`/`nullcheck`
+score a carry candidate WITH funding; `nullmodel.random_genome_null(read_funding=)`. CLI
+`_funding_reader(conn)` maps spot pair→PERP symbol (`f"{pair}:{quote}"` — funding is stored under
+`BASE/QUOTE:QUOTE`, [[w3-funding-cashflow]] via `service.perp_symbol`), wired into
+search/sweep/stability/certify/nullcheck. **KEY null decision:** the V3 surrogate re-searches
+DELIBERATELY get NO funding — a valid null must destroy the carry signal too (carry collects
+nothing on signal-destroyed data). 381 tests green (+9: attach_funding column/ratio-skip/no-funding;
+engine auto-extract bit-parity vs explicit arg; carry harvests premium; CandleCache direct-only;
+fold-slice searchability proof), ruff clean. Not yet run live (needs the DB + scraped funding, same
+"registered, alpha unproven" read as W1/W4 — a `coinmon search`/`certify` picking + judging carry).
+
+**Deferred to W3 step 2d (small, off the alpha-hunt critical path):** the LIVE FEED —
+`LiveFeed`/`ForwardRunner` (`coinmon forward`) still step candle-only (`stepper.step(candle)` with
+no funding); threading funding there needs `poll` to return per-bar funding and `feed` to pass it,
+the messiest parity work. Only matters when forward-paper-testing a graduated carry genome (chunk
+F/G). Also KNOWN carry-null gaps to revisit: V2 matched-random-entry is conceptually N/A for a
+market-neutral book (trades are direction-0; `_synthetic_return` would mis-handle them) — not
+solved, carry should lean on C1–C3/C5 + V1/V3. See [[build-roadmap]] chunk W,
+`.claude/plans/alpha-hunt.md` §W3.

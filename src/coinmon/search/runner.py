@@ -8,6 +8,7 @@ import pandas as pd
 from coinmon.backtest.fitness import FitnessResult, evaluate_fitness
 from coinmon.backtest.stress import MonteCarloResult, run_monte_carlo
 from coinmon.data.candles import load_candles, split_holdout
+from coinmon.data.funding import attach_funding
 from coinmon.search.ga import GAConfig, GAResult, evolve
 from coinmon.search.genome import (
     FAMILIES,
@@ -37,15 +38,28 @@ INITIAL_CAPITAL = 10_000.0
 
 class CandleCache:
     """Resolve + cache candles per pair. Genomes reuse pairs heavily across a run, and a pair
-    may be a synthetic ratio (two DB reads); caching avoids re-loading on every evaluation."""
+    may be a synthetic ratio (two DB reads); caching avoids re-loading on every evaluation.
 
-    def __init__(self, read: Callable[[str], pd.DataFrame]) -> None:
+    ``read_funding`` (chunk W3 step 2c), when given, attaches a per-bar ``funding_rate`` column to
+    each DIRECT perp pair (``attach_funding``) so the carry family is scored with real funding and
+    every downstream slice carries it for free. ``None`` (default) leaves frames candle-only —
+    every existing search/test path is byte-unchanged."""
+
+    def __init__(
+        self,
+        read: Callable[[str], pd.DataFrame],
+        read_funding: Callable[[str], pd.DataFrame] | None = None,
+    ) -> None:
         self._read = read
+        self._read_funding = read_funding
         self._cache: dict[str, pd.DataFrame] = {}
 
     def get(self, pair: str) -> pd.DataFrame:
         if pair not in self._cache:
-            self._cache[pair] = load_candles(self._read, pair)
+            frame = load_candles(self._read, pair)
+            if self._read_funding is not None:
+                frame = attach_funding(frame, pair, self._read_funding)
+            self._cache[pair] = frame
         return self._cache[pair]
 
 
@@ -204,6 +218,7 @@ def run_search(
     cross_pair_max_corr: float = 0.7,
     workers: int = 1,
     cache: CandleCache | None = None,
+    read_funding: Callable[[str], pd.DataFrame] | None = None,
 ) -> SearchReport:
     """Run the GA over genomes scored by OOS fitness, then gate the winner.
 
@@ -227,8 +242,11 @@ def run_search(
     skips it (chunk-N behavior unchanged).
 
     ``cache`` lets a caller (the multi-seed sweep) share one resolved-candle cache across runs so
-    the DB is read once, not once per seed; default ``None`` builds a fresh cache (unchanged)."""
-    cache = cache if cache is not None else CandleCache(read)
+    the DB is read once, not once per seed; default ``None`` builds a fresh cache (unchanged).
+    ``read_funding`` (chunk W3 step 2c) is threaded into that fresh cache so the carry family is
+    scored with real per-bar funding; ``None`` (default) keeps every frame candle-only. It is
+    ignored when a pre-built ``cache`` is supplied (the caller owns that cache's funding wiring)."""
+    cache = cache if cache is not None else CandleCache(read, read_funding)
 
     def search_span(pair: str) -> pd.DataFrame:
         frame = cache.get(pair)

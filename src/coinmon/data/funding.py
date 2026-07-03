@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 
 import numpy as np
 import pandas as pd
+
+from coinmon.config import settings
 
 
 def align_funding(funding: pd.DataFrame, candle_times: Sequence[int]) -> np.ndarray:
@@ -38,3 +40,29 @@ def align_funding(funding: pd.DataFrame, candle_times: Sequence[int]) -> np.ndar
     keep = (idx >= 0) & (ft < last_upper)
     np.add.at(out, idx[keep], rate[keep])
     return out
+
+
+def attach_funding(
+    frame: pd.DataFrame,
+    pair: str,
+    read_funding: Callable[[str], pd.DataFrame],
+) -> pd.DataFrame:
+    """Attach a per-bar ``funding_rate`` column to a DIRECT perp pair's candle frame (chunk W3
+    step 2c — the seam that finally makes ``funding_carry`` searchable, not just registered).
+
+    Only a direct ``BASE/QUOTE`` leg (``QUOTE == settings.quote_currency``) has a tradable perp and
+    thus funding; a synthetic ratio (``BASE/BASE2``) is not a perp and is returned unchanged.
+    ``read_funding`` resolves the pair to its funding-settlement frame (``funding_time``/``rate``,
+    e.g. ``db.read_funding``); the CALLER maps the pair to its perp symbol (funding is stored under
+    ``BASE/QUOTE:QUOTE``). When the perp has no stored funding the frame is returned unchanged — the
+    byte-unchanged path (no column, so the engine adds no funding feature or cashflow). Otherwise
+    the 8h settlements are aggregated onto the bar grid (``align_funding``) and stored as
+    ``funding_rate`` so every downstream slice (fold, holdout, fragility, pooled window) carries it
+    for free and the engine charges + exposes it point-in-time."""
+    if pair.split("/")[1] != settings.quote_currency:
+        return frame
+    funding = read_funding(pair)
+    if funding.empty:
+        return frame
+    aligned = align_funding(funding, frame["open_time"].to_numpy())
+    return frame.assign(funding_rate=aligned)

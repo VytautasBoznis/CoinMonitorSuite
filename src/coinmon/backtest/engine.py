@@ -200,6 +200,13 @@ class BacktestEngine:
         """
         if candles.empty:
             raise ValueError("cannot backtest an empty candle frame")
+        # Chunk W3 step 2c: a genome's frame may carry per-bar funding as a ``funding_rate`` column
+        # (attached by ``attach_funding`` for direct perps). Extract it here — the single seam — so
+        # every fold/holdout/fragility/pool slice, which carries the column through ``.iloc``, gets
+        # funding without each caller threading it. An explicit ``funding`` arg wins; no column
+        # leaves the run byte-unchanged (parity for every ratio and non-funding series).
+        if funding is None and "funding_rate" in candles.columns:
+            funding = candles["funding_rate"].to_numpy()
         if funding is not None and len(funding) != len(candles):
             raise ValueError("funding must align 1:1 with candles")
 

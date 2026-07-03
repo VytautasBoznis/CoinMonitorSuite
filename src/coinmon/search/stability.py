@@ -7,6 +7,7 @@ from dataclasses import dataclass
 import pandas as pd
 
 from coinmon.data.candles import load_candles, split_holdout
+from coinmon.data.funding import attach_funding
 from coinmon.search.ga import GAConfig
 from coinmon.search.genome import FAMILIES, Genome
 from coinmon.search.graduation import GraduationReport, graduate
@@ -229,6 +230,7 @@ def run_stability(
     fragility_min_positive: float = 0.9,
     graduate_min_trades: int = 15,
     workers: int = 1,
+    read_funding: Callable[[str], pd.DataFrame] | None = None,
 ) -> StabilityReport:
     """Run the full graduation search (``run_search``) on each rolling window of the data, then
     measure selection agreement + forward persistence (see module header).
@@ -251,7 +253,10 @@ def run_stability(
 
     def resolve(pair: str) -> pd.DataFrame:
         if pair not in cache:
-            cache[pair] = load_candles(read, pair)
+            frame = load_candles(read, pair)
+            if read_funding is not None:  # forward-holdout carry winners need funding too (W3 2c)
+                frame = attach_funding(frame, pair, read_funding)
+            cache[pair] = frame
         return cache[pair]
 
     bounds = window_bounds(window_size, step, n_windows)
@@ -271,6 +276,7 @@ def run_stability(
             holdout_fraction=holdout_fraction,
             graduate_min_trades=graduate_min_trades,
             workers=workers,
+            read_funding=read_funding,
         )
         windows.append(StabilityWindow(index=index, lo=lo, hi=hi, report=report))
 

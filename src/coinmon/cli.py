@@ -271,6 +271,18 @@ def _forward(args: argparse.Namespace) -> None:
         conn.close()
 
 
+def _funding_reader(conn) -> Callable[[str], pd.DataFrame]:
+    """A ``pair -> funding frame`` loader for ``CandleCache`` / evidence pooling (chunk W3 step 2c).
+    Funding is stored under the PERP symbol (``BASE/QUOTE:QUOTE``, see ``service.perp_symbol``), so
+    this maps the spot pair the search trades to it. ``attach_funding`` only calls it for direct
+    perps, so a ratio never hits the DB here."""
+
+    def read_funding(pair: str) -> pd.DataFrame:
+        return db.read_funding(conn, settings.exchange, f"{pair}:{pair.split('/')[1]}")
+
+    return read_funding
+
+
 def _search(args: argparse.Namespace) -> None:
     conn = db.connect()
     try:
@@ -302,6 +314,7 @@ def _search(args: argparse.Namespace) -> None:
             cross_pair_n=args.cross_pair,
             cross_pair_min=args.cross_pair_min,
             workers=args.workers,
+            read_funding=_funding_reader(conn),
         )
     finally:
         conn.close()
@@ -328,7 +341,10 @@ def _sweep(args: argparse.Namespace) -> None:
             timeframe=args.timeframe,
         )
         print(f"universe: {len(universe)} pairs auto-built from stored {args.timeframe} candles\n")
-        cache = CandleCache(lambda s: db.read_candles(conn, settings.exchange, s, args.timeframe))
+        cache = CandleCache(
+            lambda s: db.read_candles(conn, settings.exchange, s, args.timeframe),
+            _funding_reader(conn),
+        )
         rows = []
         for seed in range(args.start_seed, args.start_seed + args.seeds):
             report = run_search(
@@ -395,6 +411,7 @@ def _stability(args: argparse.Namespace) -> None:
             fragility_runs=args.stress,
             graduate_min_trades=args.graduate_min_trades,
             workers=args.workers,
+            read_funding=_funding_reader(conn),
         )
     finally:
         conn.close()
@@ -474,6 +491,7 @@ def _certify(args: argparse.Namespace) -> None:
         pooled = pool_trades(
             genome, read, settings.taker_fee, eval_pairs,
             window_size=args.window, step=args.step, holdout_fraction=args.holdout,
+            read_funding=_funding_reader(conn),
         )
     finally:
         conn.close()
@@ -496,6 +514,7 @@ def _nullcheck(args: argparse.Namespace) -> None:
         def read(symbol: str) -> pd.DataFrame:
             return db.read_candles(conn, settings.exchange, symbol, args.timeframe)
 
+        funding = _funding_reader(conn)  # chunk W3 step 2c: real funding for a carry candidate
         universe = discover_universe(
             db.list_series(conn),
             exchange=settings.exchange,
@@ -510,6 +529,7 @@ def _nullcheck(args: argparse.Namespace) -> None:
             pool_trades(
                 genome, read, settings.taker_fee, eval_pairs,
                 window_size=args.window, step=args.step, holdout_fraction=args.holdout,
+                read_funding=funding,
             ),
             seed=args.seed, resamples=args.evidence_resamples, n_regimes=args.regimes,
         )
@@ -532,6 +552,7 @@ def _nullcheck(args: argparse.Namespace) -> None:
                 window_size=args.window,
                 step=args.step,
                 holdout_fraction=args.holdout,
+                read_funding=funding,
             )
         elif args.mode == "matched":  # exposure-matched random-entry null (V2)
             print(
@@ -541,6 +562,7 @@ def _nullcheck(args: argparse.Namespace) -> None:
             segments = pool_segments(
                 genome, read, settings.taker_fee, eval_pairs,
                 window_size=args.window, step=args.step, holdout_fraction=args.holdout,
+                read_funding=funding,
             )
             result = random_entry_null(
                 candidate.expectancy,
@@ -556,7 +578,10 @@ def _nullcheck(args: argparse.Namespace) -> None:
             # FULL search on the ratios that rebuild from them, and score the winner by the SAME
             # pooled t_exp as the candidate. Search the full surrogate series (holdout_fraction=0,
             # fragility off): we only need the GA-selected winner, and pool_trades below carves
-            # its own OOS windows — so no per-surrogate 200-run graduation is paid.
+            # its own OOS windows — so no per-surrogate 200-run graduation is paid. Funding is
+            # DELIBERATELY not threaded into the surrogate re-searches (chunk W3 step 2c): a valid
+            # null must destroy the carry signal too, so a carry genome collects nothing on
+            # signal-destroyed data — the "no edge without real funding" the null should show.
             legs = [p for p in universe if p.endswith(f"/{settings.quote_currency}")]
             leg_frames = {leg: f for leg in legs if len(f := read(leg)) >= 2}
             config = GAConfig(

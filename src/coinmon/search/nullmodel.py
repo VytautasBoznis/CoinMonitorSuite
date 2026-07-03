@@ -165,6 +165,7 @@ def random_genome_null(
     step: float = 0.2,
     holdout_fraction: float = 0.2,
     quantile: float = 0.95,
+    read_funding: Callable[[str], pd.DataFrame] | None = None,
     score_genome: Callable[[Genome], float] | None = None,
 ) -> NullResult:
     """Sample ``n_genomes`` uniformly-random genomes and score each by the certificate statistic
@@ -172,7 +173,9 @@ def random_genome_null(
     candidate was measured on, then judge the candidate against the best-of-M null (see
     ``null_from_scores``). ``score_genome`` is injectable so tests can drive it without a DB;
     the default pools each genome exactly as ``pool_trades`` + ``build_evidence`` do for the
-    candidate, so candidate and nulls are scored by an identical protocol (a fair comparison)."""
+    candidate, so candidate and nulls are scored by an identical protocol (a fair comparison).
+    ``read_funding`` (chunk W3 step 2c) is passed to that pooling so a random carry genome is scored
+    with real funding — the same footing as the candidate; ``None`` = candle-only."""
     if score_genome is None:
 
         def score_genome(genome: Genome) -> float:
@@ -184,6 +187,7 @@ def random_genome_null(
                 window_size=window_size,
                 step=step,
                 holdout_fraction=holdout_fraction,
+                read_funding=read_funding,
             )
             return build_evidence(
                 trades, seed=boot_seed, resamples=evidence_resamples, n_regimes=n_regimes

@@ -1,0 +1,290 @@
+universe: 861 pairs auto-built from stored 1d candles
+
+graduation gate [NO-GO] — rsi_meanreversion on BNB/CELO [5.0x perp regime-adaptive (MA151)]
+  holdout span     308 bars (never seen by the search)
+  holdout return   -100.00%  (buy & hold +210.95%)
+  holdout trades   2
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 -100.00% / -100.00% / -100.00%
+    % runs positive        0.00%
+    % runs beat B&H        0.00%
+  rejected because:
+    - holdout return -100.00% not positive
+    - only 2 holdout trades (min 15)
+    - fragility 0% positive < 90%
+
+graduation gate [NO-GO] — rsi_meanreversion on BTC/ETC [4.8x perp regime-adaptive (MA20), 35% stop]
+  holdout span     287 bars (never seen by the search)
+  holdout return   +104.10%  (buy & hold +53.69%)
+  holdout trades   1
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 +102.88% / +103.41% / +103.89%
+    % runs positive        100.00%
+    % runs beat B&H        100.00%
+  rejected because:
+    - only 1 holdout trades (min 15)
+
+graduation gate [NO-GO] — ema_crossover on ADA/XTZ [3.8x perp regime-adaptive (MA51), 50% stop]
+  holdout span     343 bars (never seen by the search)
+  holdout return   -100.00%  (buy & hold -21.08%)
+  holdout trades   3
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 -100.00% / -100.00% / -100.00%
+    % runs positive        0.00%
+    % runs beat B&H        0.00%
+  rejected because:
+    - holdout return -100.00% not positive
+    - only 3 holdout trades (min 15)
+    - fragility 0% positive < 90%
+
+graduation gate [NO-GO] — rsi_meanreversion on BTC/FIL [4.8x perp regime-adaptive (MA73)]
+  holdout span     343 bars (never seen by the search)
+  holdout return   +2601.22%  (buy & hold +81.37%)
+  holdout trades   1
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 +2597.38% / +2598.94% / +2600.45%
+    % runs positive        100.00%
+    % runs beat B&H        100.00%
+  rejected because:
+    - only 1 holdout trades (min 15)
+
+graduation gate [NO-GO] — indicator_combo on BNB/KSM [4.9x perp regime-adaptive (MA116), 44% stop]
+  holdout span     315 bars (never seen by the search)
+  holdout return   +747.98%  (buy & hold +201.18%)
+  holdout trades   0
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 +747.41% / +747.67% / +747.91%
+    % runs positive        100.00%
+    % runs beat B&H        100.00%
+  rejected because:
+    - only 0 holdout trades (min 15)
+
+graduation gate [NO-GO] — rsi_meanreversion on BNB/KSM [2.3x perp regime-adaptive (MA193)]
+  holdout span     315 bars (never seen by the search)
+  holdout return   +133.19%  (buy & hold +201.18%)
+  holdout trades   0
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 +133.02% / +133.10% / +133.17%
+    % runs positive        100.00%
+    % runs beat B&H        0.00%
+  rejected because:
+    - only 0 holdout trades (min 15)
+
+graduation gate [NO-GO] — ema_crossover on BNB/MANA [5.0x perp regime-adaptive (MA172), 21% stop]
+  holdout span     315 bars (never seen by the search)
+  holdout return   +1232.19%  (buy & hold +185.42%)
+  holdout trades   1
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 +1228.68% / +1230.20% / +1231.60%
+    % runs positive        100.00%
+    % runs beat B&H        100.00%
+  rejected because:
+    - only 1 holdout trades (min 15)
+
+graduation gate [NO-GO] — ratio_momentum on BNB/DOT [4.3x perp regime-adaptive (MA187), 39% stop]
+  holdout span     315 bars (never seen by the search)
+  holdout return   +824.94%  (buy & hold +196.94%)
+  holdout trades   9
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 +784.09% / +808.02% / +811.60%
+    % runs positive        100.00%
+    % runs beat B&H        100.00%
+  rejected because:
+    - only 9 holdout trades (min 15)
+
+graduation gate [NO-GO] — ema_crossover on ICP/KSM [4.2x perp regime-adaptive (MA149), 50% stop]
+  holdout span     345 bars (never seen by the search)
+  holdout return   -100.00%  (buy & hold +95.72%)
+  holdout trades   2
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 -100.00% / -100.00% / -100.00%
+    % runs positive        0.00%
+    % runs beat B&H        0.00%
+  rejected because:
+    - holdout return -100.00% not positive
+    - only 2 holdout trades (min 15)
+    - fragility 0% positive < 90%
+
+graduation gate [GO] — rsi_meanreversion on BNB/DYDX [2.1x perp regime-adaptive (MA136), 34% stop]
+  holdout span     315 bars (never seen by the search)
+  holdout return   +114.61%  (buy & hold +188.48%)
+  holdout trades   18
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 +94.72% / +110.91% / +164.25%
+    % runs positive        100.00%
+    % runs beat B&H        0.00%
+
+graduation gate [NO-GO] — ema_crossover on AAVE/DOT [5.0x perp regime-adaptive (MA70), 49% stop]
+  holdout span     348 bars (never seen by the search)
+  holdout return   -100.00%  (buy & hold +30.92%)
+  holdout trades   2
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 -100.00% / -100.00% / -100.00%
+    % runs positive        0.00%
+    % runs beat B&H        0.00%
+  rejected because:
+    - holdout return -100.00% not positive
+    - only 2 holdout trades (min 15)
+    - fragility 0% positive < 90%
+
+graduation gate [NO-GO] — ratio_momentum on BNB/KSM [4.8x perp regime-adaptive (MA200), 25% stop]
+  holdout span     315 bars (never seen by the search)
+  holdout return   -100.00%  (buy & hold +201.18%)
+  holdout trades   2
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 -100.00% / -100.00% / -100.00%
+    % runs positive        0.00%
+    % runs beat B&H        0.00%
+  rejected because:
+    - holdout return -100.00% not positive
+    - only 2 holdout trades (min 15)
+    - fragility 0% positive < 90%
+
+graduation gate [NO-GO] — indicator_combo on BNB/KSM [5.0x perp regime-adaptive (MA200), 38% stop]
+  holdout span     315 bars (never seen by the search)
+  holdout return   -706.25%  (buy & hold +201.18%)
+  holdout trades   3
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 -706.15% / -704.68% / -6.75%
+    % runs positive        5.00%
+    % runs beat B&H        5.00%
+  rejected because:
+    - holdout return -706.25% not positive
+    - only 3 holdout trades (min 15)
+    - fragility 5% positive < 90%
+
+graduation gate [NO-GO] — ratio_momentum on BNB/DOT [5.0x perp regime-adaptive (MA96), 43% stop]
+  holdout span     315 bars (never seen by the search)
+  holdout return   +373.86%  (buy & hold +196.94%)
+  holdout trades   12
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 +353.85% / +359.37% / +428.09%
+    % runs positive        100.00%
+    % runs beat B&H        100.00%
+  rejected because:
+    - only 12 holdout trades (min 15)
+
+graduation gate [NO-GO] — rsi_meanreversion on BNB/KSM [5.0x perp regime-adaptive (MA90), 25% stop]
+  holdout span     315 bars (never seen by the search)
+  holdout return   +524.64%  (buy & hold +201.18%)
+  holdout trades   2
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 +519.89% / +521.64% / +523.24%
+    % runs positive        100.00%
+    % runs beat B&H        100.00%
+  rejected because:
+    - only 2 holdout trades (min 15)
+
+graduation gate [NO-GO] — rsi_meanreversion on BNB/KSM [5.0x perp regime-adaptive (MA181)]
+  holdout span     315 bars (never seen by the search)
+  holdout return   +726.42%  (buy & hold +201.18%)
+  holdout trades   0
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 +725.86% / +726.11% / +726.35%
+    % runs positive        100.00%
+    % runs beat B&H        100.00%
+  rejected because:
+    - only 0 holdout trades (min 15)
+
+graduation gate [GO] — ratio_momentum on BNB/GRT [4.2x perp regime-adaptive (MA200), 44% stop]
+  holdout span     315 bars (never seen by the search)
+  holdout return   +587.31%  (buy & hold +230.06%)
+  holdout trades   17
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 +503.20% / +564.17% / +588.89%
+    % runs positive        100.00%
+    % runs beat B&H        100.00%
+
+graduation gate [NO-GO] — ratio_momentum on BNB/KSM [5.0x perp regime-adaptive (MA200), 50% stop]
+  holdout span     315 bars (never seen by the search)
+  holdout return   +207.50%  (buy & hold +201.18%)
+  holdout trades   12
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 +192.73% / +197.32% / +232.37%
+    % runs positive        100.00%
+    % runs beat B&H        8.33%
+  rejected because:
+    - only 12 holdout trades (min 15)
+
+graduation gate [NO-GO] — indicator_combo on ADA/KSM [5.0x perp regime-adaptive (MA158)]
+  holdout span     343 bars (never seen by the search)
+  holdout return   -100.00%  (buy & hold -3.81%)
+  holdout trades   1
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 -100.00% / -100.00% / -100.00%
+    % runs positive        0.00%
+    % runs beat B&H        0.00%
+  rejected because:
+    - holdout return -100.00% not positive
+    - only 1 holdout trades (min 15)
+    - fragility 0% positive < 90%
+
+graduation gate [NO-GO] — ratio_momentum on BCH/CHZ [4.0x perp regime-adaptive (MA199), 50% stop]
+  holdout span     345 bars (never seen by the search)
+  holdout return   -100.00%  (buy & hold +4.74%)
+  holdout trades   4
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 -100.00% / -100.00% / -100.00%
+    % runs positive        0.00%
+    % runs beat B&H        0.00%
+  rejected because:
+    - holdout return -100.00% not positive
+    - only 4 holdout trades (min 15)
+    - fragility 0% positive < 90%
+
+multi-seed sweep — graduation verdict per seed:
+  seed   0  [NO-GO]  rsi_meanreversion on BNB/CELO (adaptive)  ret -100.00%  trades   2  frag 0%  (B&H +210.95%)
+  seed   1  [NO-GO]  rsi_meanreversion on BTC/ETC (adaptive)  ret +104.10%  trades   1  frag 100%  (B&H +53.69%)
+  seed   2  [NO-GO]  ema_crossover on ADA/XTZ (adaptive)  ret -100.00%  trades   3  frag 0%  (B&H -21.08%)
+  seed   3  [NO-GO]  rsi_meanreversion on BTC/FIL (adaptive)  ret +2601.22%  trades   1  frag 100%  (B&H +81.37%)
+  seed   4  [NO-GO]  indicator_combo on BNB/KSM (adaptive)  ret +747.98%  trades   0  frag 100%  (B&H +201.18%)
+  seed   5  [NO-GO]  rsi_meanreversion on BNB/KSM (adaptive)  ret +133.19%  trades   0  frag 100%  (B&H +201.18%)
+  seed   6  [NO-GO]  ema_crossover on BNB/MANA (adaptive)  ret +1232.19%  trades   1  frag 100%  (B&H +185.42%)
+  seed   7  [NO-GO]  ratio_momentum on BNB/DOT (adaptive)  ret +824.94%  trades   9  frag 100%  (B&H +196.94%)
+  seed   8  [NO-GO]  ema_crossover on ICP/KSM (adaptive)  ret -100.00%  trades   2  frag 0%  (B&H +95.72%)
+  seed   9  [GO   ]  rsi_meanreversion on BNB/DYDX (adaptive)  ret +114.61%  trades  18  frag 100%  (B&H +188.48%)  [SPECIALIST]
+  seed  10  [NO-GO]  ema_crossover on AAVE/DOT (adaptive)  ret -100.00%  trades   2  frag 0%  (B&H +30.92%)
+  seed  11  [NO-GO]  ratio_momentum on BNB/KSM (adaptive)  ret -100.00%  trades   2  frag 0%  (B&H +201.18%)
+  seed  12  [NO-GO]  indicator_combo on BNB/KSM (adaptive)  ret -706.25%  trades   3  frag 5%  (B&H +201.18%)
+  seed  13  [NO-GO]  ratio_momentum on BNB/DOT (adaptive)  ret +373.86%  trades  12  frag 100%  (B&H +196.94%)
+  seed  14  [NO-GO]  rsi_meanreversion on BNB/KSM (adaptive)  ret +524.64%  trades   2  frag 100%  (B&H +201.18%)
+  seed  15  [NO-GO]  rsi_meanreversion on BNB/KSM (adaptive)  ret +726.42%  trades   0  frag 100%  (B&H +201.18%)
+  seed  16  [GO   ]  ratio_momentum on BNB/GRT (adaptive)  ret +587.31%  trades  17  frag 100%  (B&H +230.06%)  [SPECIALIST]
+  seed  17  [NO-GO]  ratio_momentum on BNB/KSM (adaptive)  ret +207.50%  trades  12  frag 100%  (B&H +201.18%)
+  seed  18  [NO-GO]  indicator_combo on ADA/KSM (adaptive)  ret -100.00%  trades   1  frag 0%  (B&H -3.81%)
+  seed  19  [NO-GO]  ratio_momentum on BCH/CHZ (adaptive)  ret -100.00%  trades   4  frag 0%  (B&H +4.74%)
+
+GO: 2/20 seeds
+  GOs span 2 distinct pair(s): BNB/DYDX, BNB/GRT  (one pair across seeds = consistent; many = lottery)
+  GO holdout return: median +587.31%, range +114.61%..+587.31%
+  tiers: 0 golden, 2 specialist  (golden = structural, generalizes across peers; specialist = own pair only)
+
+certifying 2 distinct GO winner(s)...
+
+certified sweep — GO winners ranked by certificate score (t_exp):
+  [UNPROVEN ] rsi_meanreversion on BNB/DYDX (adaptive)  t_exp -0.03  N  133  win 0.639 (Wilson 0.568)  exp -0.0006
+  [UNPROVEN ] ratio_momentum on BNB/GRT (adaptive)  t_exp -0.70  N  183  win 0.399 (Wilson 0.341)  exp -0.0161
+
+0 CERTIFIED, 2 UNPROVEN, 0 REFUTED of 2 GO winner(s)
+
+wrote 2 winner(s) to runs/go_winners_usdt_1d_heavy.json — feed it to `certify-ensemble --genomes runs/go_winners_usdt_1d_heavy.json`

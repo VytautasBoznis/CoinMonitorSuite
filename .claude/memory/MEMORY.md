@@ -51,3 +51,4 @@ This file indexes all memory files for the CoinMonitorSuite project.
 - [session-build-loop](session-build-loop.md) — how each session runs: read memory → do next roadmap chunk → ask blockers → deliver a commit message
 - [user-commits-themselves](user-commits-themselves.md) — never run git commit; hand over a commit message and stop
 - [data-package-gitignored](data-package-gitignored.md) — REPO BUG: broad `data/` .gitignore rule ignores the whole `src/coinmon/data/` source package (untracked); new data/ files need `-f` or an anchored `/data/` rule
+- [certified-sweep-calibrated-negative](certified-sweep-calibrated-negative.md) — chunk Y payoff run RAN live (first time ever): 1d moderate/heavy + 4h sweeps → 0 CERTIFIED, every t_exp negative; scale doesn't buy alpha, C3 caught a 64%-win money-loser, 4h reached N≥300 and REFUTED; price-shape valley empty → redirect to W3 carry / W5 / Plan B

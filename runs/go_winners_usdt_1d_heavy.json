@@ -1,0 +1,28 @@
+[
+  {
+    "family": "rsi_meanreversion",
+    "pair": "BNB/DYDX",
+    "params": {
+      "period": 2.0,
+      "oversold": 17.1258305597202,
+      "exit_level": 90.0
+    },
+    "direction": "adaptive",
+    "leverage": 2.107803158681128,
+    "trend_period": 136.0,
+    "stop_pct": 0.3400191253444874
+  },
+  {
+    "family": "ratio_momentum",
+    "pair": "BNB/GRT",
+    "params": {
+      "lookback": 12.0,
+      "skip": 6.0,
+      "band": 0.01728144137249359
+    },
+    "direction": "adaptive",
+    "leverage": 4.188501680123387,
+    "trend_period": 200.0,
+    "stop_pct": 0.4428161190259457
+  }
+]

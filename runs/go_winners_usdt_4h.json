@@ -1,0 +1,52 @@
+[
+  {
+    "family": "ratio_momentum",
+    "pair": "BNB/GRT",
+    "params": {
+      "lookback": 96.0,
+      "skip": 8.0,
+      "band": 0.0
+    },
+    "direction": "long",
+    "leverage": 5.0,
+    "trend_period": 66.0,
+    "stop_pct": 0.4919949079724029
+  },
+  {
+    "family": "ema_crossover",
+    "pair": "BTC/CHZ",
+    "params": {
+      "fast": 4.0,
+      "slow": 168.0
+    },
+    "direction": "long",
+    "leverage": 1.5860848015391946,
+    "trend_period": 200.0,
+    "stop_pct": 0.5
+  },
+  {
+    "family": "donchian_breakout",
+    "pair": "WLD/USDT",
+    "params": {
+      "channel": 43.0,
+      "atr_period": 27.0,
+      "exit_mult": 1.009152497511635
+    },
+    "direction": "adaptive",
+    "leverage": 1.9617575613329028,
+    "trend_period": 178.0,
+    "stop_pct": 0.37170624556852383
+  },
+  {
+    "family": "ema_crossover",
+    "pair": "ETH/SOL",
+    "params": {
+      "fast": 50.0,
+      "slow": 67.0
+    },
+    "direction": "adaptive",
+    "leverage": 3.5993556496718413,
+    "trend_period": 62.0,
+    "stop_pct": 0.4351638958459308
+  }
+]

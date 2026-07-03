@@ -1,0 +1,128 @@
+universe: 861 pairs auto-built from stored 1d candles
+
+graduation gate [NO-GO] — ratio_momentum on BNB/ENA [4.6x perp regime-adaptive (MA125)]
+  holdout span     164 bars (never seen by the search)
+  holdout return   -100.00%  (buy & hold +69.19%)
+  holdout trades   5
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 -100.00% / -100.00% / -100.00%
+    % runs positive        0.00%
+    % runs beat B&H        0.00%
+  rejected because:
+    - holdout return -100.00% not positive
+    - only 5 holdout trades (min 15)
+    - fragility 0% positive < 90%
+
+graduation gate [GO] — ratio_momentum on BCH/DYDX [long/flat spot]
+  holdout span     345 bars (never seen by the search)
+  holdout return   +109.05%  (buy & hold +97.04%)
+  holdout trades   16
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 +101.48% / +107.40% / +109.80%
+    % runs positive        100.00%
+    % runs beat B&H        100.00%
+
+graduation gate [NO-GO] — atr_channel on ENA/ETH [5.0x perp regime-adaptive (MA36), 40% stop]
+  holdout span     164 bars (never seen by the search)
+  holdout return   -57.01%  (buy & hold -28.77%)
+  holdout trades   4
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 -58.97% / -57.74% / -57.52%
+    % runs positive        0.00%
+    % runs beat B&H        0.00%
+  rejected because:
+    - holdout return -57.01% not positive
+    - only 4 holdout trades (min 15)
+    - fragility 0% positive < 90%
+
+graduation gate [NO-GO] — rsi_meanreversion on BNB/ZRX [4.4x perp regime-adaptive (MA160), 49% stop]
+  holdout span     315 bars (never seen by the search)
+  holdout return   -77.17%  (buy & hold +93.98%)
+  holdout trades   9
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 -77.90% / -77.72% / -76.62%
+    % runs positive        0.00%
+    % runs beat B&H        0.00%
+  rejected because:
+    - holdout return -77.17% not positive
+    - only 9 holdout trades (min 15)
+    - fragility 0% positive < 90%
+
+graduation gate [NO-GO] — rsi_meanreversion on ETH/KSM [4.1x perp regime-adaptive (MA134)]
+  holdout span     345 bars (never seen by the search)
+  holdout return   +132.05%  (buy & hold +139.46%)
+  holdout trades   3
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 +102.37% / +130.45% / +131.10%
+    % runs positive        100.00%
+    % runs beat B&H        1.67%
+  rejected because:
+    - only 3 holdout trades (min 15)
+
+graduation gate [NO-GO] — ema_crossover on BNB/GRT [5.0x perp regime-adaptive (MA189), 28% stop]
+  holdout span     315 bars (never seen by the search)
+  holdout return   +597.84%  (buy & hold +230.06%)
+  holdout trades   4
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 +586.91% / +590.91% / +595.28%
+    % runs positive        100.00%
+    % runs beat B&H        100.00%
+  rejected because:
+    - only 4 holdout trades (min 15)
+
+graduation gate [NO-GO] — rsi_meanreversion on ETH/KSM [5.0x perp regime-adaptive (MA186), 20% stop]
+  holdout span     345 bars (never seen by the search)
+  holdout return   -74.17%  (buy & hold +139.46%)
+  holdout trades   3
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 -74.70% / -74.51% / -73.49%
+    % runs positive        0.00%
+    % runs beat B&H        0.00%
+  rejected because:
+    - holdout return -74.17% not positive
+    - only 3 holdout trades (min 15)
+    - fragility 0% positive < 90%
+
+graduation gate [NO-GO] — ratio_momentum on BNB/ENA [4.9x perp regime-adaptive (MA47), 39% stop]
+  holdout span     164 bars (never seen by the search)
+  holdout return   -99.67%  (buy & hold +69.19%)
+  holdout trades   15
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 -99.71% / -99.69% / -99.69%
+    % runs positive        0.00%
+    % runs beat B&H        0.00%
+  rejected because:
+    - holdout return -99.67% not positive
+    - fragility 0% positive < 90%
+
+multi-seed sweep — graduation verdict per seed:
+  seed   0  [NO-GO]  ratio_momentum on BNB/ENA (adaptive)  ret -100.00%  trades   5  frag 0%  (B&H +69.19%)
+  seed   1  [GO   ]  ratio_momentum on BCH/DYDX (long)  ret +109.05%  trades  16  frag 100%  (B&H +97.04%)  [SPECIALIST]
+  seed   2  [NO-GO]  atr_channel on ENA/ETH (adaptive)  ret -57.01%  trades   4  frag 0%  (B&H -28.77%)
+  seed   3  [NO-GO]  rsi_meanreversion on BNB/ZRX (adaptive)  ret -77.17%  trades   9  frag 0%  (B&H +93.98%)
+  seed   4  [NO-GO]  rsi_meanreversion on ETH/KSM (adaptive)  ret +132.05%  trades   3  frag 100%  (B&H +139.46%)
+  seed   5  [NO-GO]  ema_crossover on BNB/GRT (adaptive)  ret +597.84%  trades   4  frag 100%  (B&H +230.06%)
+  seed   6  [NO-GO]  rsi_meanreversion on ETH/KSM (adaptive)  ret -74.17%  trades   3  frag 0%  (B&H +139.46%)
+  seed   7  [NO-GO]  ratio_momentum on BNB/ENA (adaptive)  ret -99.67%  trades  15  frag 0%  (B&H +69.19%)
+
+GO: 1/8 seeds
+  GOs span 1 distinct pair(s): BCH/DYDX
+  GO holdout return: median +109.05%, range +109.05%..+109.05%
+  tiers: 0 golden, 1 specialist  (golden = structural, generalizes across peers; specialist = own pair only)
+
+certifying 1 distinct GO winner(s)...
+
+certified sweep — GO winners ranked by certificate score (t_exp):
+  [UNPROVEN ] ratio_momentum on BCH/DYDX (long)  t_exp -0.03  N  145  win 0.448 (Wilson 0.382)  exp -0.0003
+
+0 CERTIFIED, 1 UNPROVEN, 0 REFUTED of 1 GO winner(s)
+
+wrote 1 winner(s) to runs/go_winners_usdt.json — feed it to `certify-ensemble --genomes runs/go_winners_usdt.json`

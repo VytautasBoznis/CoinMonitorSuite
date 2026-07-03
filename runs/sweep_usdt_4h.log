@@ -1,0 +1,121 @@
+universe: 861 pairs auto-built from stored 4h candles
+
+graduation gate [NO-GO] — donchian_breakout on WLD/YFI [1.0x perp regime-adaptive (MA144), 29% stop]
+  holdout span     1289 bars (never seen by the search)
+  holdout return   -0.11%  (buy & hold +36.85%)
+  holdout trades   32
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 -2.19% / -1.68% / +1.15%
+    % runs positive        13.33%
+    % runs beat B&H        0.00%
+  rejected because:
+    - holdout return -0.11% not positive
+    - fragility 13% positive < 90%
+
+graduation gate [GO] — donchian_breakout on WLD/USDT [2.0x perp regime-adaptive (MA178), 37% stop]
+  holdout span     1289 bars (never seen by the search)
+  holdout return   +26.33%  (buy & hold -42.38%)
+  holdout trades   36
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 +8.67% / +21.88% / +43.50%
+    % runs positive        98.33%
+    % runs beat B&H        100.00%
+
+graduation gate [NO-GO] — atr_channel on BTC/KSM [2.5x perp regime-adaptive (MA22), 43% stop]
+  holdout span     2071 bars (never seen by the search)
+  holdout return   -99.22%  (buy & hold +173.48%)
+  holdout trades   108
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 -99.36% / -99.33% / -99.28%
+    % runs positive        0.00%
+    % runs beat B&H        0.00%
+  rejected because:
+    - holdout return -99.22% not positive
+    - fragility 0% positive < 90%
+
+graduation gate [GO] — ratio_momentum on BNB/GRT [long/flat spot, 49% stop]
+  holdout span     1890 bars (never seen by the search)
+  holdout return   +85.53%  (buy & hold +224.21%)
+  holdout trades   45
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 +78.30% / +81.31% / +83.58%
+    % runs positive        100.00%
+    % runs beat B&H        0.00%
+
+graduation gate [NO-GO] — ratio_momentum on BTC/NOM [4.6x perp regime-adaptive (MA200), 50% stop]
+  holdout span     328 bars (never seen by the search)
+  holdout return   -100.00%  (buy & hold +19.42%)
+  holdout trades   6
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 -100.00% / -100.00% / -100.00%
+    % runs positive        0.00%
+    % runs beat B&H        0.00%
+  rejected because:
+    - holdout return -100.00% not positive
+    - only 6 holdout trades (min 15)
+    - fragility 0% positive < 90%
+
+graduation gate [GO] — ema_crossover on ETH/SOL [3.6x perp regime-adaptive (MA62), 44% stop]
+  holdout span     2058 bars (never seen by the search)
+  holdout return   +72.45%  (buy & hold +6.28%)
+  holdout trades   21
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 +64.57% / +66.10% / +72.64%
+    % runs positive        100.00%
+    % runs beat B&H        100.00%
+
+graduation gate [NO-GO] — ratio_momentum on BCH/NOM [5.0x perp regime-adaptive (MA177), 42% stop]
+  holdout span     328 bars (never seen by the search)
+  holdout return   -100.00%  (buy & hold -24.54%)
+  holdout trades   25
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 -100.00% / -100.00% / -100.00%
+    % runs positive        0.00%
+    % runs beat B&H        0.00%
+  rejected because:
+    - holdout return -100.00% not positive
+    - fragility 0% positive < 90%
+
+graduation gate [GO] — ema_crossover on BTC/CHZ [long/flat spot, 50% stop]
+  holdout span     2083 bars (never seen by the search)
+  holdout return   +40.16%  (buy & hold +24.69%)
+  holdout trades   17
+  fragility:
+    Runs                   60
+    Return  p5 / p50 / p95 +36.88% / +38.95% / +40.96%
+    % runs positive        100.00%
+    % runs beat B&H        100.00%
+
+multi-seed sweep — graduation verdict per seed:
+  seed   0  [NO-GO]  donchian_breakout on WLD/YFI (adaptive)  ret -0.11%  trades  32  frag 13%  (B&H +36.85%)
+  seed   1  [GO   ]  donchian_breakout on WLD/USDT (adaptive)  ret +26.33%  trades  36  frag 98%  (B&H -42.38%)  [SPECIALIST]
+  seed   2  [NO-GO]  atr_channel on BTC/KSM (adaptive)  ret -99.22%  trades 108  frag 0%  (B&H +173.48%)
+  seed   3  [GO   ]  ratio_momentum on BNB/GRT (long)  ret +85.53%  trades  45  frag 100%  (B&H +224.21%)  [SPECIALIST]
+  seed   4  [NO-GO]  ratio_momentum on BTC/NOM (adaptive)  ret -100.00%  trades   6  frag 0%  (B&H +19.42%)
+  seed   5  [GO   ]  ema_crossover on ETH/SOL (adaptive)  ret +72.45%  trades  21  frag 100%  (B&H +6.28%)  [SPECIALIST]
+  seed   6  [NO-GO]  ratio_momentum on BCH/NOM (adaptive)  ret -100.00%  trades  25  frag 0%  (B&H -24.54%)
+  seed   7  [GO   ]  ema_crossover on BTC/CHZ (long)  ret +40.16%  trades  17  frag 100%  (B&H +24.69%)  [SPECIALIST]
+
+GO: 4/8 seeds
+  GOs span 4 distinct pair(s): BNB/GRT, BTC/CHZ, ETH/SOL, WLD/USDT  (one pair across seeds = consistent; many = lottery)
+  GO holdout return: median +72.45%, range +26.33%..+85.53%
+  tiers: 0 golden, 4 specialist  (golden = structural, generalizes across peers; specialist = own pair only)
+
+certifying 4 distinct GO winner(s)...
+
+certified sweep — GO winners ranked by certificate score (t_exp):
+  [REFUTED  ] ratio_momentum on BNB/GRT (long)  t_exp -0.32  N  418  win 0.428 (Wilson 0.389)  exp -0.0009
+  [UNPROVEN ] ema_crossover on BTC/CHZ (long)  t_exp -0.34  N  177  win 0.192 (Wilson 0.148)  exp -0.0025
+  [REFUTED  ] donchian_breakout on WLD/USDT (adaptive)  t_exp -0.99  N  332  win 0.181 (Wilson 0.149)  exp -0.0071
+  [REFUTED  ] ema_crossover on ETH/SOL (adaptive)  t_exp -2.29  N  432  win 0.190 (Wilson 0.161)  exp -0.0275
+
+0 CERTIFIED, 1 UNPROVEN, 3 REFUTED of 4 GO winner(s)
+
+wrote 4 winner(s) to runs/go_winners_usdt_4h.json — feed it to `certify-ensemble --genomes runs/go_winners_usdt_4h.json`

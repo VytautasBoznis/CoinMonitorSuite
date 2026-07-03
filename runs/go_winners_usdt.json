@@ -1,0 +1,15 @@
+[
+  {
+    "family": "ratio_momentum",
+    "pair": "BCH/DYDX",
+    "params": {
+      "lookback": 14.0,
+      "skip": 4.0,
+      "band": 0.03805673753827672
+    },
+    "direction": "long",
+    "leverage": 1.0,
+    "trend_period": 54.0,
+    "stop_pct": null
+  }
+]

@@ -4,6 +4,22 @@ This file indexes all memory files for the CoinMonitorSuite project.
 
 ## Files
 
+- [mission-find-edge-ship-ui](mission-find-edge-ship-ui.md) — **READ FIRST — the mission (2026-07-04): find a working strategy (W5 rotation → W3 carry → Plan B probes; GA parked) → build UI → confirmed/auto trading; Z0 collectors start immediately; micro-stakes live (~$10) authorized for the first promising strategy**
+- [no-more-rsi-ema-permutations](no-more-rsi-ema-permutations.md) — user directive (2026-07-04): price-transform indicator strategies are exhausted (0 CERTIFIED everywhere); never refocus on them; legacy families are baseline/control only
+- [ga-parked](ga-parked.md) — GA officially parked: no more sweeps or genome work; strategies are hand-built research candidates through the gauntlet; certification stack is the durable asset
+- [ga-architecture-reality](ga-architecture-reality.md) — the GA was a parameter jitterer over 7 hardcoded families, NOT the composition engine the user intended; never misdescribe it; full GP wouldn't have fixed the informational wall anyway
+- [honest-status-reporting](honest-status-reporting.md) — user feedback: ~2 weeks of falsely claimed sweep progress; never claim work done without artifact evidence; surface scope downgrades loudly
+- [execution-plan-2026-07](execution-plan-2026-07.md) — the 2026-07-04 pivot's ordered candidate list (momentum → carry → order-flow → liq-fade → on-chain); mission-find-edge-ship-ui holds the authoritative order
+- [cross-sectional-momentum-portfolio](cross-sectional-momentum-portfolio.md) — W5 candidate: rank USDT universe weekly, hold top slice; zero new data, fastest falsifiable, fees are the main killer
+- [funding-carry-harvester](funding-carry-harvester.md) — W3 candidate detail: delta-neutral funding capture (BIS/CMU documented); hard part is margin/liquidation risk engineering at 1-2x, not signal
+- [order-flow-direction](order-flow-direction.md) — taker volume delta (Binance klines have it; Bybit needs trade tape), OI history, long/short ratio; h7-style probe before integration; L2 book imbalance examined and rejected
+- [liquidation-cascade-fade](liquidation-cascade-fade.md) — event-driven post-cascade reversal candidate (Plan B P2-adjacent); start recording Bybit liquidations early, history is shallow; pool across symbols for N
+- [onchain-stablecoin-netflow](onchain-stablecoin-netflow.md) — stablecoin exchange netflow as liquidity signal (arXiv 2411.06327); lowest priority, paid-data burden, 1-2h horizons tighter than the rig
+- [portfolio-search-protocol](portfolio-search-protocol.md) — post-GA winner-finding: no pair parameter, exhaustive small grid ALL RECORDED with multiple-testing deflation, portfolio certificate vs equal-weight universe benchmark
+- [strategy-lab-model](strategy-lab-model.md) — the evaluator is the product: one-command gauntlet, candidates from research/grids/model-authored modules with stated economic rationale; chunk-letter decoder + Plans-B/C vs chunks-B/C namespace distinction
+- [autotrading-rollout](autotrading-rollout.md) — per-strategy execution modes: suggest-only → auto-on-confirm (certified) → capped full-auto (paper record); latency tolerance decides (carry fine on confirm, liq-fade needs full-auto or nothing)
+- [machines-and-tooling](machines-and-tooling.md) — user works on multiple machines; the 2026-07-04 Mac has repo but no runnable stack; verify environment before promising runs
+
 - [project-direction](project-direction.md) — Python/Bybit greenfield, trade-coins-efficiently (not options-first), phased backtest→suggestions→automation
 - [prototype-reference](prototype-reference.md) — the .NET bachelor's prototype in C:\Dev\CoinMonitor; which patterns to reuse vs the gaps
 - [fragility-stress-test](fragility-stress-test.md) — Monte Carlo latency/slippage stress test as a kill-filter for thin-margin strategies before live

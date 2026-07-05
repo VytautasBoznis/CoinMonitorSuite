@@ -35,8 +35,8 @@ def _flat_candles(n):
 
 
 def _carry_engine():
-    # A carry book that hedges the moment it has a 2-bar window (entry_pct=0 -> any positive rate).
-    return BacktestEngine(FundingCarry(window=2, entry_pct=0.0), CarryPortfolio(10_000.0, 0.001))
+    # A carry book that hedges the moment it has a 2-bar window (threshold=0 -> positive mean rate).
+    return BacktestEngine(FundingCarry(window=2, threshold=0.0), CarryPortfolio(10_000.0, 0.001))
 
 
 # --- engine auto-extract (the single seam) -------------------------------------------------
@@ -98,7 +98,7 @@ def test_candle_cache_without_funding_reader_is_candle_only():
 
 def test_evaluate_fitness_scores_carry_with_funding_from_the_column():
     n = 60
-    genome = Genome("funding_carry", "BTC/USDC", {"window": 20, "entry_pct": 0.0})
+    genome = Genome("funding_carry", "BTC/USDC", {"window": 20, "threshold": 0.0})
     common = dict(
         make_portfolio=decode_portfolio(genome),
         stop_pct=decode_stop(genome),

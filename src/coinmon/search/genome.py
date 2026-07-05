@@ -82,7 +82,7 @@ def _build_donchian(p: Mapping[str, float]) -> Strategy:
 
 
 def _build_carry(p: Mapping[str, float]) -> Strategy:
-    return FundingCarry(window=int(p["window"]), entry_pct=p["entry_pct"])
+    return FundingCarry(window=int(p["window"]), threshold=p["threshold"])
 
 
 # The registry of searchable families. Ranges are deliberately broad-but-sane: the OOS fitness +
@@ -145,14 +145,15 @@ FAMILIES: dict[str, StrategyFamily] = {
     # Chunk W3: funding carry — a MARKET-NEUTRAL family (long spot + short perp) harvesting the
     # documented perp funding premium (probe H6: funding is a collectible premium, not a timing
     # signal). Unlike the price-shape families it is not directional: it supplies its own
-    # ``CarryPortfolio`` (so the direction/leverage/stop genes are inert) and reads the
-    # point-in-time ``funding_rate`` feature to hedge only when funding is richest. Broad-but-sane
-    # ranges; the OOS fitness + gate reject the churny/junk corners, not a tight prior.
+    # ``CarryPortfolio`` (so the direction/leverage/stop genes are inert) and HOLDS the hedge while
+    # the smoothed funding premium clears ``threshold`` (2026-07-05 live: toggling bleeds fees, only
+    # holding captures the premium — [[w3-carry-first-live-diagnosis]]). Broad-but-sane ranges; the
+    # OOS fitness + gate reject the churny/junk corners, not a tight prior.
     "funding_carry": StrategyFamily(
         name="funding_carry",
         params={
             "window": ParamSpec(20, 200, integer=True),
-            "entry_pct": ParamSpec(0.0, 1.0),
+            "threshold": ParamSpec(0.0, 0.0005),
         },
         build=_build_carry,
         portfolio=lambda cash, fee: CarryPortfolio(cash, fee),

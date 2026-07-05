@@ -21,7 +21,7 @@ FAMILY = "funding_carry"
 
 
 def _params(**overrides) -> dict[str, float]:
-    return {"window": 60, "entry_pct": 0.5, **overrides}
+    return {"window": 60, "threshold": 0.0, **overrides}
 
 
 def _genome(pair="BTC/USDC", **overrides) -> Genome:
@@ -58,7 +58,7 @@ def _candles(n):
 
 def test_family_is_registered_as_market_neutral():
     fam = FAMILIES[FAMILY]
-    assert set(fam.params) == {"window", "entry_pct"}
+    assert set(fam.params) == {"window", "threshold"}
     assert fam.portfolio is not None  # brings its own CarryPortfolio (the seam)
 
 
@@ -102,33 +102,37 @@ def test_decode_yields_a_fresh_strategy_each_call():
 
 def test_no_funding_feature_stays_flat():
     # On a pair/run with no funding (a ratio, or a funding=None backtest) the feature is absent.
-    assert _run(FundingCarry(window=3, entry_pct=0.0), [None] * 10) == [0] * 10
+    assert _run(FundingCarry(window=3, threshold=0.0), [None] * 10) == [0] * 10
 
 
 def test_holds_flat_through_warmup():
-    # Until the rolling window is full there is nothing to rank the current rate against.
-    targets = _run(FundingCarry(window=5, entry_pct=0.0), [0.001] * 8)
+    # Until the rolling window is full there is no smoothed mean to gate on yet.
+    targets = _run(FundingCarry(window=5, threshold=0.0), [0.001] * 8)
     assert targets[:4] == [0, 0, 0, 0]
-    assert targets[4] == 1  # first full window, positive rate, entry_pct=0 -> hedge on
+    assert targets[4] == 1  # first full window, mean 0.001 > 0 -> hedge on
 
 
-def test_flat_when_funding_non_positive():
-    # Never run a fee-bleeding hedge while paying to hold it.
-    targets = _run(FundingCarry(window=3, entry_pct=0.0), [0.001, 0.001, 0.001, -0.001, 0.0])
-    assert targets == [0, 0, 1, 0, 0]
+def test_holds_through_a_single_dip_exits_when_regime_turns():
+    # The fee-efficiency fix (2026-07-05): smoothing the funding rides out a single negative bar
+    # instead of un-hedging (and paying to re-hedge), and exits only when the smoothed mean turns
+    # non-positive. window=3, threshold=0:
+    #   bar2 full window [.001,.001,.001] mean +0.001 -> 1
+    #   bar3 window [.001,.001,-.001] mean +0.00033 (still positive) -> HOLD (1), not a toggle
+    #   bar4 window [.001,-.001,0.0]   mean  0.0 (not > 0)            -> flat (0)
+    targets = _run(FundingCarry(window=3, threshold=0.0), [0.001, 0.001, 0.001, -0.001, 0.0])
+    assert targets == [0, 0, 1, 1, 0]
 
 
-def test_entry_pct_gates_on_percentile_rank():
-    rising = FundingCarry(window=4, entry_pct=1.0)
-    # last rate is the window max -> rank 1.0 -> clears a 100th-percentile threshold
-    assert _run(rising, [0.001, 0.002, 0.003, 0.004])[-1] == 1
-    falling = FundingCarry(window=4, entry_pct=0.5)
-    # last rate is the window min -> rank 0.25 -> below a 50th-percentile threshold
-    assert _run(falling, [0.004, 0.003, 0.002, 0.001])[-1] == 0
+def test_threshold_gates_on_smoothed_mean():
+    # A positive threshold only harvests when the smoothed premium is meaningfully rich.
+    rich = FundingCarry(window=4, threshold=0.0015)
+    assert _run(rich, [0.001, 0.002, 0.003, 0.004])[-1] == 1  # mean 0.0025 > 0.0015
+    thin = FundingCarry(window=4, threshold=0.0015)
+    assert _run(thin, [0.0005, 0.001, 0.0005, 0.001])[-1] == 0  # mean 0.00075 < 0.0015
 
 
 def test_buffer_stays_bounded():
-    strat = FundingCarry(window=5, entry_pct=0.5)
+    strat = FundingCarry(window=5, threshold=0.0)
     _run(strat, [0.001] * 500)
     assert len(strat._rates) == 5
 
@@ -152,8 +156,8 @@ def test_random_and_mutated_genomes_stay_valid():
 
 def test_crossover_within_family_inherits_each_gene():
     rng = random.Random(2)
-    a = _genome("BTC/USDC", window=30, entry_pct=0.2)
-    b = _genome("ETH/USDC", window=150, entry_pct=0.9)
+    a = _genome("BTC/USDC", window=30, threshold=0.0001)
+    b = _genome("ETH/USDC", window=150, threshold=0.0004)
     for _ in range(200):
         child = crossover(a, b, rng)
         validate(child)
@@ -166,11 +170,12 @@ def test_crossover_within_family_inherits_each_gene():
 
 
 def test_engine_harvests_the_carry_premium():
-    # Price is flat (the hedge is market-neutral anyway); funding is richly positive while the
-    # hedge is on, then drops to zero so the hedge closes and books a round-trip.
-    funding = [0.01] * 25 + [0.0] * 5
+    # Price is flat (the hedge is market-neutral anyway); funding is richly positive well past the
+    # warmup so the held hedge collects it, then turns negative long enough for the smoothed mean to
+    # drop non-positive, so the hedge closes and books a round-trip.
+    funding = [0.02] * 40 + [-0.02] * 20
     candles = _candles(len(funding))
-    g = _genome(pair="BTC/USDC", **_params(window=20, entry_pct=0.0))
+    g = _genome(pair="BTC/USDC", **_params(window=20))
     result = BacktestEngine(
         decode(g)(), decode_portfolio(g)(10_000.0, 0.0), stop_pct=decode_stop(g)
     ).run(candles, funding=funding)
@@ -181,7 +186,7 @@ def test_engine_harvests_the_carry_premium():
 def test_carry_stays_flat_without_funding():
     # funding=None -> no funding_rate feature -> the strategy can never find a premium to hedge.
     candles = _candles(30)
-    g = _genome(pair="BTC/USDC", **_params(window=20, entry_pct=0.0))
+    g = _genome(pair="BTC/USDC", **_params(window=20))
     result = BacktestEngine(decode(g)(), decode_portfolio(g)(10_000.0, 0.0)).run(candles)
     assert result.metrics["trades"] == 0
     assert result.metrics["total_return"] == 0.0

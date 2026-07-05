@@ -13,6 +13,11 @@ from coinmon.backtest.portfolio import SpotPortfolio
 from coinmon.backtest.result import BacktestResult
 from coinmon.backtest.stress import run_monte_carlo
 from coinmon.backtest.walkforward import walk_forward
+from coinmon.backtest.xsectional import (
+    XSectionalConfig,
+    backtest_xsectional,
+    load_universe_closes,
+)
 from coinmon.config import settings
 from coinmon.data import db
 from coinmon.data.adapters.binance import BinanceAdapter
@@ -115,6 +120,72 @@ def _coverage(args: argparse.Namespace) -> None:
     finally:
         conn.close()
     print(summarize_coverage(stats, min_bars=args.min_bars))
+
+
+def _xsectional(args: argparse.Namespace) -> None:
+    # First post-GA candidate: cross-sectional momentum rotation over the whole quote universe
+    # ([[cross-sectional-momentum-portfolio]], [[portfolio-search-protocol]]). Trains on USDT by
+    # default ([[train-usdt-certify-usdc]]); no GA, no pair parameter — one portfolio, one curve.
+    conn = db.connect()
+    try:
+        stats = db.series_stats(conn)
+        symbols = sorted(
+            sym
+            for ex, sym, tf, n, _lo, _hi in stats
+            if ex == settings.exchange
+            and tf == args.timeframe
+            and sym.endswith(f"/{args.quote}")
+            and n >= args.min_bars
+        )
+        if len(symbols) < 2:
+            raise SystemExit(
+                f"only {len(symbols)} {args.quote} {args.timeframe} series clear "
+                f"{args.min_bars} bars on {settings.exchange} — need >= 2 for a rotation"
+            )
+        closes = load_universe_closes(
+            lambda s: db.read_candles(conn, settings.exchange, s, args.timeframe), symbols
+        )
+    finally:
+        conn.close()
+
+    cfg = XSectionalConfig(
+        lookback=args.lookback,
+        skip=args.skip,
+        top_frac=args.top_frac,
+        rebalance=args.rebalance,
+        fee=settings.taker_fee,
+    )
+    result = backtest_xsectional(closes, cfg)
+
+    print(
+        f"cross-sectional momentum on {len(symbols)} {args.quote} {args.timeframe} coins "
+        f"({len(closes)} bars)\n"
+        f"  lookback={cfg.lookback} skip={cfg.skip} top={cfg.top_frac:.0%} "
+        f"rebalance={cfg.rebalance} fee={cfg.fee:.2%}/side\n"
+    )
+    print(result.summary())
+
+    if args.out:
+        payload = {
+            "config": {
+                "quote": args.quote,
+                "timeframe": args.timeframe,
+                "min_bars": args.min_bars,
+                "universe": symbols,
+                "lookback": cfg.lookback,
+                "skip": cfg.skip,
+                "top_frac": cfg.top_frac,
+                "rebalance": cfg.rebalance,
+                "fee": cfg.fee,
+            },
+            "metrics": result.metrics,
+            "benchmark_metrics": result.benchmark_metrics,
+            "n_rebalances": result.n_rebalances,
+            "n_positions": len(result.positions),
+        }
+        with open(args.out, "w", encoding="utf-8") as fh:
+            json.dump(payload, fh, indent=2)
+        print(f"\nwrote {args.out}")
 
 
 def _backfill(args: argparse.Namespace) -> None:
@@ -818,6 +889,41 @@ def build_parser() -> argparse.ArgumentParser:
         help="bar count a series must clear to count toward the usable universe (default 800)",
     )
     p_cov.set_defaults(func=_coverage)
+
+    p_xs = sub.add_parser(
+        "xsectional",
+        help="Cross-sectional momentum rotation over the whole quote universe (post-GA candidate: "
+        "rank all coins by trailing return, hold the top slice, weekly rebalance; no GA, no pair)",
+    )
+    p_xs.add_argument("--timeframe", default="1d")
+    p_xs.add_argument(
+        "--quote", default="USDT",
+        help="quote currency defining the universe; trains on USDT by default (train/test split)",
+    )
+    p_xs.add_argument(
+        "--min-bars", type=int, default=400, metavar="N",
+        help="bars a coin must have stored to enter the universe (default 400)",
+    )
+    p_xs.add_argument(
+        "--lookback", type=int, default=28, metavar="BARS",
+        help="trailing-return window the ranking uses (default 28)",
+    )
+    p_xs.add_argument(
+        "--skip", type=int, default=1, metavar="BARS",
+        help="most-recent bars skipped before ranking, a reversal guard (default 1)",
+    )
+    p_xs.add_argument(
+        "--top-frac", type=float, default=0.2, metavar="FRACTION",
+        help="fraction of the universe held long, equal-weighted (default 0.2)",
+    )
+    p_xs.add_argument(
+        "--rebalance", type=int, default=7, metavar="BARS",
+        help="bars between rebalances (default 7 = weekly on 1d bars)",
+    )
+    p_xs.add_argument(
+        "--out", default="", metavar="FILE", help="also write a JSON summary here (off by default)",
+    )
+    p_xs.set_defaults(func=_xsectional)
 
     p_bt = sub.add_parser("backtest", help="Run a strategy over stored candles")
     p_bt.add_argument(

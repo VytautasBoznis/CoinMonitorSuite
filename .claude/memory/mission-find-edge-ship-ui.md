@@ -1,9 +1,10 @@
 ---
 name: mission-find-edge-ship-ui
-description: "THE MISSION (user directive 2026-07-04, read FIRST): find a working strategy → build UI → confirmed/auto trading. Plan B is ACTIVE (calibrated negative fired). Micro-stakes live (~$10 loss) explicitly authorized for the first promising strategy — bias to action, no more 'implemented' that does nothing"
-metadata:
+description: "THE MISSION (user directive 2026-07-04, updated 2026-07-05, read FIRST): find working strategies → build UI → confirmed/auto trading. UI is GATED on ≥3 winner strategies (do not start UI with fewer). Plan B is ACTIVE (calibrated negative fired). Micro-stakes live (~$10 loss) explicitly authorized for the first promising strategy — bias to action, no more 'implemented' that does nothing"
+metadata: 
   node_type: memory
   type: project
+  originSessionId: 87eee45e-fd58-44ae-921e-2c58f2724952
 ---
 
 User directive, 2026-07-04, after reviewing the calibrated-negative sweeps
@@ -28,8 +29,12 @@ picking any chunk.
    d. If all the above fail: web-research fresh approaches (2026-07-04 session found
       liquidation-cascade fade + stablecoin netflow as candidates), pre-register probes,
       test, repeat. [[plan-c-onchain-ideation]] stays the gated moonshot — user decision only.
-2. **First promising strategy → UI + micro-stakes live.** Build the [[ui-roadmap]] research
-   tier, then the suggestion/confirm face. **The user has given the explicit confirmation
+2. **≥3 winner strategies BEFORE the UI, then UI + micro-stakes live.** User directive
+   2026-07-05: do NOT start building the UI until at least **3 winning (certified / strong-
+   gauntlet) strategies** exist. One winner is not enough to justify the UI build — keep
+   hunting candidates (W5 → W3 → Plan B probes) until three clear. Then build the
+   [[ui-roadmap]] research tier, then the suggestion/confirm face. **The user has given the
+   explicit confirmation
    ui-roadmap requires for pulling tier-2 forward: they authorize real-money testing at
    ~$10-loss scale as soon as a strategy is promising** (certified, or strong gauntlet
    evidence). Forward-paper and micro-live may run concurrently — seeing it act in the real

@@ -7,7 +7,9 @@ import pytest
 from coinmon.backtest.xsectional import (
     XSectionalConfig,
     backtest_xsectional,
+    default_grid,
     load_universe_closes,
+    sweep_xsectional,
 )
 
 
@@ -86,3 +88,54 @@ def test_load_universe_closes_aligns_and_skips_empty() -> None:
     assert list(frame.columns) == ["A/USDT", "B/USDT"]  # empty dropped
     assert np.isnan(frame.loc[0, "B/USDT"])  # B not listed at bar 0
     assert frame.loc[5, "B/USDT"] == 6.0
+
+
+def test_short_leg_profits_on_the_falling_basket() -> None:
+    # A rises, C falls. Long-only (no short) holds A and skips C's decline. Adding a short leg on
+    # the bottom slice should ALSO harvest C's fall, so the long-short book out-returns long-only.
+    n = 80
+    a = [1.0 * 1.01**i for i in range(n)]
+    b = [1.0] * n
+    c = [1.0 * 0.99**i for i in range(n)]
+    closes = _closes({"A": a, "B": b, "C": c})
+    cfg = dict(lookback=10, skip=1, top_frac=0.34, rebalance=5, fee=0.0)
+    long_only = backtest_xsectional(closes, XSectionalConfig(**cfg, short_frac=0.0))
+    long_short = backtest_xsectional(closes, XSectionalConfig(**cfg, short_frac=0.34))
+    assert long_short.metrics["total_return"] > long_only.metrics["total_return"]
+    # The short leg records signed round-trips: shorting C (which falls) is a winning position.
+    shorts = [t for t in long_short.trades if t.direction == -1]
+    assert shorts and all(t.net_return_pct > 0 for t in shorts)
+    assert long_short.metrics["exposure"] == 2.0  # gross = long leg + short leg
+
+
+def test_trades_ledger_matches_positions() -> None:
+    a = [1.0 * 1.01**i for i in range(60)]
+    b = [1.0 * 1.005**i for i in range(60)]
+    result = backtest_xsectional(
+        _closes({"A": a, "B": b}),
+        XSectionalConfig(lookback=10, skip=1, top_frac=0.5, short_frac=0.5, rebalance=5, fee=0.001),
+    )
+    # One TradeRecord per pooled position, same signed net returns, all time-stamped for the cert.
+    assert len(result.trades) == len(result.positions)
+    assert [t.net_return_pct for t in result.trades] == result.positions
+    assert all(t.exit_time > t.entry_time for t in result.trades)
+
+
+def test_sweep_records_all_configs_ranked_by_edge() -> None:
+    a = [1.0 * 1.01**i for i in range(90)]
+    b = [1.0] * 90
+    c = [1.0 * 0.99**i for i in range(90)]
+    closes = _closes({"A": a, "B": b, "C": c})
+    configs = [
+        XSectionalConfig(lookback=10, skip=1, top_frac=0.34, rebalance=5, fee=0.0),
+        XSectionalConfig(lookback=10, skip=1, top_frac=0.34, short_frac=0.34, rebalance=5, fee=0.0),
+    ]
+    rows = sweep_xsectional(closes, configs)
+    assert len(rows) == len(configs)  # every config kept, none hidden
+    assert rows[0].edge >= rows[1].edge  # ranked best edge first
+
+
+def test_default_grid_is_fixed_and_carries_fee() -> None:
+    grid = default_grid(fee=0.0007)
+    assert len(grid) == 3 * 2 * 3 * 3 * 3  # lookback x skip x top x short x rebalance
+    assert all(c.fee == 0.0007 for c in grid)

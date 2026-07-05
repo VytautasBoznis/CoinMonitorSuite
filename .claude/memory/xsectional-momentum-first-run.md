@@ -1,6 +1,6 @@
 ---
 name: xsectional-momentum-first-run
-description: "W5 cross-sectional momentum backtester BUILT (coinmon xsectional) + first live run 2026-07-05: default config LOSES vs equal-weight benchmark, but the universe is a 2021-top-anchored downtrend — not yet a verdict on the effect"
+description: "W5 cross-sectional momentum (coinmon xsectional): first run LOST, then W5.2 grid+long-short+certificate (2026-07-05) gave the VERDICT — short leg beats beta (60/162 configs) but NO certifiable per-position edge (best-of-162 config REFUTED, expectancy CI straddles 0). W5 is NOT a winner; recommend moving to W3 carry"
 metadata: 
   node_type: memory
   type: project
@@ -24,8 +24,26 @@ coins (1823 bars), so this universe is essentially the 2021-top→2026 altcoin b
 downtrend where the benchmark itself is −72%. Long-only momentum bleeds in a downtrend. This is ONE
 pre-registered default config, not the [[portfolio-search-protocol]] verdict.
 
-**Next chunk (not yet done):** the exhaustive config grid (lookback/skip/slice/rebalance/long-short/
-weighting) ALL RECORDED with multiple-testing deflation, the portfolio-level Edge Certificate + nulls,
-and — critically — a ≥2-regime span (pull the Binance USDT 2017+ majors and/or the longer-history
-coins so the sample isn't one crash regime). Long-short (short the bottom slice) is the obvious axis
-to test given the downtrend: the losing basket is exactly what a short leg would harvest.
+**W5.2 DONE 2026-07-05 — grid + long-short + certificate (verdict: NOT a winner).** Added a
+market-neutral short leg (`short_frac`, long top / short bottom, gross ~2x), a `default_grid` sweep
+(162 configs: lookback×skip×top×short×rebalance, ALL recorded), and a per-position `TradeRecord`
+ledger so the Edge Certificate scores one run directly (N≫300 spanning years — no cross-pair pooling
+needed). CLI: `coinmon xsectional --grid --certify --short-frac`. Live run (artifact
+`runs/xsectional_usdt_1d_grid.json`, 38 USDT 1d coins, benchmark −59.0%):
+- **The short leg works as hypothesized** — all top-12-by-edge configs short the bottom slice;
+  60/162 beat the −59% benchmark. Long-short turns momentum from a beta-LOSER into a beta-BEATER in
+  a downtrend (harvests the falling basket), confirming the first-run diagnosis.
+- **But NOT a certifiable edge.** Only 1/162 has positive absolute return (+22.6%). That best-of-162
+  pick (look14/skip1/top30/short30/reb14, N=2606) is **REFUTED**: win 48.1%, expectancy +0.0027 with
+  95% CI [−0.0055,+0.0118] straddling zero → C2 & C3 FAIL (C4 null / C6 fragility still PENDING). The
+  +81.5% headline equity edge is best-of-M selection luck; the per-decision edge ≈ 0, and the
+  certificate caught it — the money-loser-catch working in reverse.
+
+**Verdict:** W5 cross-sectional momentum, even with the long-short axis, is **not a winner** (0 of
+the ≥3 the [[mission-find-edge-ship-ui]] UI gate needs). The certificate on the best config is even
+selection-INFLATED and still refuted. Momentum's beta-relative edge is real but per-position it's
+inside the noise/fee floor — consistent with the whole [[certified-sweep-calibrated-negative]]
+price-shape valley. **Still untested (optional before abandoning W5):** ≥2-regime span via
+Binance-USDT 2017+ majors (this run is still one 2021-top→2026 downtrend), weighting axis, and the
+best-of-M null to formally deflate the grid. **Recommended next per mission order: move to W3 funding
+carry** (a structurally different return source, not another price-shape) rather than deeper W5 tuning.

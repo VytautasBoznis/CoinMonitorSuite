@@ -16,7 +16,9 @@ from coinmon.backtest.walkforward import walk_forward
 from coinmon.backtest.xsectional import (
     XSectionalConfig,
     backtest_xsectional,
+    default_grid,
     load_universe_closes,
+    sweep_xsectional,
 )
 from coinmon.config import settings
 from coinmon.data import db
@@ -148,22 +150,50 @@ def _xsectional(args: argparse.Namespace) -> None:
     finally:
         conn.close()
 
+    header = (
+        f"cross-sectional momentum on {len(symbols)} {args.quote} {args.timeframe} coins "
+        f"({len(closes)} bars)\n"
+    )
+
+    if args.grid:
+        grid = default_grid(settings.taker_fee)
+        rows = sweep_xsectional(closes, grid)
+        print(header + f"  grid sweep: {len(rows)}/{len(grid)} configs ran, ranked by edge\n")
+        for r in rows:
+            c = r.config
+            print(
+                f"  edge {r.edge:+.2%}  ret {r.result.metrics['total_return']:+.2%}  "
+                f"look={c.lookback:>2} skip={c.skip} top={c.top_frac:.0%} short={c.short_frac:.0%} "
+                f"reb={c.rebalance:>2}  N={len(r.result.positions)} "
+                f"win={r.result.metrics['win_rate']:.2%}"
+            )
+        best = rows[0]
+        print(f"\n  benchmark return {best.result.benchmark_metrics['total_return']:+.2%} "
+              f"(equal-weight universe)\n  best config edge {best.edge:+.2%}")
+        if args.certify:
+            _certify_xsectional(best.result)
+        if args.out:
+            _write_grid(args, symbols, rows)
+        return
+
     cfg = XSectionalConfig(
         lookback=args.lookback,
         skip=args.skip,
         top_frac=args.top_frac,
+        short_frac=args.short_frac,
         rebalance=args.rebalance,
         fee=settings.taker_fee,
     )
     result = backtest_xsectional(closes, cfg)
 
     print(
-        f"cross-sectional momentum on {len(symbols)} {args.quote} {args.timeframe} coins "
-        f"({len(closes)} bars)\n"
-        f"  lookback={cfg.lookback} skip={cfg.skip} top={cfg.top_frac:.0%} "
-        f"rebalance={cfg.rebalance} fee={cfg.fee:.2%}/side\n"
+        header
+        + f"  lookback={cfg.lookback} skip={cfg.skip} top={cfg.top_frac:.0%} "
+        f"short={cfg.short_frac:.0%} rebalance={cfg.rebalance} fee={cfg.fee:.2%}/side\n"
     )
     print(result.summary())
+    if args.certify:
+        _certify_xsectional(result)
 
     if args.out:
         payload = {
@@ -175,6 +205,7 @@ def _xsectional(args: argparse.Namespace) -> None:
                 "lookback": cfg.lookback,
                 "skip": cfg.skip,
                 "top_frac": cfg.top_frac,
+                "short_frac": cfg.short_frac,
                 "rebalance": cfg.rebalance,
                 "fee": cfg.fee,
             },
@@ -186,6 +217,39 @@ def _xsectional(args: argparse.Namespace) -> None:
         with open(args.out, "w", encoding="utf-8") as fh:
             json.dump(payload, fh, indent=2)
         print(f"\nwrote {args.out}")
+
+
+def _certify_xsectional(result) -> None:
+    # Score one xsectional run's pooled per-position ledger with the Edge Certificate. Unlike the GA
+    # path, no cross-pair pooling is needed: a single rotation already yields N >> 300 signed,
+    # time-stamped positions spanning years, so C1/C5 are directly meaningful. C4 (null) and C6
+    # (fragility) stay PENDING here — best attainable verdict is UNPROVEN until those are supplied.
+    evidence = build_evidence(result.trades)
+    print("\n" + certify(evidence).summary())
+
+
+def _write_grid(args, symbols, rows) -> None:
+    payload = {
+        "config": {"quote": args.quote, "timeframe": args.timeframe, "universe": symbols},
+        "benchmark_return": rows[0].result.benchmark_metrics["total_return"],
+        "grid": [
+            {
+                "lookback": r.config.lookback,
+                "skip": r.config.skip,
+                "top_frac": r.config.top_frac,
+                "short_frac": r.config.short_frac,
+                "rebalance": r.config.rebalance,
+                "edge": r.edge,
+                "total_return": r.result.metrics["total_return"],
+                "win_rate": r.result.metrics["win_rate"],
+                "n_positions": len(r.result.positions),
+            }
+            for r in rows
+        ],
+    }
+    with open(args.out, "w", encoding="utf-8") as fh:
+        json.dump(payload, fh, indent=2)
+    print(f"\nwrote {args.out}")
 
 
 def _backfill(args: argparse.Namespace) -> None:
@@ -917,8 +981,22 @@ def build_parser() -> argparse.ArgumentParser:
         help="fraction of the universe held long, equal-weighted (default 0.2)",
     )
     p_xs.add_argument(
+        "--short-frac", type=float, default=0.0, metavar="FRACTION",
+        help="fraction of the bottom slice shorted (0 = long-only; adds a market-neutral short)",
+    )
+    p_xs.add_argument(
         "--rebalance", type=int, default=7, metavar="BARS",
         help="bars between rebalances (default 7 = weekly on 1d bars)",
+    )
+    p_xs.add_argument(
+        "--grid", action="store_true",
+        help="sweep the pre-registered lookback/skip/slice/short/rebalance grid, ALL recorded and "
+        "ranked by edge (ignores the single-config flags above)",
+    )
+    p_xs.add_argument(
+        "--certify", action="store_true",
+        help="score the run's pooled per-position ledger with the Edge Certificate "
+        "(N/win/expectancy/regimes; C4 null + C6 fragility stay PENDING)",
     )
     p_xs.add_argument(
         "--out", default="", metavar="FILE", help="also write a JSON summary here (off by default)",

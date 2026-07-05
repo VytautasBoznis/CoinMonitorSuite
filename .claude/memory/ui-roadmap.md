@@ -1,9 +1,10 @@
 ---
 name: ui-roadmap
 description: "UI plan (agreed 2026-07-03): three tiers gated on what exists to show — research UI (trade-dot map + exit reasons + monthly genome profitability) right after first certify ledgers; forward-paper dashboard WITH chunk G only once something certifies; Phase-2 scanner product UI last"
-metadata:
+metadata: 
   node_type: memory
   type: project
+  originSessionId: 87eee45e-fd58-44ae-921e-2c58f2724952
 ---
 
 Agreed with the user 2026-07-03. Principle: **each view is built only when it has real data to
@@ -31,8 +32,13 @@ show** — a dashboard of nothing is procrastination. Three tiers, in order:
 3. **Phase-2 scanner/suggestions product UI — last.** The deliverable AFTER an edge exists,
    never a research tool. Not started on any earlier trigger.
 
+**≥3-winner gate (user directive 2026-07-05, [[mission-find-edge-ship-ui]]):** the UI build
+does not start until at least **3 winning strategies** exist. The tier-1 research/diagnostics
+viewer is a hunting *aid* and may still land as soon as certify ledgers exist; but tiers 2–3
+(and any real UI investment) wait for three winners, not one. Keep finding candidates first.
+
 **How to apply:** don't pull tier 2/3 forward even if asked casually — restate the gate
-(certification) and get explicit confirmation. Priority stack around this: data-package
+(certification + ≥3 winners) and get explicit confirmation. Priority stack around this: data-package
 restore → T data run → first certify+nulls → tier-1 UI → Y sweep → (if certified) chunk G +
 tier-2 UI. See [[user-infra-ui-plans]], [[edge-certificate-implemented]],
 [[chunk-f-live-forward-feed]].

@@ -108,8 +108,11 @@ candles+funding so 400 re-pools hit the DB once/pair; ~3 min):
 - The fragility gate GENUINELY bit (real adverse perturbations, not the inert slippage harness) and the
   strategy survived — a true pass, not a rubber-stamp. 419 tests green (+5).
 
-**NEXT: the mission's ~$10 micro-live is now UNLOCKED for carry** (first promising/certified strategy,
-[[mission-find-edge-ship-ui]], [[autotrading-rollout]] = auto-on-confirm, carry's slow horizon is
-latency-tolerant). Then keep hunting winners 2 & 3 (W5/Plan-B) for the UI gate. See
-[[funding-carry-harvester]], [[alpha-definition-edge-certificate]].
+**BUT NOT DEPLOYED — [[live-yield-hurdle]] (user gate, 2026-07-06):** certification unlocked live in
+principle, but the user requires an expected FORWARD net yield >= 5%/yr or it's negative EV vs an
+index fund. Carry's RECENT regime is only ~+0.18%/yr (the full-sample +2.23% is flattered by the
+older +4.9%/yr era); even 3x is ~0.5%/yr. So **carry is PARKED as a MONITORED candidate** — it goes
+live only if/when the funding premium widens back toward the older-regime level (then ~5%/yr at 1x,
+~15%/yr at 3x). Keep hunting winners 2 & 3 (W5/Plan-B) for the UI gate. See
+[[funding-carry-harvester]], [[autotrading-rollout]], [[alpha-definition-edge-certificate]].
 </content>

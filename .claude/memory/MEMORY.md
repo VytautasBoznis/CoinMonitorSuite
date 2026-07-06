@@ -21,6 +21,7 @@ This file indexes all memory files for the CoinMonitorSuite project.
 - [portfolio-search-protocol](portfolio-search-protocol.md) — post-GA winner-finding: no pair parameter, exhaustive small grid ALL RECORDED with multiple-testing deflation, portfolio certificate vs equal-weight universe benchmark
 - [strategy-lab-model](strategy-lab-model.md) — the evaluator is the product: one-command gauntlet, candidates from research/grids/model-authored modules with stated economic rationale; chunk-letter decoder + Plans-B/C vs chunks-B/C namespace distinction
 - [autotrading-rollout](autotrading-rollout.md) — per-strategy execution modes: suggest-only → auto-on-confirm (certified) → capped full-auto (paper record); latency tolerance decides (carry fine on confirm, liq-fade needs full-auto or nothing)
+- [live-yield-hurdle](live-yield-hurdle.md) — **USER GATE (2026-07-06): certified != deploy. Live real capital needs expected FORWARD, continuing net yield >= 5%/yr (weight the RECENT regime, not full-sample) else it's negative EV vs a passive index fund. Carry CERTIFIED but recent regime ~0.18%/yr -> does NOT clear the hurdle even at 3x -> PARKED as monitored until the funding premium widens back**
 - [machines-and-tooling](machines-and-tooling.md) — user works on multiple machines; the 2026-07-04 Mac has repo but no runnable stack; verify environment before promising runs
 
 - [project-direction](project-direction.md) — Python/Bybit greenfield, trade-coins-efficiently (not options-first), phased backtest→suggestions→automation

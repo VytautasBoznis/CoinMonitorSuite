@@ -1,0 +1,14 @@
+B9 maker fee hurdle — GA-free on persisted GO winners (bybit USDT)
+baseline = taker 0.0010 + Ideal fill | maker = 0.0002 + limit fill
+
+family            pair            tf  N_tk   exp_tk%  N_mk   exp_mk%    d_exp  flip
+-----------------------------------------------------------------------------------
+ratio_momentum    BCH/DYDX        1d   183     0.054   183     0.215    0.160  
+rsi_meanreversion BNB/DYDX        1d   164     1.734   164     2.073    0.339  
+ratio_momentum    BNB/GRT         1d   230    -1.871   230    -1.209    0.662  
+ratio_momentum    BNB/GRT         4h   514    -0.029   514     0.132    0.160  *
+ema_crossover     BTC/CHZ         4h   226     0.070   226     0.230    0.160  
+donchian_breakout WLD/USDT        4h   352    -0.735   352    -0.420    0.315  
+ema_crossover     ETH/SOL         4h   535    -2.352   535    -1.777    0.575  
+
+B9 (informational): 1/7 GO winners flip expectancy-positive under maker execution. Frozen rule funds Z3 (honest maker model) at >= 5/10; here the denominator is 7 persisted GO winners (GA banned, so no top-10 ranking).

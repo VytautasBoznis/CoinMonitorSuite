@@ -1,0 +1,25 @@
+B13 low-vol cross-section — bybit USDT direct legs, 1d, 41 coins
+close frame: 1823 bars x 41 coins (2021-07-05 -> 2026-07-01)
+
+   L     q  reb   strat_abs   bench_abs   edge_full   edge_rec   win%
+---------------------------------------------------------------------
+  30   0.2   14     +67.3%     -68.4%    +135.7%   +155.8% 40.4%
+  30   0.2   30     +99.2%     -66.4%    +165.6%    +98.7% 41.6%
+  30   0.3   14     -14.6%     -68.4%     +53.8%    +86.2% 41.1%
+  30   0.3   30      -4.2%     -66.4%     +62.2%    +50.7% 42.2%
+  60   0.2   14     +25.5%     -77.7%    +103.2%   +162.7% 38.8%
+  60   0.2   30    +116.7%     -76.6%    +193.3%   +116.5% 43.2%
+  60   0.3   14      +7.2%     -77.7%     +84.9%    +67.5% 40.5%
+  60   0.3   30      +6.2%     -76.6%     +82.8%    +54.0% 43.2%
+  90   0.2   14     +63.4%     -74.3%    +137.6%   +142.6% 40.7%
+  90   0.2   30    +147.9%     -73.3%    +221.2%    +89.8% 43.8%
+  90   0.3   14     -11.4%     -74.3%     +62.9%    +62.0% 39.9%
+  90   0.3   30     +30.6%     -73.3%    +103.9%    +54.7% 43.5%
+
+BTC buy-and-hold over the same span: +78.1% (+15.6%/yr) — the real deploy alternative
+median ABSOLUTE low-vol book return: +28.1% (+5.6%/yr)
+configs with positive full-sample edge vs EW-universe: 12/12
+median recent-half edge: +88.00%
+median annualized full-sample edge (vs EW-universe): +20.73%/yr (deploy hurdle is >= +5%/yr)
+
+B13 VERDICT: PASS — frozen rule: >= 9/12 positive full-sample edge AND median recent-half edge > 0 (informational; a PASS funds a full certificate).

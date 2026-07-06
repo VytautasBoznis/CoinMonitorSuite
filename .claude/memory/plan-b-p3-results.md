@@ -1,6 +1,6 @@
 ---
 name: plan-b-p3-results
-description: "Plan-B P3 cost-side probes (B9 maker limit-fill, B10 1h maker hurdle): B10 RUN 2026-07-06 = FAIL (1/5 majors); B9 infra built but DEFERRED unrun (lower priority than W3 3c)"
+description: "Plan-B P3 cost-side probes (B9 maker limit-fill, B10 1h maker hurdle) BOTH RUN 2026-07-06 = FAIL. B10 1/5 majors; B9 1/7 GO winners flip positive under maker (need 5/10) → does NOT fund Z3. P3 tier CLOSED — confirms signal absence, not cost domination"
 metadata: 
   node_type: memory
   type: project
@@ -17,11 +17,25 @@ per 1h bar vs 2× maker round-trip (2×0.001) on the 5 majors (Binance USDT). Cl
 on only 1/5 (SOL 2.60×; BTC 1.19×, ETH/BNB 1.61×, XRP 1.82×) — need ≥3. Even the *maker*
 round-trip dominates the median 1h bar move on 4/5 majors. Consistent with fee-domination.
 
-**B9 (fee-hurdle re-run under maker limit-fill) — INFRA BUILT, RUNNER DEFERRED.** The seam is in
-place and committed with B10: `MakerLimitExecution` (backtest/execution.py — rests a limit at the
-prior close, fills only if the bar trades through `low<=prev_close<=high`, else skips the trade),
-`prev_close` threaded through `BarStepper`, and `execution=` threaded through `pool_trades`
-(search/evidence.py). No runner script yet. When resumed:
+**B9 (fee-hurdle re-run under maker limit-fill) — RUN 2026-07-06 -> does NOT fund Z3 (1/7 flip).**
+`probes/b9_maker_fee_hurdle.py` (log `runs/b9_maker_fee_hurdle.log`): GA-free on the 7 persisted GO
+genomes, pooling each one's strictly-OOS ledger (same `select_eval_pairs`/`pool_trades` seams as
+`certify`, eval_pairs 8, holdout 0.2, seed 0, bybit USDT) under (taker 10bps, Ideal) vs (**2bps
+maker**, `MakerLimitExecution`). Only **1/7** flipped positive (BNB/GRT-4h, marginal -0.029%->
++0.132%); the rest stayed money-losers (ETH/SOL -2.35%, BNB/GRT-1d -1.87%, WLD -0.74%). Need 5/10
+-> Z3 NOT funded. **KEY GOTCHA:** in 24/7 crypto consecutive bars are CONTIGUOUS (this bar's open
+~= prior close), so a limit at the prior close fills on ESSENTIALLY EVERY bar at ~= the open ->
+`N_maker == N_taker` for all 7 and every 1x delta is exactly +0.160% = 2x(0.001-0.0002). So on
+daily/4h bars `MakerLimitExecution` degenerates to "same fills, lower fee"; the skip-on-gap path
+never triggers. B9 here measures the FEE REDUCTION only, not a realistic limit-fill regime. Verdict
+stands: halving the fee does not rescue the price-shape families -> signal absence, not cost
+domination (same as B10 + the calibrated negative).
+
+**P3 tier CLOSED (both FAIL).** With P1 (all FAIL) + P3 done, the remaining Plan-B hunt is P2
+(B5 OI / B6 basis / B7 positioning / B8 listings, collector-gated on Z0) and P4 external
+(B11 stablecoin supply / B12 BTC-dominance). Original deferral note (superseded) below:
+
+_Infra as-built:_ `MakerLimitExecution` (backtest/execution.py, rests a limit at the
 - Run **GA-free** on the 7 persisted GO genomes in `runs/go_winners_usdt*.json` (1d:1, 1d-heavy:2,
   4h:4). B9's frozen "top-10 by t_exp" clause needs the banned GA to rank — [[ga-parked]] WINS, so
   use the persisted GO winners and report it as informational, not the literal top-10.

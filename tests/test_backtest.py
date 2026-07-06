@@ -4,6 +4,7 @@ import pandas as pd
 import pytest
 
 from coinmon.backtest.engine import BacktestEngine, BarStepper
+from coinmon.backtest.execution import MakerLimitExecution
 from coinmon.backtest.metrics import summarize
 from coinmon.backtest.portfolio import CarryPortfolio, PerpPortfolio, SpotPortfolio
 from coinmon.data.candles import load_candles
@@ -449,3 +450,29 @@ def test_load_candles_synthetic_ratio_reads_both_usdc_legs():
     out = load_candles(read, "ETH/BTC")
     assert seen == ["ETH/USDC", "BTC/USDC"]  # both legs loaded vs USDC
     assert out["close"].iloc[0] == pytest.approx(110.0 / 110.0 * 2.0)  # 220/110 = 2.0
+
+
+def test_maker_limit_fills_at_prior_close_when_bar_trades_through_it():
+    # B9 seam: a limit rests at the prior bar's close and fills THERE (not at the next open) when
+    # the bar trades through it. Bar 0 closes at 10; bar 1 (open 9, close 11) straddles 10, so the
+    # long fills at 10 -> 10 units -> equity marks 110 at the bar-1 close of 11. An IdealExecution
+    # would have filled at the bar-1 OPEN of 9 (11.11 units -> 122.2), so 110 proves the limit.
+    candles = _candles([(10.0, 10.0), (9.0, 11.0), (12.0, 12.0)])
+    engine = BacktestEngine(
+        _AlwaysLong(), SpotPortfolio(cash=100.0, taker_fee=0.0), execution=MakerLimitExecution()
+    )
+    result = engine.run(candles)
+    assert result.equity_curve.iloc[1] == pytest.approx(110.0)
+
+
+def test_maker_limit_skips_the_trade_when_the_bar_gaps_past_the_limit():
+    # If the bar never trades through the prior close, the resting order does not fill and the
+    # trade is skipped. Bar 0 closes at 10; bar 1 (open 12, close 13) gaps entirely above 10, so
+    # the long never fills and no round trip is recorded.
+    candles = _candles([(10.0, 10.0), (12.0, 13.0)])
+    engine = BacktestEngine(
+        _AlwaysLong(), SpotPortfolio(cash=100.0, taker_fee=0.0), execution=MakerLimitExecution()
+    )
+    result = engine.run(candles)
+    assert result.trades == []
+    assert result.equity_curve.iloc[-1] == pytest.approx(100.0)  # never entered

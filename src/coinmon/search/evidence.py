@@ -9,6 +9,7 @@ from dataclasses import dataclass
 import pandas as pd
 
 from coinmon.backtest.engine import BacktestEngine
+from coinmon.backtest.execution import ExecutionModel
 from coinmon.backtest.result import TradeRecord
 from coinmon.data.candles import load_candles, split_holdout
 from coinmon.data.funding import attach_funding
@@ -368,6 +369,7 @@ def _iter_segments(
     n_windows: int | None,
     holdout_fraction: float,
     read_funding: Callable[[str], pd.DataFrame] | None = None,
+    execution: ExecutionModel | None = None,
 ):
     """Yield ``(pair, holdout_frame, BacktestResult)`` for each (pair, window) OOS slice — the
     single grid iteration ``pool_trades``/``pool_segments`` (chunk V2)/``pool_carry_bars`` (W3 step
@@ -401,6 +403,7 @@ def _iter_segments(
             result = BacktestEngine(
                 factory(),
                 build_portfolio(INITIAL_CAPITAL, taker_fee),
+                execution=execution,
                 stop_pct=stop_pct,
             ).run(holdout)
             yield pair, holdout, result
@@ -417,6 +420,7 @@ def pool_trades(
     n_windows: int | None = None,
     holdout_fraction: float = 0.2,
     read_funding: Callable[[str], pd.DataFrame] | None = None,
+    execution: ExecutionModel | None = None,
 ) -> list[TradeRecord]:
     """Run the frozen ``genome`` (pair gene overridden to each of ``eval_pairs``) over the holdout
     tail of each rolling window and pool every closed trade — the strictly-OOS ledger the
@@ -429,7 +433,7 @@ def pool_trades(
     for _pair, _holdout, result in _iter_segments(
         genome, read, taker_fee, eval_pairs,
         window_size=window_size, step=step, n_windows=n_windows, holdout_fraction=holdout_fraction,
-        read_funding=read_funding,
+        read_funding=read_funding, execution=execution,
     ):
         pooled.extend(result.trades)
     return pooled
@@ -731,3 +735,143 @@ def pool_carry_bars(
             (int(t), float(r)) for t, r in zip(rets.index, rets.to_numpy(), strict=True)
         )
     return bars, len(pairs)
+
+
+# --- W3 step 3c: the carry certificate's C4 (shuffled-funding null) + C6 (fragility) -------------
+# certify_carry accepts a null verdict + a fragility fraction but leaves both PENDING (blocking
+# CERTIFIED, never REFUTED) until supplied. These produce them for a frozen carry genome, both by
+# re-pooling `pool_carry_bars` on the SAME OOS pairs/windows under a perturbed funding read — so no
+# engine seam and no leakage path changes. The single statistic each resamples is mean carry/bar.
+
+
+def _pooled_carry_mean(
+    genome: Genome,
+    read: Callable[[str], pd.DataFrame],
+    taker_fee: float,
+    eval_pairs: Sequence[str],
+    *,
+    read_funding: Callable[[str], pd.DataFrame],
+    window_size: float,
+    step: float,
+    holdout_fraction: float,
+) -> float:
+    """Pool the carry genome's per-bar OOS ledger once and reduce it to mean carry/bar — the single
+    statistic both the null (C4) and the fragility sweep (C6) resample. Empty pool -> 0.0."""
+    bars, _ = pool_carry_bars(
+        genome, read, taker_fee, eval_pairs,
+        window_size=window_size, step=step, holdout_fraction=holdout_fraction,
+        read_funding=read_funding,
+    )
+    return statistics.fmean(r for _, r in bars) if bars else 0.0
+
+
+def _sign_flipped_funding_reader(
+    read_funding: Callable[[str], pd.DataFrame], rng: random.Random
+) -> Callable[[str], pd.DataFrame]:
+    """Wrap a settlement reader so each perp's funding ``rate`` has the SIGN of contiguous
+    ~sqrt(N)-length blocks flipped (a fresh block-sign draw per pair from ``rng``). Block sign-flips
+    drive expected funding to ~0 — destroying the PREMIUM the carry edge lives on — while keeping
+    the magnitude distribution and intra-block persistence intact. That makes a premium-free
+    surrogate on which a genuine carry edge must collapse: the carry-currency analogue of chunk V3's
+    signal-destroyed-data null. NOT a plain time-permutation: permuting keeps the premium (only
+    scrambles timing) and would wrongly refute an ambient-premium harvester — exactly what carry is.
+    """
+
+    def read(pair: str) -> pd.DataFrame:
+        funding = read_funding(pair)
+        if funding.empty:
+            return funding
+        rates = list(funding["rate"])
+        n = len(rates)
+        block = max(1, round(math.sqrt(n)))
+        flipped: list[float] = []
+        for start in range(0, n, block):
+            sign = 1.0 if rng.random() < 0.5 else -1.0
+            flipped.extend(sign * r for r in rates[start : start + block])
+        return funding.assign(rate=flipped)
+
+    return read
+
+
+def _haircut_funding_reader(
+    read_funding: Callable[[str], pd.DataFrame], factor: float
+) -> Callable[[str], pd.DataFrame]:
+    """Wrap a settlement reader so every funding ``rate`` is scaled by ``factor`` (< 1 = an adverse
+    haircut on the realized premium) — the funding axis of the carry fragility sweep (C6)."""
+
+    def read(pair: str) -> pd.DataFrame:
+        funding = read_funding(pair)
+        if funding.empty:
+            return funding
+        return funding.assign(rate=funding["rate"] * factor)
+
+    return read
+
+
+def carry_null_beaten(
+    genome: Genome,
+    read: Callable[[str], pd.DataFrame],
+    taker_fee: float,
+    eval_pairs: Sequence[str],
+    real_mean: float,
+    *,
+    read_funding: Callable[[str], pd.DataFrame],
+    draws: int = 200,
+    seed: int = 0,
+    window_size: float = 0.6,
+    step: float = 0.2,
+    holdout_fraction: float = 0.2,
+) -> tuple[bool, float]:
+    """C4 (W3 step 3c) — the shuffled-funding null. Re-pool the frozen carry genome ``draws`` times
+    with every perp's funding sign-flipped in blocks (``_sign_flipped_funding_reader``: same OOS
+    pairs/windows, premium destroyed) and return ``(beaten, null_p95)`` — ``beaten`` is the real
+    pooled mean carry/bar (``real_mean``, the certificate's own figure) exceeding the 95th pct of
+    the premium-free distribution. Beating it says the edge tracks the GENUINE funding premium,
+    not the fee/hold mechanics a premium-free series would also produce."""
+    rng = random.Random(seed)
+    null_means = [
+        _pooled_carry_mean(
+            genome, read, taker_fee, eval_pairs,
+            read_funding=_sign_flipped_funding_reader(read_funding, rng),
+            window_size=window_size, step=step, holdout_fraction=holdout_fraction,
+        )
+        for _ in range(draws)
+    ]
+    null_means.sort()
+    p95 = null_means[min(len(null_means) - 1, int(0.95 * len(null_means)))]
+    return real_mean > p95, p95
+
+
+def carry_fragility(
+    genome: Genome,
+    read: Callable[[str], pd.DataFrame],
+    taker_fee: float,
+    eval_pairs: Sequence[str],
+    *,
+    read_funding: Callable[[str], pd.DataFrame],
+    runs: int = 200,
+    seed: int = 0,
+    fee_mult_max: float = 2.0,
+    funding_haircut_min: float = 0.7,
+    window_size: float = 0.6,
+    step: float = 0.2,
+    holdout_fraction: float = 0.2,
+) -> float:
+    """C6 (W3 step 3c) — carry fragility. The neutral book's equity is price-independent, so the
+    per-trade slippage harness (``StochasticExecution``) barely bites here; carry's real fragility
+    is COST vs a thin premium. Each of ``runs`` re-pools under one adverse draw: taker fee scaled
+    by U[1, ``fee_mult_max``] AND funding scaled by U[``funding_haircut_min``, 1]. The read is the
+    fraction of runs whose pooled mean carry/bar stays > 0. A thin edge a modest fee bump or premium
+    haircut flips negative is fragile; certify_carry gates this at >= 95%."""
+    rng = random.Random(seed)
+    positive = 0
+    for _ in range(runs):
+        fee = taker_fee * rng.uniform(1.0, fee_mult_max)
+        haircut = rng.uniform(funding_haircut_min, 1.0)
+        mean = _pooled_carry_mean(
+            genome, read, fee, eval_pairs,
+            read_funding=_haircut_funding_reader(read_funding, haircut),
+            window_size=window_size, step=step, holdout_fraction=holdout_fraction,
+        )
+        positive += mean > 0
+    return positive / runs if runs else 0.0

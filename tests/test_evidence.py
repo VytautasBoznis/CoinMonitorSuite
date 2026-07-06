@@ -7,6 +7,8 @@ from coinmon.search.evidence import (
     block_bootstrap_ci,
     build_carry_evidence,
     build_evidence,
+    carry_fragility,
+    carry_null_beaten,
     certify,
     certify_carry,
     pool_carry_bars,
@@ -326,3 +328,83 @@ def test_pool_carry_bars_no_funding_yields_flat_returns():
         read_funding=lambda p: pd.DataFrame({"funding_time": [], "rate": []}),
     )
     assert all(r == 0.0 for _, r in bars)
+
+
+# --- W3 step 3c: the carry certificate's C4 (shuffled-funding null) + C6 (fragility) ---
+
+def _flat_frame(n):
+    return pd.DataFrame(
+        {
+            "open_time": range(n),
+            "open": [100.0] * n,
+            "high": [100.0] * n,
+            "low": [100.0] * n,
+            "close": [100.0] * n,
+            "volume": [1.0] * n,
+        }
+    )
+
+
+_CARRY_GENOME = Genome("funding_carry", "AAA/USDC", {"window": 20, "threshold": 0.0})
+_CARRY_KW = {"window_size": 1.0, "step": 1.0, "holdout_fraction": 0.5}
+
+
+def test_sign_flipped_funding_reader_destroys_the_premium():
+    import random
+
+    from coinmon.search.evidence import _sign_flipped_funding_reader
+
+    funding = pd.DataFrame({"funding_time": range(400), "rate": [0.001] * 400})
+    flipped = _sign_flipped_funding_reader(lambda p: funding, random.Random(0))("AAA/USDC")
+    # magnitudes preserved exactly, but the +0.001 premium is driven toward zero by the block flips.
+    assert set(flipped["rate"].abs().round(6)) == {0.001}
+    assert abs(flipped["rate"].mean()) < 0.0006
+
+
+def test_haircut_funding_reader_scales_the_rate():
+    from coinmon.search.evidence import _haircut_funding_reader
+
+    funding = pd.DataFrame({"funding_time": range(3), "rate": [0.001, 0.002, -0.001]})
+    out = _haircut_funding_reader(lambda p: funding, 0.5)("AAA/USDC")
+    assert list(out["rate"]) == pytest.approx([0.0005, 0.001, -0.0005])
+
+
+def test_carry_null_beaten_by_a_persistent_premium():
+    n = 400
+    read = lambda s: _flat_frame(n)  # noqa: E731
+    read_funding = lambda p: pd.DataFrame({"funding_time": range(n), "rate": [0.001] * n})  # noqa: E731
+    pairs = ["AAA/USDC", "BBB/USDC"]
+    bars, npairs = pool_carry_bars(
+        _CARRY_GENOME, read, 0.0, pairs, read_funding=read_funding, **_CARRY_KW
+    )
+    real = build_carry_evidence(bars, npairs, bars_per_year=365, seed=0, resamples=200).mean_return
+    beaten, p95 = carry_null_beaten(
+        _CARRY_GENOME, read, 0.0, pairs, real, read_funding=read_funding, draws=40, seed=0,
+        **_CARRY_KW,
+    )
+    # a genuine persistent premium out-earns the premium-destroyed surrogate.
+    assert real > 0 and beaten and real > p95
+
+
+def test_carry_null_not_beaten_without_a_premium():
+    # zero funding -> the hedge never earns; real mean == 0 == the premium-free null -> not beaten.
+    n = 400
+    read = lambda s: _flat_frame(n)  # noqa: E731
+    read_funding = lambda p: pd.DataFrame({"funding_time": range(n), "rate": [0.0] * n})  # noqa: E731
+    beaten, _ = carry_null_beaten(
+        _CARRY_GENOME, read, 0.0, ["AAA/USDC", "BBB/USDC"], 0.0,
+        read_funding=read_funding, draws=20, seed=0, **_CARRY_KW,
+    )
+    assert not beaten
+
+
+def test_carry_fragility_robust_positive_premium_survives():
+    n = 400
+    read = lambda s: _flat_frame(n)  # noqa: E731
+    read_funding = lambda p: pd.DataFrame({"funding_time": range(n), "rate": [0.001] * n})  # noqa: E731
+    frac = carry_fragility(
+        _CARRY_GENOME, read, 0.0, ["AAA/USDC", "BBB/USDC"],
+        read_funding=read_funding, runs=30, seed=0, **_CARRY_KW,
+    )
+    # a pure positive-funding premium at zero fee stays positive under every funding haircut.
+    assert frac == 1.0

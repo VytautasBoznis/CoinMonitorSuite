@@ -36,6 +36,8 @@ from coinmon.search.evidence import (
     CertifiedRow,
     build_carry_evidence,
     build_evidence,
+    carry_fragility,
+    carry_null_beaten,
     certify,
     certify_carry,
     pool_carry_bars,
@@ -743,10 +745,25 @@ def _certify_carry(args: argparse.Namespace) -> None:
     quote = settings.quote_currency
     conn = db.connect()
     try:
-        def read(symbol: str) -> pd.DataFrame:
-            return db.read_candles(conn, settings.exchange, symbol, args.timeframe)
+        # Cache candles + funding per pair: the null (C4) and fragility (C6) sweeps re-pool the same
+        # universe hundreds of times, so read each series from the DB once, not once per draw.
+        candle_cache: dict[str, pd.DataFrame] = {}
 
-        read_funding = _funding_reader(conn)
+        def read(symbol: str) -> pd.DataFrame:
+            if symbol not in candle_cache:
+                candle_cache[symbol] = db.read_candles(
+                    conn, settings.exchange, symbol, args.timeframe
+                )
+            return candle_cache[symbol]
+
+        base_read_funding = _funding_reader(conn)
+        funding_cache: dict[str, pd.DataFrame] = {}
+
+        def read_funding(symbol: str) -> pd.DataFrame:
+            if symbol not in funding_cache:
+                funding_cache[symbol] = base_read_funding(symbol)
+            return funding_cache[symbol]
+
         universe = discover_universe(
             db.list_series(conn),
             exchange=settings.exchange,
@@ -771,22 +788,47 @@ def _certify_carry(args: argparse.Namespace) -> None:
             f"carry certificate: pooling {genome.family} {genome.params} over "
             f"{len(funded)} funded {quote} perps at {args.timeframe}\n"
         )
+        bars_per_year = _BARS_PER_YEAR.get(args.timeframe, 365.0)
         bars, n_pairs = pool_carry_bars(
             genome, read, settings.taker_fee, funded,
             window_size=args.window, step=args.step, holdout_fraction=args.holdout,
             read_funding=read_funding,
         )
+        evidence = build_carry_evidence(
+            bars, n_pairs, bars_per_year=bars_per_year, seed=args.seed, n_regimes=args.regimes
+        )
+
+        # W3 step 3c: C4 (shuffled-funding null) + C6 (fragility). Each is 0-disabled (leaves the
+        # criterion PENDING). Both re-pool the same funded universe, so they share the caches above.
+        null_beaten: bool | None = None
+        if args.null_draws > 0:
+            print(f"C4: shuffled-funding null ({args.null_draws} block-sign-flip draws)...")
+            null_beaten, null_p95 = carry_null_beaten(
+                genome, read, settings.taker_fee, funded, evidence.mean_return,
+                read_funding=read_funding, draws=args.null_draws, seed=args.seed,
+                window_size=args.window, step=args.step, holdout_fraction=args.holdout,
+            )
+            print(
+                f"     real mean/bar {evidence.mean_return:+.6f} vs null 95th pct {null_p95:+.6f} "
+                f"-> {'beats' if null_beaten else 'does NOT beat'} null\n"
+            )
+        fragility_positive: float | None = None
+        if args.fragility_runs > 0:
+            print(f"C6: fragility sweep ({args.fragility_runs} fee+funding perturbations)...")
+            fragility_positive = carry_fragility(
+                genome, read, settings.taker_fee, funded,
+                read_funding=read_funding, runs=args.fragility_runs, seed=args.seed,
+                window_size=args.window, step=args.step, holdout_fraction=args.holdout,
+            )
+            print(f"     {fragility_positive:.0%} of runs keep mean/bar > 0\n")
     finally:
         conn.close()
 
-    bars_per_year = _BARS_PER_YEAR.get(args.timeframe, 365.0)
-    evidence = build_carry_evidence(
-        bars, n_pairs, bars_per_year=bars_per_year, seed=args.seed, n_regimes=args.regimes
-    )
     # A regime bleeding worse than ~-20%/yr (per-bar) is catastrophic — timeframe-scaled so the
     # gate means the same thing at 1d and 4h.
     certificate = certify_carry(
-        evidence, min_pairs=args.min_pairs, catastrophic=-0.20 / bars_per_year
+        evidence, min_pairs=args.min_pairs, catastrophic=-0.20 / bars_per_year,
+        null_beaten=null_beaten, fragility_positive=fragility_positive,
     )
     print(certificate.summary())
 
@@ -1457,6 +1499,14 @@ def build_parser() -> argparse.ArgumentParser:
     p_carry.add_argument(
         "--regimes", type=int, default=2, metavar="N",
         help="disjoint time regimes to split the pool into for C5 (default 2)",
+    )
+    p_carry.add_argument(
+        "--null-draws", type=int, default=200, metavar="N",
+        help="C4 shuffled-funding null: block-sign-flip surrogate draws (0 = skip, leaves PENDING)",
+    )
+    p_carry.add_argument(
+        "--fragility-runs", type=int, default=200, metavar="N",
+        help="C6 fragility: adverse fee+funding perturbation runs (0 = skip, leaves PENDING)",
     )
     p_carry.set_defaults(func=_certify_carry)
 

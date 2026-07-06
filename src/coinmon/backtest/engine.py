@@ -54,6 +54,7 @@ class BarStepper:
         self._entry: float | None = None  # fill price of the open position, the stop's reference
         self._stopped_side = 0  # side just stopped out of; suppresses re-entry until signal resets
         self._entry_time: int = 0  # open_time of the bar the current position was entered on
+        self._prev_close: float | None = None  # prior bar's close — a limit model's rest price (B9)
         self._harvested = 0  # closed_trades already turned into records (chunk-U ledger)
         self.trades: list[TradeRecord] = []  # per-trade ledger, one record per closed round-trip
 
@@ -72,7 +73,11 @@ class BarStepper:
             # Buy (+1) when moving more positive, sell (-1) when more negative — so a long->short
             # flip sells, a short->flat buys. For the 0/1 spot path this is the old rule unchanged.
             side = 1 if self._pending > self._position else -1
-            fill = self.execution.fill_price(side, candle.open)
+            # low/high/prev_close let a limit model rest at the prior close and fill only if this
+            # bar trades through it (B9); the market models ignore them, so the path is unchanged.
+            fill = self.execution.fill_price(
+                side, candle.open, low=candle.low, high=candle.high, prev_close=self._prev_close
+            )
             if fill is not None:  # a None fill = order didn't execute; position unchanged
                 self.portfolio.rebalance(self._pending, fill)
                 # A flip closes the old position here — record it under its OWN entry time
@@ -96,6 +101,7 @@ class BarStepper:
         else:
             view = BarView(candle=candle, features={"funding_rate": funding_rate})
         self._pending = self._guard_reentry(self.strategy.on_bar(view))
+        self._prev_close = candle.close  # this bar's close is next bar's limit-rest price (B9)
         return StepResult(
             open_time=candle.open_time,
             close=candle.close,

@@ -1,0 +1,26 @@
+W3 step 3c — first CERTIFIED strategy (2026-07-06)
+command: COINMON_QUOTE_CURRENCY=USDT COINMON_EXCHANGE=bybit \
+  coinmon certify-carry --timeframe 1d --family funding_carry \
+  --params '{"window": 30, "threshold": 0.0}' --null-draws 200 --fragility-runs 200
+
+carry certificate: pooling funding_carry {'window': 30, 'threshold': 0.0} over 41 funded USDT perps at 1d
+
+C4: shuffled-funding null (200 block-sign-flip draws)...
+     real mean/bar +0.000061 vs null 95th pct +0.000005 -> beats null
+
+C6: fragility sweep (200 fee+funding perturbations)...
+     100% of runs keep mean/bar > 0
+
+Carry Certificate [CERTIFIED]:
+  pooled OOS bars    22391  (41 funded perps)
+  mean carry/bar     +0.000061  (95% CI [+0.000035, +0.000093])
+  ~annualized        +2.23%  (simple, mean x bars/yr)
+  t-stat             +4.08
+  positive bars      51.3%
+  regimes positive   2/2  (means +0.000135, +0.000005)
+  criteria:
+    [PASS   ] C1 evidence floor  22391 bars / 41 perps (min 300 / 3)
+    [PASS   ] C3 expectancy      mean/bar +0.000061, 95% CI low +0.000035 (need > 0)
+    [PASS   ] C4 beats null      score > null 95th pct
+    [PASS   ] C5 regime spread   2/2 regimes positive, worst +0.000005 (min 2 positive, none < -0.000548)
+    [PASS   ] C6 fragility       100% positive (min 95%)

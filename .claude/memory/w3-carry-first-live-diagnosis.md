@@ -1,6 +1,6 @@
 ---
 name: w3-carry-first-live-diagnosis
-description: "W3 funding-carry FIRST LIVE DIAGNOSIS (2026-07-05, tooled Windows machine): the carry PREMIUM is real + robust (+2.1%/yr continuous-hold, +4.9%/yr smoothed-hold, 29/29 USDT perps positive at 1d) but the funding_carry FAMILY as built CHURNS it away (percentile-toggle → -1.4%/yr net; -99% at 4h from funding sparsity). First genuinely promising strategy — the fix is a HOLD design, not the toggle"
+description: "W3 funding-carry — CERTIFIED 2026-07-06, the project's FIRST certified strategy (1 of 3 for the UI gate). The premium is real+robust; smoothed-HOLD design (not percentile-toggle) captures it; carry-appropriate Edge Certificate (per-bar net carry, 41 USDT perps, 1d): CERTIFIED at +2.23%/yr, t+4.08, C4 block-sign-flip null + C6 fee/funding fragility both PASS. ~$10 micro-live now UNLOCKED. Run at 1d, never sub-8h (4h REFUTED)"
 metadata:
   node_type: memory
   type: project
@@ -83,9 +83,33 @@ positive bars, 1/2 regimes): funding sparsity dilutes the per-bar unit sub-8h �
 correctly steers carry to 1d, confirming the diagnosis's "never sub-8h."
 
 **Carry is now the first strategy with a real, OOS, fee-net, significant (t≈4), cross-regime positive
-edge measured on its own appropriate certificate.** Micro-live stays GATED on CERTIFIED. NEXT (W3
-step 3c): the **shuffled/block-bootstrapped-funding null (C4)** — re-pool on signal-destroyed funding,
-the real edge must clear its 95th pct (reuses `data/surrogate.py`) — + **carry fragility (C6)**; a
-CERTIFIED carry then triggers the mission's ~$10 micro-live. See [[funding-carry-harvester]],
-[[autotrading-rollout]], [[alpha-definition-edge-certificate]].
+edge measured on its own appropriate certificate.** Micro-live stays GATED on CERTIFIED.
+
+**W3 STEP 3c DONE + LIVE (2026-07-06) — CARRY IS CERTIFIED. First CERTIFIED strategy in the project
+(1 of the 3 the UI is gated on).** C4 + C6 built in `search/evidence.py` (both re-pool `pool_carry_bars`
+on the SAME OOS pairs/windows under a perturbed funding read — no engine seam, no leakage change) and
+wired into `certify-carry` (`--null-draws`/`--fragility-runs`, default 200, 0=skip→PENDING; caches
+candles+funding so 400 re-pools hit the DB once/pair; ~3 min):
+- **C4 shuffled-funding null = `carry_null_beaten`.** NOT a time-permutation (that keeps the premium,
+  only scrambles timing → would wrongly REFUTE an ambient-premium harvester, which carry IS). Instead
+  a **block sign-flip surrogate** (`_sign_flipped_funding_reader`): flip the sign of ~√N-length blocks
+  of each perp's funding → drives E[funding]→0 (premium DESTROYED) while keeping magnitude + intra-block
+  persistence → a premium-free series a real carry edge must beat. Carry-currency analogue of V3's
+  signal-destroyed-data null. Did NOT reuse `data/surrogate.py` (that's per-bar-price block-bootstrap;
+  carry's signal lives in the funding series, so the surrogate must act there).
+- **C6 fragility = `carry_fragility`.** The neutral book's equity is price-INDEPENDENT, so the stock
+  `StochasticExecution` slippage harness is ~inert on carry (would rubber-stamp 100% — a dishonest
+  pass). Carry's real fragility is COST vs a thin premium, so each run re-pools under an adverse draw:
+  taker fee ×U[1,2] AND funding ×U[0.7,1]; read = fraction of runs keeping mean/bar>0; gate ≥95%.
+- **LIVE VERDICT (1d, window=30/threshold=0, 41 USDT perps, 22,391 OOS bars): CERTIFIED.** C4 real
+  **+0.000061/bar beats null p95 +0.000005 (12×)**; C6 **100% positive** (a 30% funding haircut +
+  doubled fees can't flip it — low-turnover held premium). Same headline figures as the 3b UNPROVEN
+  run (+2.23%/yr, t+4.08, 2/2 regimes) — 3c only supplied the two pending criteria. `runs/certify_carry_usdt_1d.txt`.
+- The fragility gate GENUINELY bit (real adverse perturbations, not the inert slippage harness) and the
+  strategy survived — a true pass, not a rubber-stamp. 419 tests green (+5).
+
+**NEXT: the mission's ~$10 micro-live is now UNLOCKED for carry** (first promising/certified strategy,
+[[mission-find-edge-ship-ui]], [[autotrading-rollout]] = auto-on-confirm, carry's slow horizon is
+latency-tolerant). Then keep hunting winners 2 & 3 (W5/Plan-B) for the UI gate. See
+[[funding-carry-harvester]], [[alpha-definition-edge-certificate]].
 </content>

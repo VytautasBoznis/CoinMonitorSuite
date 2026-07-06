@@ -28,7 +28,14 @@ class StochasticExecution(ExecutionModel):
         self.fail_prob = fail_prob
         self.rng = rng
 
-    def fill_price(self, side: int, reference: float) -> float | None:
+    def fill_price(
+        self,
+        side: int,
+        reference: float,
+        low: float | None = None,
+        high: float | None = None,
+        prev_close: float | None = None,
+    ) -> float | None:
         if self.rng.random() < self.fail_prob:
             return None  # order didn't fill this bar
         slip = self.rng.uniform(0.0, self.max_slippage)  # >= 0, applied adversely via side

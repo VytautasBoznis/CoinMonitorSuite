@@ -1,6 +1,6 @@
 ---
 name: b13-low-vol-fresh-lead
-description: "Fresh-ideation pivot (2026-07-06) after P1/P3 exhausted: the cross-sectional LOW-VOLATILITY anomaly. Pre-registered probe B13 PASSED its frozen rule (12/12 edge vs EW-universe, recent-regime present) BUT long-only underperforms BTC-hold — the real alpha is the market-neutral long-low-vol/short-high-vol book (B14, next). First promising fresh lead since the pivot; still 0 deployable winners."
+description: "Fresh-ideation pivot (2026-07-06) after P1/P3 exhausted: the cross-sectional LOW-VOLATILITY anomaly. B13 (long-only) PASSED its frozen rule but underperforms BTC-hold. B14 (market-neutral long-low-vol/short-high-vol, honest perp-funding short costs) ALSO PASSED its frozen rule (12/12 net-positive, median +72%/yr) — BUT risk-adjusted it is NOT a winner: Sharpe 0.79-0.90, maxDD -64% to -82%, negative in 2023-2024, and survivorship-inflated short leg. It's a regime-timed short-vol/crash-hedge bet, not clean alpha. Low-vol lead now essentially exhausted; still 0 deployable winners."
 metadata:
   node_type: memory
   type: project
@@ -45,3 +45,25 @@ don't rush it and inflate the result. Then a full Edge Certificate (absolute exp
 regimes + the 3 nulls, NOT edge-vs-beta) via the xsectional certify path. If B14's neutral book clears
 absolute expectancy + the 5%/yr hurdle after short costs, it's a genuine winner candidate (1 of 3).
 Still **0 deployable winners** toward the UI gate. See [[plan-b-fallback-probes]], [[portfolio-search-protocol]].
+
+**B14 RUN (2026-07-06) → PASSED the frozen rule, but NOT a deploy winner.** `probes/b14_lowvol_neutral.py`
+(log `runs/b14_lowvol_neutral.log`). Dollar-neutral long bottom-vol / short top-vol PERPS on the 41
+Bybit USDT legs, 1d; honest short cost = real per-symbol Bybit 8h funding summed to daily, applied per
+bar with correct sign (long pays / short receives — the same funding data that CERTIFIED carry,
+[[w3-carry-first-live-diagnosis]]); both legs on one margin account (harsher/executable version). Frozen
+rule pre-registered: grid L∈{30,60,90}×q∈{0.1,0.2}×reb∈{14,30}; PASS iff ≥9/12 net-positive AND median
+annualized ≥+5%/yr (applied DIRECTLY — neutral book has no beta to subtract) AND median recent-half >0.
+Result: **12/12 net-positive, median +72%/yr, recent-half +82%, survives fee×2+25% funding-haircut
+fragility.** Funding was a mild tail-wind (short leg received ~+0.1-0.3% per hold on avg).
+**WHY IT IS STILL NOT A WINNER (risk metrics I added post-run — the frozen rule was blind to these):**
+- **Sharpe only 0.79-0.90** — the +100-600% totals are leveraged variance (gross 2, high-vol short leg),
+  NOT a strong edge.
+- **maxDD -64% to -82%** — undeployable; worse drawdown than just holding BTC.
+- **Regime-driven, short-gamma**: enormous in the 2022 alt crash (+136%/+341%), NEGATIVE in 2023
+  (-36%/-14%) and one config in 2024 (-9%). A crash-hedge / short-alt-vol bet, not a neutral money machine.
+- **SURVIVORSHIP UNADDRESSED**: the 41-coin universe = today's SURVIVING liquid Bybit legs; high-vol
+  alts that went to zero and delisted are absent — exactly where the short leg's bias inflates returns.
+Did NOT run an Edge Certificate — it would only formalize a strategy the risk metrics already disqualify.
+Fork for the user: (a) accept it as a crash-HEDGE overlay (not standalone alpha), (b) attempt a
+survivorship-clean universe (needs delisted-coin history we likely lack), or (c) move to Plan C on-chain
+([[plan-c-onchain-ideation]]).

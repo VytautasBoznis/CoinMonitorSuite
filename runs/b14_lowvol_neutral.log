@@ -1,0 +1,46 @@
+B14 market-neutral low/high-vol — bybit 41 USDT perps, 1d
+close frame: 1823 bars x 41 coins (2021-07-05 -> 2026-07-01)
+funding: real Bybit 8h settlements, summed to daily, applied per bar (long pays / short receives)
+
+   L     q  reb    net_abs   net/yr   net_rec   win%  sh_fund
+-------------------------------------------------------------
+  30   0.1   14    +14.2%   +2.8%   +55.4% 48.5%  +0.28%
+  30   0.1   30    +64.1%  +12.8%   +17.1% 52.8%  +0.21%
+  30   0.2   14    +32.1%   +6.4%   +97.8% 49.7%  +0.08%
+  30   0.2   30   +495.4%  +99.2%   +87.0% 54.6%  -0.03%
+  60   0.1   14   +227.5%  +45.5%  +280.1% 48.5%  +0.31%
+  60   0.1   30   +165.1%  +33.1%   +58.0% 54.2%  +0.26%
+  60   0.2   14   +287.0%  +57.5%  +218.3% 49.3%  +0.09%
+  60   0.2   30   +479.0%  +95.9%   +73.7% 54.1%  +0.06%
+  90   0.1   14   +431.8%  +86.5%  +275.9% 50.7%  +0.28%
+  90   0.1   30   +600.7% +120.3%   +76.5% 54.7%  +0.22%
+  90   0.2   14   +437.1%  +87.5%  +226.8% 51.0%  +0.08%
+  90   0.2   30   +500.7% +100.2%   +70.2% 54.4%  +0.07%
+
+BTC buy-and-hold over the span: +78.1% (+15.6%/yr) — the passive alternative
+configs with positive net absolute return: 12/12
+median annualized net return: +71.96%/yr (deploy hurdle >= +5%/yr)
+median recent-half net return: +81.75%
+
+fragility (median config, fee x2 + 25% funding haircut):
+  L=60 q=0.2 reb=14: base +57.46%/yr -> stressed +50.11%/yr
+
+B14 VERDICT: PASS — frozen rule: >= 9/12 net-positive [#OK] AND median >= +5%/yr [#OK] AND median recent-half > 0 [#OK] (informational; a PASS funds a full Edge-Certificate run).
+
+--- RISK-ADJUSTED REALITY (appended post-run) ---
+L=60 q=0.2 reb=14: total +287%  Sharpe 0.79  maxDD -64%
+  yearly: 2021 -14%  2022 +136%  2023 -36%  2024 +18%  2025 +176%  2026 +13%
+L=90 q=0.1 reb=30: total +601%  Sharpe 0.90  maxDD -82%
+  yearly: 2021 -0%  2022 +341%  2023 -14%  2024 -9%  2025 +61%  2026 +39%
+
+READ: the frozen rule PASSED, but the eye-popping totals are leveraged variance, not clean alpha.
+  - Sharpe < 1.0 (0.79-0.90): mediocre, NOT a strong edge.
+  - maxDD -64% to -82%: undeployable as-is (worse drawdown than holding BTC).
+  - Regime-driven: huge in the 2022 alt crash (short high-vol alts), NEGATIVE 2023 & one config 2024.
+    This is a short-gamma / crash-hedge bet on alt volatility, not a market-neutral money machine.
+  - SURVIVORSHIP UNADDRESSED: the 41-coin universe = TODAY's surviving liquid Bybit legs. High-vol
+    alts that went to zero and delisted are absent, and the short leg is exactly where that bias
+    inflates returns. Must be fixed before any certificate is trusted.
+CONCLUSION: passes the informational probe, but is NOT a deployable winner and does NOT clear the
+live hurdle on a risk-adjusted/drawdown basis. Better than B13 (net-positive in recent regime) but
+still a regime-timed short-vol bet, not the clean alpha the mission needs.

@@ -1,0 +1,25 @@
+B16 funding-crowding signal — bybit 41 USDT perps, 1d
+close frame: 1823 bars (2021-07-05 -> 2026-07-01)
+book: LONG lowest-funding slice / SHORT highest-funding slice, dollar-neutral, real funding applied
+
+   L     q  reb    net_abs   net/yr   net_rec   win%  Sharpe   maxDD
+--------------------------------------------------------------------
+   7   0.1    7    -65.1%  -13.0%   +11.7% 50.2%   -0.08   -81%
+   7   0.1   14    -37.9%   -7.6%   -24.7% 50.9%    0.11   -82%
+   7   0.2    7    +17.5%   +3.5%   +11.9% 50.1%    0.30   -40%
+   7   0.2   14    +89.7%  +18.0%   +19.0% 51.2%    0.55   -53%
+  14   0.1    7    +31.4%   +6.3%    -5.7% 49.8%    0.38   -58%
+  14   0.1   14    -69.8%  -14.0%   -48.8% 49.4%   -0.19   -74%
+  14   0.2    7     -5.9%   -1.2%   -21.2% 49.1%    0.17   -53%
+  14   0.2   14     -9.4%   -1.9%   -22.8% 49.9%    0.15   -48%
+  30   0.1    7     -2.8%   -0.6%   -11.1% 48.3%    0.26   -71%
+  30   0.1   14     +0.6%   +0.1%   -18.3% 49.8%    0.27   -69%
+  30   0.2    7    +73.8%  +14.8%    +7.1% 48.7%    0.49   -41%
+  30   0.2   14   +185.9%  +37.2%   +11.0% 49.9%    0.76   -39%
+
+BTC buy-and-hold over the span: +78.1% (+15.6%/yr) — the passive alternative
+configs with positive net absolute return: 6/12
+median annualized net return: -0.23%/yr (deploy hurdle >= +5%/yr)
+median recent-half net return: -8.44%
+
+B16 VERDICT: FAIL — frozen rule: >= 9/12 net-positive [no] AND median >= +5%/yr [no] AND median recent-half > 0 [no]. Even on PASS, Sharpe/maxDD above decide deploy-plausibility (B14 lesson).

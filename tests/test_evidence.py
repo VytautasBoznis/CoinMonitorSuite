@@ -5,8 +5,11 @@ from coinmon.backtest.result import TradeRecord
 from coinmon.search.evidence import (
     CertifiedRow,
     block_bootstrap_ci,
+    build_carry_evidence,
     build_evidence,
     certify,
+    certify_carry,
+    pool_carry_bars,
     pool_segments,
     pool_trades,
     rank_certified,
@@ -211,3 +214,115 @@ def test_pool_segments_matches_pool_trades_and_records_durations():
         for direction, duration in seg.trades:
             assert direction in (-1, 1)
             assert 1 <= duration < len(seg.opens)
+
+
+# --- W3 step 3b: the carry-appropriate (per-bar) certificate ---
+
+def _carry_bars(returns, *, span=1000):
+    """Synthetic per-bar carry ledger: each return at a time spread evenly over ``span`` so the
+    regime buckets split it in half (mirrors ``_ledger`` for the per-trade certificate)."""
+    n = len(returns)
+    return [(int(i * span / n), r) for i, r in enumerate(returns)]
+
+
+def _carry_ev(bars, n_pairs=5, *, resamples=500):
+    return build_carry_evidence(bars, n_pairs, bars_per_year=365, seed=0, resamples=resamples)
+
+
+def test_carry_positive_premium_passes_hard_criteria_pending_null():
+    ev = _carry_ev(_carry_bars([0.001] * 400))
+    cert = certify_carry(ev)  # null + fragility not supplied -> PENDING
+    assert ev.mean_return > 0
+    status = {c.split()[0]: s for c, s, _ in cert.criteria}
+    assert status["C1"] == "PASS" and status["C3"] == "PASS" and status["C5"] == "PASS"
+    assert cert.verdict == "UNPROVEN"  # hard criteria clean, but C4/C6 pending block CERTIFIED
+
+
+def test_carry_certified_when_null_and_fragility_supplied():
+    ev = _carry_ev(_carry_bars([0.001] * 400))
+    cert = certify_carry(ev, null_beaten=True, fragility_positive=1.0)
+    assert cert.verdict == "CERTIFIED"
+
+
+def test_carry_negative_premium_refuted():
+    ev = _carry_ev(_carry_bars([-0.001] * 400))
+    cert = certify_carry(ev, null_beaten=True, fragility_positive=1.0)
+    assert cert.verdict == "REFUTED"  # N over floor, mean/CI <= 0 -> C3 FAIL
+
+
+def test_carry_small_sample_unproven():
+    ev = _carry_ev(_carry_bars([0.001] * 50))
+    cert = certify_carry(ev, null_beaten=True, fragility_positive=1.0)
+    assert cert.verdict == "UNPROVEN"  # below the 300-bar evidence floor
+
+
+def test_carry_too_few_pairs_unproven():
+    ev = _carry_ev(_carry_bars([0.001] * 400), n_pairs=1)
+    cert = certify_carry(ev, null_beaten=True, fragility_positive=1.0)
+    assert cert.verdict == "UNPROVEN"  # C1 breadth: only 1 funded perp (< min_pairs 3)
+
+
+def test_carry_single_regime_refuted():
+    bars = [(0, 0.001) for _ in range(400)]  # all at one instant -> one regime
+    ev = _carry_ev(bars, resamples=1000)
+    cert = certify_carry(ev, null_beaten=True, fragility_positive=1.0)
+    assert cert.verdict == "REFUTED"
+    assert next(s for c, s, _ in cert.criteria if c.startswith("C5")) == "FAIL"
+
+
+def test_carry_fraction_positive_reported():
+    ev = _carry_ev(_carry_bars([0.001, -0.001] * 200))
+    assert ev.fraction_positive == pytest.approx(0.5)
+
+
+def test_pool_carry_bars_collects_positive_funding_returns():
+    # a funding_carry genome on a series with positive funding must collect it: on the neutral book
+    # price PnL cancels, so (taker_fee 0) every held bar's net return is the funding credit.
+    n = 200
+    frame = pd.DataFrame(
+        {
+            "open_time": range(n),
+            "open": [100.0] * n,
+            "high": [100.0] * n,
+            "low": [100.0] * n,
+            "close": [100.0] * n,
+            "volume": [1.0] * n,
+        }
+    )
+    funding = pd.DataFrame({"funding_time": range(n), "rate": [0.001] * n})
+    genome = Genome(
+        family="funding_carry", pair="AAA/USDC", params={"window": 20, "threshold": 0.0}
+    )
+    bars, n_pairs = pool_carry_bars(
+        genome, lambda s: frame, 0.0, [genome.pair],
+        window_size=1.0, step=1.0, holdout_fraction=0.5,
+        read_funding=lambda p: funding,
+    )
+    assert n_pairs == 1
+    assert bars, "expected the carry hedge to collect funding in the holdout"
+    ev = build_carry_evidence(bars, n_pairs, bars_per_year=365, seed=0, resamples=200)
+    assert ev.mean_return > 0 and ev.fraction_positive > 0
+
+
+def test_pool_carry_bars_no_funding_yields_flat_returns():
+    # no funding attached -> the hedge never opens -> every bar returns 0 (honest "earned nothing").
+    n = 200
+    frame = pd.DataFrame(
+        {
+            "open_time": range(n),
+            "open": [100.0] * n,
+            "high": [100.0] * n,
+            "low": [100.0] * n,
+            "close": [100.0] * n,
+            "volume": [1.0] * n,
+        }
+    )
+    genome = Genome(
+        family="funding_carry", pair="AAA/USDC", params={"window": 20, "threshold": 0.0}
+    )
+    bars, _ = pool_carry_bars(
+        genome, lambda s: frame, 0.0, [genome.pair],
+        window_size=1.0, step=1.0, holdout_fraction=0.5,
+        read_funding=lambda p: pd.DataFrame({"funding_time": [], "rate": []}),
+    )
+    assert all(r == 0.0 for _, r in bars)

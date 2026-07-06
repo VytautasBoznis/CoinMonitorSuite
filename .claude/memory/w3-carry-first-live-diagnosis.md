@@ -58,10 +58,34 @@ the funding percentile."
 win rate. Pooling 29 pairs × ~10 trades ≈ borderline 300; carry likely needs a bar-level / pooled
 evaluation rather than the trade-count certificate.
 
-**Verdict: carry is the first candidate with a real, robust, positive edge** — but only via a HOLD
-redesign of the family (+ the two quote seams + a carry-appropriate evaluation). This plausibly
-triggers the mission's ~$10 micro-live authorization once certified. NEXT (user's call): (a) recode
-`FundingCarry` to smoothed-hold, or go cross-sectional funding rotation (hold top-K highest-mean-
-funding coins, the professional form that auto-dodges negative-funding coins); (b) fix the eval
-seam + run certify; (c) then micro-live. See [[funding-carry-harvester]], [[autotrading-rollout]].
+**W3 STEP 3b DONE + VERIFIED LIVE (2026-07-06) — the carry-appropriate Edge Certificate.** Both
+seams + the certificate unit are resolved. User's calls this session: evidence unit = **per-bar net
+carry return** (not per-trade Wilson — a hold makes ~5–10 round-trips and each "wins" almost by
+construction); venue = **USDT perps** (carry has ~no search-overfit surface — 2 structural params —
+so the USDT-train/USDC-certify firewall barely applies; USDT is the deep funded venue: 41 perps,
+funding to 2020 vs USDC's 17 from 2022). Built in `search/evidence.py`: `pool_carry_bars` (pools the
+CarryPortfolio's per-bar equity `pct_change` = funding credit − any rebalance fee, price PnL cancels
+on the neutral book; reuses `_iter_segments`, now yielding `pair` too), `build_carry_evidence` +
+`CarryEvidence`, `certify_carry` + `CarryCertificate` (same 6-criterion shape as `certify` minus C2
+win-rate; C1 = bars≥300 AND perps≥3, C3 = mean/bar>0 & bootstrap-CI>0, C5 = ≥2 regimes positive &
+none catastrophic, C4 null / C6 fragility optional→PENDING), `_regime_means`. CLI **`coinmon
+certify-carry`** (builds the direct-funded-perp universe itself; run with `COINMON_QUOTE_CURRENCY=
+USDT`). 422 tests green (+10), ruff clean.
+
+**LIVE VERDICT (1d, window=30/threshold=0, 41 USDT perps, 22,391 strictly-OOS bars): UNPROVEN, but
+every HARD criterion PASSES.** mean **+0.000061/bar, 95% CI [+0.000035, +0.000093]** (excludes 0),
+**t +4.08**, ~**+2.23%/yr** (simple), positive bars 51.3%, **regimes 2/2 positive** (+0.000135,
++0.000005 — recent funding has compressed but stays ≥0). C1/C3/C5 PASS; UNPROVEN only because **C4
+(shuffled-funding null) + C6 (fragility) are PENDING** — staged next, exactly like chunk U left C4/C6
+to V. The OOS-pooled +2.23%/yr is the honest haircut off the +5.47%/yr in-sample (pooled over ALL 41
+perps incl. low-funding ones, per-calendar-bar incl. flat bars). **4h = REFUTED** (mean≈0, 30.5%
+positive bars, 1/2 regimes): funding sparsity dilutes the per-bar unit sub-8h — the certificate
+correctly steers carry to 1d, confirming the diagnosis's "never sub-8h."
+
+**Carry is now the first strategy with a real, OOS, fee-net, significant (t≈4), cross-regime positive
+edge measured on its own appropriate certificate.** Micro-live stays GATED on CERTIFIED. NEXT (W3
+step 3c): the **shuffled/block-bootstrapped-funding null (C4)** — re-pool on signal-destroyed funding,
+the real edge must clear its 95th pct (reuses `data/surrogate.py`) — + **carry fragility (C6)**; a
+CERTIFIED carry then triggers the mission's ~$10 micro-live. See [[funding-carry-harvester]],
+[[autotrading-rollout]], [[alpha-definition-edge-certificate]].
 </content>

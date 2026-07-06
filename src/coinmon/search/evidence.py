@@ -369,10 +369,12 @@ def _iter_segments(
     holdout_fraction: float,
     read_funding: Callable[[str], pd.DataFrame] | None = None,
 ):
-    """Yield ``(holdout_frame, BacktestResult)`` for each (pair, window) OOS slice — the single
-    grid iteration ``pool_trades`` and ``pool_segments`` (chunk V2) share, so the leakage-critical
-    'only strictly-OOS bars' logic lives in ONE place. Each window's holdout is bars the producing
-    search never touched. A pair that won't load, or a window too short, is skipped, not crashed on.
+    """Yield ``(pair, holdout_frame, BacktestResult)`` for each (pair, window) OOS slice — the
+    single grid iteration ``pool_trades``/``pool_segments`` (chunk V2)/``pool_carry_bars`` (W3 step
+    3b) share, so the leakage-critical 'only strictly-OOS bars' logic lives in ONE place. Each
+    window's holdout is bars the producing search never touched. The ``pair`` is yielded so the
+    carry pooler can count how many perps actually contributed. A pair that won't load, or a window
+    too short, is skipped, not crashed on.
 
     ``read_funding`` (chunk W3 step 2c), when given, attaches the per-bar ``funding_rate`` column so
     a carry genome's pooled certificate ledger includes real funding; ``None`` keeps frames
@@ -401,7 +403,7 @@ def _iter_segments(
                 build_portfolio(INITIAL_CAPITAL, taker_fee),
                 stop_pct=stop_pct,
             ).run(holdout)
-            yield holdout, result
+            yield pair, holdout, result
 
 
 def pool_trades(
@@ -424,7 +426,7 @@ def pool_trades(
     ``read_funding`` (chunk W3 step 2c) includes real funding for a carry genome; ``None`` =
     candle-only."""
     pooled: list[TradeRecord] = []
-    for _, result in _iter_segments(
+    for _pair, _holdout, result in _iter_segments(
         genome, read, taker_fee, eval_pairs,
         window_size=window_size, step=step, n_windows=n_windows, holdout_fraction=holdout_fraction,
         read_funding=read_funding,
@@ -465,7 +467,7 @@ def pool_segments(
     dropped (nothing to exposure-match). ``read_funding`` (chunk W3 step 2c) includes real funding
     for a carry genome; ``None`` = candle-only."""
     segments: list[EvalSegment] = []
-    for holdout, result in _iter_segments(
+    for _pair, holdout, result in _iter_segments(
         genome, read, taker_fee, eval_pairs,
         window_size=window_size, step=step, n_windows=n_windows, holdout_fraction=holdout_fraction,
         read_funding=read_funding,
@@ -484,3 +486,248 @@ def pool_segments(
             )
         )
     return segments
+
+
+# Chunk W3 step 3b — the CARRY-appropriate Edge Certificate. The chunk-U certificate above judges a
+# per-TRADE ledger (N>=300 closed round-trips, a Wilson win-rate bound). A funding-carry hold makes
+# only ~5-10 round-trips per perp and each held trade is almost always net-positive, so that ledger
+# is both starved (N) and its win-rate inflated (a hold that survives positive funding "wins" almost
+# by construction). The economically meaningful unit for carry is instead the PER-BAR net carry
+# return: (equity_t - equity_{t-1}) / equity_{t-1} on the market-neutral CarryPortfolio, whose
+# equity is price-independent so a bar's return is exactly the funding it collected minus any taker
+# fee that rebalanced on it. Pooling those bars over DIRECT funded perps x rolling windows asks the
+# real question — "held across settlements, does the premium out-earn the round-trip fees, per unit
+# time, across regimes?" — with an N (bars) that clears any floor and a block-bootstrap CI that
+# accounts for funding's autocorrelation. Fees are attributed with no bookkeeping: they land on the
+# rebalance bar's return, held bars carry the funding credit, flat bars return 0 (an honest "earned
+# nothing then"). Same six-criterion shape as ``certify``, minus C2 (win-rate is not carry's
+# invariant — reported as fraction-of-positive-bars only) and with C1 an evidence+breadth floor.
+
+
+def _regime_means(
+    times: Sequence[int], values: Sequence[float], n_regimes: int
+) -> tuple[float, ...]:
+    """Split ``(times, values)`` into ``n_regimes`` DISJOINT equal-time spans by ``times`` and give
+    each non-empty span's mean — the per-bar analogue of ``_regime_expectancies`` (C5 evidence: the
+    carry premium must be positive in >= 2 genuine market periods, not one funding regime). Uses
+    calendar time so a regime is a real period; a pool confined to one instant collapses to one
+    regime (which then fails C5's spread test, as it should)."""
+    if not times or n_regimes < 1:
+        return ()
+    lo, hi = min(times), max(times)
+    span = hi - lo
+    if span == 0:
+        return (statistics.fmean(values),)
+    buckets: list[list[float]] = [[] for _ in range(n_regimes)]
+    for t, v in zip(times, values, strict=True):
+        idx = min(n_regimes - 1, int((t - lo) / span * n_regimes))
+        buckets[idx].append(v)
+    return tuple(statistics.fmean(b) for b in buckets if b)
+
+
+@dataclass(frozen=True)
+class CarryEvidence:
+    """The pooled per-bar carry statistics the carry certificate judges. All figures are per-bar,
+    net of taker fees, over the strictly-OOS bar pool. ``annualized`` is the simple (non-compounded)
+    ``mean_return * bars_per_year`` — a readability aid, never gated on."""
+
+    n_bars: int
+    n_pairs: int
+    mean_return: float
+    return_ci: tuple[float, float]
+    boot_std: float
+    t_stat: float
+    fraction_positive: float
+    annualized: float
+    regime_means: tuple[float, ...]
+
+    def summary(self) -> str:
+        lo, hi = self.return_ci
+        pos = sum(1 for e in self.regime_means if e > 0)
+        return "\n".join(
+            [
+                f"  pooled OOS bars    {self.n_bars}  ({self.n_pairs} funded perps)",
+                f"  mean carry/bar     {self.mean_return:+.6f}  "
+                f"(95% CI [{lo:+.6f}, {hi:+.6f}])",
+                f"  ~annualized        {self.annualized:+.2%}  (simple, mean x bars/yr)",
+                f"  t-stat             {self.t_stat:+.2f}",
+                f"  positive bars      {self.fraction_positive:.1%}",
+                f"  regimes positive   {pos}/{len(self.regime_means)}  "
+                f"(means {', '.join(f'{e:+.6f}' for e in self.regime_means)})",
+            ]
+        )
+
+
+def build_carry_evidence(
+    bars: Sequence[tuple[int, float]],
+    n_pairs: int,
+    *,
+    bars_per_year: float,
+    seed: int = 0,
+    resamples: int = 5000,
+    n_regimes: int = 2,
+) -> CarryEvidence:
+    """Reduce a pooled per-bar carry ledger (``(open_time, net_return)`` pairs) to the carry
+    certificate's statistics. Pure — takes bars, returns numbers — so it is unit-testable on
+    synthetic bar streams without any DB or engine."""
+    ordered = sorted(bars, key=lambda b: b[0])
+    times = [t for t, _ in ordered]
+    rets = [r for _, r in ordered]
+    n = len(rets)
+    mean = statistics.fmean(rets) if rets else 0.0
+    positive = sum(1 for r in rets if r > 0)
+    ci_low, ci_high, boot_std = block_bootstrap_ci(rets, seed=seed, resamples=resamples)
+    return CarryEvidence(
+        n_bars=n,
+        n_pairs=n_pairs,
+        mean_return=mean,
+        return_ci=(ci_low, ci_high),
+        boot_std=boot_std,
+        t_stat=mean / boot_std if boot_std > 0 else 0.0,
+        fraction_positive=positive / n if n else 0.0,
+        annualized=mean * bars_per_year,
+        regime_means=_regime_means(times, rets, n_regimes),
+    )
+
+
+@dataclass(frozen=True)
+class CarryCertificate:
+    """The carry verdict on a pooled per-bar ledger, same explicit-criteria shape as
+    ``EdgeCertificate``. ``criteria`` is ``(id, status, detail)`` per criterion."""
+
+    verdict: str  # CERTIFIED / UNPROVEN / REFUTED
+    evidence: CarryEvidence
+    criteria: tuple[tuple[str, str, str], ...]
+
+    def summary(self) -> str:
+        lines = [
+            f"Carry Certificate [{self.verdict}]:",
+            self.evidence.summary(),
+            "  criteria:",
+        ]
+        for cid, status, detail in self.criteria:
+            lines.append(f"    [{status:<7}] {cid:<18} {detail}")
+        return "\n".join(lines)
+
+
+def certify_carry(
+    evidence: CarryEvidence,
+    *,
+    null_beaten: bool | None = None,
+    fragility_positive: float | None = None,
+    min_bars: int = 300,
+    min_pairs: int = 3,
+    catastrophic: float = -0.0005,
+) -> CarryCertificate:
+    """Apply the carry criteria to a pooled ``evidence`` report. Same verdict logic as ``certify``
+    with carry's unit: C1 breadth (>= ``min_bars`` pooled bars AND >= ``min_pairs`` funded perps —
+    a per-bar N is huge, so breadth-across-perps is the real floor), C3 expectancy (mean carry/bar
+    > 0 AND block-bootstrap CI low > 0 — the core test), C5 regime spread (positive in >= 2 disjoint
+    time regimes, none worse than ``catastrophic`` per bar). No C2 (win-rate is not carry's
+    invariant). ``null_beaten`` (shuffled-funding null, W3 step 3c) and ``fragility_positive`` are
+    optional: ``None`` leaves that criterion PENDING, which blocks CERTIFIED but never forces
+    REFUTED."""
+    ev = evidence
+
+    def mark(ok: bool) -> str:
+        return "PASS" if ok else "FAIL"
+
+    c1 = ev.n_bars >= min_bars and ev.n_pairs >= min_pairs
+    c3 = ev.mean_return > 0 and ev.return_ci[0] > 0
+    positive_regimes = sum(1 for e in ev.regime_means if e > 0)
+    worst = min(ev.regime_means) if ev.regime_means else 0.0
+    c5 = len(ev.regime_means) >= 2 and positive_regimes >= 2 and worst >= catastrophic
+
+    criteria: list[tuple[str, str, str]] = [
+        (
+            "C1 evidence floor",
+            mark(c1),
+            f"{ev.n_bars} bars / {ev.n_pairs} perps (min {min_bars} / {min_pairs})",
+        ),
+        (
+            "C3 expectancy",
+            mark(c3),
+            f"mean/bar {ev.mean_return:+.6f}, 95% CI low {ev.return_ci[0]:+.6f} (need > 0)",
+        ),
+    ]
+    if null_beaten is None:
+        criteria.append(
+            ("C4 beats null", "PENDING", "shuffled-funding null not supplied (W3 step 3c)")
+        )
+    else:
+        criteria.append(
+            (
+                "C4 beats null",
+                mark(null_beaten),
+                "score > null 95th pct" if null_beaten else "does not beat the null",
+            )
+        )
+    criteria.append(
+        (
+            "C5 regime spread",
+            mark(c5),
+            f"{positive_regimes}/{len(ev.regime_means)} regimes positive, "
+            f"worst {worst:+.6f} (min 2 positive, none < {catastrophic:+.6f})",
+        )
+    )
+    if fragility_positive is None:
+        criteria.append(("C6 fragility", "PENDING", "fragility not supplied"))
+    else:
+        c6 = fragility_positive >= 0.95
+        criteria.append(
+            ("C6 fragility", mark(c6), f"{fragility_positive:.0%} positive (min 95%)")
+        )
+
+    hard_fail = not (c3 and c5)
+    optional_fail = (null_beaten is False) or (
+        fragility_positive is not None and fragility_positive < 0.95
+    )
+    pending = null_beaten is None or fragility_positive is None
+
+    if not c1:
+        verdict = "UNPROVEN"
+    elif hard_fail or optional_fail:
+        verdict = "REFUTED"
+    elif pending:
+        verdict = "UNPROVEN"
+    else:
+        verdict = "CERTIFIED"
+
+    return CarryCertificate(verdict=verdict, evidence=ev, criteria=tuple(criteria))
+
+
+def pool_carry_bars(
+    genome: Genome,
+    read: Callable[[str], pd.DataFrame],
+    taker_fee: float,
+    eval_pairs: Sequence[str],
+    *,
+    window_size: float = 0.6,
+    step: float = 0.2,
+    n_windows: int | None = None,
+    holdout_fraction: float = 0.2,
+    read_funding: Callable[[str], pd.DataFrame] | None = None,
+) -> tuple[list[tuple[int, float]], int]:
+    """Run the frozen carry ``genome`` over the holdout tail of each rolling window on every DIRECT
+    funded perp in ``eval_pairs`` and pool every bar's net carry return — the strictly-OOS per-bar
+    ledger the carry certificate scores. Returns ``(bars, n_pairs)`` where ``bars`` is
+    ``(open_time, net_return)`` per holdout bar (equity ``pct_change``: funding credit minus any
+    rebalance fee, price PnL cancels on the neutral book) and ``n_pairs`` is how many perps actually
+    contributed a bar. Reuses ``_iter_segments`` so the leakage-critical OOS-window logic is shared;
+    ``read_funding`` MUST be supplied for a carry genome (without funding the hedge never opens and
+    every bar returns 0)."""
+    bars: list[tuple[int, float]] = []
+    pairs: set[str] = set()
+    for pair, _holdout, result in _iter_segments(
+        genome, read, taker_fee, eval_pairs,
+        window_size=window_size, step=step, n_windows=n_windows, holdout_fraction=holdout_fraction,
+        read_funding=read_funding,
+    ):
+        rets = result.equity_curve.pct_change().dropna()
+        if rets.empty:
+            continue
+        pairs.add(pair)
+        bars.extend(
+            (int(t), float(r)) for t, r in zip(rets.index, rets.to_numpy(), strict=True)
+        )
+    return bars, len(pairs)

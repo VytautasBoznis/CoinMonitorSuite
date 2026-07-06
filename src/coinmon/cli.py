@@ -34,8 +34,11 @@ from coinmon.scraper import service
 from coinmon.search.ensemble import certify_ensemble
 from coinmon.search.evidence import (
     CertifiedRow,
+    build_carry_evidence,
     build_evidence,
     certify,
+    certify_carry,
+    pool_carry_bars,
     pool_segments,
     pool_trades,
     rank_certified,
@@ -726,6 +729,68 @@ def _certify(args: argparse.Namespace) -> None:
     print(certificate.summary())
 
 
+# W3 step 3b: how many bars a year each timeframe has — the simple annualization factor for the
+# carry certificate's readable figure (never gated on). 4h = 6 settlements-worth of bars/day.
+_BARS_PER_YEAR = {"1d": 365.0, "4h": 2190.0, "1h": 8760.0}
+
+
+def _certify_carry(args: argparse.Namespace) -> None:
+    # W3 step 3b: the CARRY-appropriate Edge Certificate. Unlike `certify` (per-trade ledger), this
+    # pools the PER-BAR net carry return of the market-neutral CarryPortfolio across DIRECT funded
+    # perps x rolling holdout windows and judges mean/bar > 0 (bootstrap CI), positive per regime.
+    # The whole funding path keys off `settings.quote_currency`, so certifying USDT perps means
+    # running with COINMON_QUOTE_CURRENCY=USDT (the deep funded venue — 41 perps back to 2020).
+    quote = settings.quote_currency
+    conn = db.connect()
+    try:
+        def read(symbol: str) -> pd.DataFrame:
+            return db.read_candles(conn, settings.exchange, symbol, args.timeframe)
+
+        read_funding = _funding_reader(conn)
+        universe = discover_universe(
+            db.list_series(conn),
+            exchange=settings.exchange,
+            quote=quote,
+            timeframe=args.timeframe,
+        )
+        # Carry's own eval universe = DIRECT funded perps only (ratios have no perp/funding, so the
+        # generic decorrelated-peer pool would collect nothing). Keep the direct legs, drop any with
+        # no stored funding history.
+        direct = [p for p in universe if p.endswith(f"/{quote}")]
+        funded = [p for p in direct if not read_funding(p).empty]
+        if args.max_pairs:
+            funded = funded[: args.max_pairs]
+        if len(funded) < 2:
+            raise SystemExit(
+                f"only {len(funded)} funded {quote} perps found — carry needs a pooled universe "
+                f"(set COINMON_QUOTE_CURRENCY=USDT for the deep funded venue)"
+            )
+        genome = Genome(family=args.family, pair=funded[0], params=json.loads(args.params))
+        validate(genome)  # pair is inert here (data comes from each eval pair), but validate anyway
+        print(
+            f"carry certificate: pooling {genome.family} {genome.params} over "
+            f"{len(funded)} funded {quote} perps at {args.timeframe}\n"
+        )
+        bars, n_pairs = pool_carry_bars(
+            genome, read, settings.taker_fee, funded,
+            window_size=args.window, step=args.step, holdout_fraction=args.holdout,
+            read_funding=read_funding,
+        )
+    finally:
+        conn.close()
+
+    bars_per_year = _BARS_PER_YEAR.get(args.timeframe, 365.0)
+    evidence = build_carry_evidence(
+        bars, n_pairs, bars_per_year=bars_per_year, seed=args.seed, n_regimes=args.regimes
+    )
+    # A regime bleeding worse than ~-20%/yr (per-bar) is catastrophic — timeframe-scaled so the
+    # gate means the same thing at 1d and 4h.
+    certificate = certify_carry(
+        evidence, min_pairs=args.min_pairs, catastrophic=-0.20 / bars_per_year
+    )
+    print(certificate.summary())
+
+
 def _certify_ensemble(args: argparse.Namespace) -> None:
     # Chunk Y step 2: certify a PORTFOLIO of frozen winners as its own unit. Reads a JSON list of
     # genome specs (the sweep's GO winners), keeps a decorrelated top-k, unions their strictly-OOS
@@ -1359,6 +1424,41 @@ def build_parser() -> argparse.ArgumentParser:
         "without it C4 stays PENDING and the certificate can't reach CERTIFIED",
     )
     p_cert.set_defaults(func=_certify)
+
+    p_carry = sub.add_parser(
+        "certify-carry",
+        help="W3 step 3b: pool a funding-carry genome's PER-BAR net carry return across direct "
+        "funded perps x windows and judge the carry-appropriate certificate (mean/bar CI, regime). "
+        "Run with COINMON_QUOTE_CURRENCY=USDT for the deep funded venue",
+    )
+    p_carry.add_argument("--timeframe", default="1d")
+    p_carry.add_argument(
+        "--family", default="funding_carry", help="carry family (default funding_carry)"
+    )
+    p_carry.add_argument(
+        "--params", required=True, metavar="JSON",
+        help='family params as JSON, e.g. \'{"window":30,"threshold":0.0}\'',
+    )
+    p_carry.add_argument("--seed", type=int, default=0, help="seeds the bootstrap")
+    p_carry.add_argument(
+        "--max-pairs", type=int, default=0, metavar="N",
+        help="cap the funded-perp pool (0 = all funded perps, default)",
+    )
+    p_carry.add_argument(
+        "--min-pairs", type=int, default=3, metavar="N",
+        help="C1 breadth floor: minimum funded perps that must contribute (default 3)",
+    )
+    p_carry.add_argument(
+        "--holdout", type=float, default=0.2, metavar="FRACTION",
+        help="each window's OOS holdout tail the per-bar ledger is pooled from (default 0.2)",
+    )
+    p_carry.add_argument("--window", type=float, default=0.6, metavar="FRACTION")
+    p_carry.add_argument("--step", type=float, default=0.2, metavar="FRACTION")
+    p_carry.add_argument(
+        "--regimes", type=int, default=2, metavar="N",
+        help="disjoint time regimes to split the pool into for C5 (default 2)",
+    )
+    p_carry.set_defaults(func=_certify_carry)
 
     p_ens = sub.add_parser(
         "certify-ensemble",

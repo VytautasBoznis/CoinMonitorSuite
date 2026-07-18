@@ -56,3 +56,21 @@ SELECT create_hypertable(
     chunk_time_interval => 7776000000,  -- 90 days in ms (funding settles every 8h)
     if_not_exists => TRUE
 );
+
+-- Perp open-interest history (Plan-B P2 positioning signal; Bybit retains ~400+ daily points).
+-- One row per (exchange, symbol, timeframe, bar). ts is the interval's timestamp in epoch ms (UTC);
+-- oi_amount is open interest in BASE-currency contracts (Bybit's openInterest). Data-only.
+CREATE TABLE IF NOT EXISTS open_interest (
+    exchange   TEXT             NOT NULL,
+    symbol     TEXT             NOT NULL,
+    timeframe  TEXT             NOT NULL,
+    ts         BIGINT           NOT NULL,
+    oi_amount  DOUBLE PRECISION NOT NULL,
+    PRIMARY KEY (exchange, symbol, timeframe, ts)
+);
+
+SELECT create_hypertable(
+    'open_interest', 'ts',
+    chunk_time_interval => 2592000000,  -- 30 days in ms
+    if_not_exists => TRUE
+);

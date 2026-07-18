@@ -172,6 +172,44 @@ def read_funding(
     return pd.DataFrame(rows, columns=["funding_time", "rate"])
 
 
+def insert_open_interest(
+    conn: psycopg.Connection,
+    exchange: str,
+    symbol: str,
+    timeframe: str,
+    rows: list[tuple[int, float]],
+) -> int:
+    """Upsert ``(ts, oi_amount)`` open-interest points for a perp. Idempotent: re-fetching an
+    already-stored window overwrites, no dupes. Returns the number of rows written."""
+    if not rows:
+        return 0
+    records = [(exchange, symbol, timeframe, int(t), float(v)) for t, v in rows]
+    with conn.cursor() as cur:
+        cur.executemany(
+            """
+            INSERT INTO open_interest (exchange, symbol, timeframe, ts, oi_amount)
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (exchange, symbol, timeframe, ts) DO UPDATE SET
+                oi_amount = EXCLUDED.oi_amount
+            """,
+            records,
+        )
+    conn.commit()
+    return len(records)
+
+
+def read_open_interest(
+    conn: psycopg.Connection, exchange: str, symbol: str, timeframe: str
+) -> pd.DataFrame:
+    """Load a perp's open-interest history as a ``(ts, oi_amount)`` frame, oldest-first."""
+    rows = conn.execute(
+        "SELECT ts, oi_amount FROM open_interest "
+        "WHERE exchange = %s AND symbol = %s AND timeframe = %s ORDER BY ts",
+        (exchange, symbol, timeframe),
+    ).fetchall()
+    return pd.DataFrame(rows, columns=["ts", "oi_amount"])
+
+
 def last_open_time(
     conn: psycopg.Connection, exchange: str, symbol: str, timeframe: str
 ) -> int | None:
@@ -192,12 +230,14 @@ __all__ = [
     "connect",
     "init_schema",
     "insert_funding",
+    "insert_open_interest",
     "insert_raw",
     "last_funding_time",
     "last_open_time",
     "list_series",
     "read_candles",
     "read_funding",
+    "read_open_interest",
     "series_stats",
     "upsert_candles",
 ]

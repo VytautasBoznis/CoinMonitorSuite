@@ -1,78 +1,90 @@
 # CoinMonitorSuite Project Memory
 
-This file indexes all memory files for the CoinMonitorSuite project.
+This file indexes all memory files. One line per file; detail lives in each topic file.
 
-## Files
-
-- [b13-low-vol-fresh-lead](b13-low-vol-fresh-lead.md) — **LOW-VOL LEAD PLAYED OUT (2026-07-06): B13 long-only + B14 market-neutral (honest perp-funding short costs) BOTH PASSED their frozen rules, neither deployable. B13 long-only underperforms BTC-hold; B14 neutral book 12/12 net-positive & median +72%/yr BUT Sharpe 0.79-0.90, maxDD -64% to -82%, negative 2023-2024, survivorship-inflated short leg → a regime-timed short-vol/crash-hedge bet, NOT clean alpha. Fork: hedge-overlay / survivorship-clean rebuild / Plan C. Still 0 deployable winners**
-- [b16-funding-signal-refuted](b16-funding-signal-refuted.md) — fresh-ideation probe B16 (2026-07-06) REFUTED: cross-sectional funding-CROWDING signal (long lowest-funding / short highest-funding perps, dollar-neutral) has NO edge on 41 Bybit USDT legs — 6/12 net-positive, median -0.23%/yr, recent-half -8.4%, win ~49-51% coin-flip. Chosen over B15 hour-of-day (weekday H2 already failed). Fresh-ideation well nearly dry → next fork is Plan C / new-data collectors vs one more idea
-- [mission-find-edge-ship-ui](mission-find-edge-ship-ui.md) — **READ FIRST — the mission (2026-07-04, upd 2026-07-05): find working strategies (W5 rotation → W3 carry → Plan B probes; GA parked) → build UI → confirmed/auto trading; UI GATED on ≥3 winner strategies (not 1); Z0 collectors start immediately; micro-stakes live (~$10) authorized for the first promising strategy**
-- [no-more-rsi-ema-permutations](no-more-rsi-ema-permutations.md) — user directive (2026-07-04): price-transform indicator strategies are exhausted (0 CERTIFIED everywhere); never refocus on them; legacy families are baseline/control only
-- [ga-parked](ga-parked.md) — **GA HARD-BANNED (not parked), re-affirmed 2026-07-06: NEVER run `coinmon sweep`/`search` or re-run old sweeps for ANY reason — a frozen probe rule does NOT override the ban; run GA-free on persisted artifacts or surface the conflict. Strategies are hand-built research candidates through the gauntlet; certification stack is the durable asset**
-- [ga-architecture-reality](ga-architecture-reality.md) — the GA was a parameter jitterer over 7 hardcoded families, NOT the composition engine the user intended; never misdescribe it; full GP wouldn't have fixed the informational wall anyway
-- [honest-status-reporting](honest-status-reporting.md) — user feedback: ~2 weeks of falsely claimed sweep progress; never claim work done without artifact evidence; surface scope downgrades loudly
-- [execution-plan-2026-07](execution-plan-2026-07.md) — the 2026-07-04 pivot's ordered candidate list (momentum → carry → order-flow → liq-fade → on-chain); mission-find-edge-ship-ui holds the authoritative order
-- [cross-sectional-momentum-portfolio](cross-sectional-momentum-portfolio.md) — W5 candidate: rank USDT universe weekly, hold top slice; zero new data, fastest falsifiable, fees are the main killer
-- [xsectional-momentum-first-run](xsectional-momentum-first-run.md) — W5 `coinmon xsectional`: first run LOST, then W5.2 grid+long-short+certificate (2026-07-05) = VERDICT: short leg beats beta (60/162 configs) but NO certifiable per-position edge (best-of-162 config REFUTED, expectancy CI straddles 0). W5 NOT a winner (0/3); recommend W3 carry next
-- [funding-carry-harvester](funding-carry-harvester.md) — W3 candidate detail: delta-neutral funding capture (BIS/CMU documented); hard part is margin/liquidation risk engineering at 1-2x, not signal
-- [w3-carry-first-live-diagnosis](w3-carry-first-live-diagnosis.md) — **W3 carry CERTIFIED 2026-07-06 — the project's FIRST certified strategy (1 of the 3 the UI is gated on). Smoothed-HOLD funding_carry, per-bar carry certificate on 41 USDT perps @1d = CERTIFIED: +2.23%/yr, t+4.08, 22391 OOS bars, 2/2 regimes; STEP 3c added C4 (block-sign-flip premium-destroyed null — real +0.000061 beats null p95 +0.000005) + C6 (fee×2/funding-haircut fragility, 100% positive — NOT the inert slippage harness). `coinmon certify-carry --null-draws/--fragility-runs`. 4h REFUTED (sub-8h funding sparsity). ~$10 micro-live now UNLOCKED. 419 tests. `runs/certify_carry_usdt_1d.txt`**
-- [order-flow-direction](order-flow-direction.md) — taker volume delta (Binance klines have it; Bybit needs trade tape), OI history, long/short ratio; h7-style probe before integration; L2 book imbalance examined and rejected
-- [order-flow-probe-h7-refuted](order-flow-probe-h7-refuted.md) — order-flow #3 TESTED (2026-07-06): taker-flow/CVD leg REFUTED (probe H7, contemp corr +0.4 but next-bar IC≈0, 0/4 majors); OI leg + liq-fade collector-gated (no scraper/table, only ~30d exchange history) → fork: build Z0 collectors vs move to Plan-B P1 free probes
-- [liquidation-cascade-fade](liquidation-cascade-fade.md) — event-driven post-cascade reversal candidate (Plan B P2-adjacent); start recording Bybit liquidations early, history is shallow; pool across symbols for N
-- [onchain-stablecoin-netflow](onchain-stablecoin-netflow.md) — stablecoin exchange netflow as liquidity signal (arXiv 2411.06327); lowest priority, paid-data burden, 1-2h horizons tighter than the rig
-- [portfolio-search-protocol](portfolio-search-protocol.md) — post-GA winner-finding: no pair parameter, exhaustive small grid ALL RECORDED with multiple-testing deflation, portfolio certificate vs equal-weight universe benchmark
-- [strategy-lab-model](strategy-lab-model.md) — the evaluator is the product: one-command gauntlet, candidates from research/grids/model-authored modules with stated economic rationale; chunk-letter decoder + Plans-B/C vs chunks-B/C namespace distinction
-- [autotrading-rollout](autotrading-rollout.md) — per-strategy execution modes: suggest-only → auto-on-confirm (certified) → capped full-auto (paper record); latency tolerance decides (carry fine on confirm, liq-fade needs full-auto or nothing)
-- [live-yield-hurdle](live-yield-hurdle.md) — **USER GATE (2026-07-06): certified != deploy. Live real capital needs expected FORWARD, continuing net yield >= 5%/yr (weight the RECENT regime, not full-sample) else it's negative EV vs a passive index fund. Carry CERTIFIED but recent regime ~0.18%/yr -> does NOT clear the hurdle even at 3x -> PARKED as monitored until the funding premium widens back**
-- [machines-and-tooling](machines-and-tooling.md) — user works on multiple machines; the 2026-07-04 Mac has repo but no runnable stack; verify environment before promising runs
-
-- [project-direction](project-direction.md) — Python/Bybit greenfield, trade-coins-efficiently (not options-first), phased backtest→suggestions→automation
-- [prototype-reference](prototype-reference.md) — the .NET bachelor's prototype in C:\Dev\CoinMonitor; which patterns to reuse vs the gaps
-- [fragility-stress-test](fragility-stress-test.md) — Monte Carlo latency/slippage stress test as a kill-filter for thin-margin strategies before live
-- [blackbox-evolutionary-vision](blackbox-evolutionary-vision.md) — north star: engine = live-compatible black-box exchange; sequential non-atomic legs; evolutionary/GA search is the long-term path to alpha
-- [user-quant-background](user-quant-background.md) — user has limited quant math; relies on the eval rig + search, not hand-derived strategies
-- [no-strategy-preference](no-strategy-preference.md) — user has ZERO strategy/indicator preference (RSI anchoring was a past model's error); only "winnable/certified" matters — never favor a family from a mention, let the certificate decide
-- [deployment-target-k8s](deployment-target-k8s.md) — runs in a Kubernetes cluster; every component must ship as a Docker image; config via env/ConfigMaps
-- [feature-store-seam](feature-store-seam.md) — BarView point-in-time feature-snapshot contract; future post-scraper indicator engine (compute-sharing for many bots), kept as cache not contract; engine itself deferred
-- [backtester-reads-timescaledb](backtester-reads-timescaledb.md) — backtester loads candles from TimescaleDB (db.read_candles), not Parquet; store.py/fetch-data retired (brief said Parquet, reality is the scraper's Timescale)
-- [stop-loss-hurts-mean-reversion](stop-loss-hurts-mean-reversion.md) — empirical: fixed stop-loss made RSI mean-reversion worse on every metric (stops suit trend, not mean-reversion); scope stop-loss genes away from MR in the GA
-- [daily-meanreversion-goes-positive](daily-meanreversion-goes-positive.md) — RSI MR positive on ETH/BTC daily (fixed params +12% OOS, PF 1.51) vs −6% on 1h; fee-domination confirmed; downtrend-flattered risk result; 1d data now in the DB
-- [search-overfits-not-strategy](search-overfits-not-strategy.md) — the param SEARCH overfits (−23% OOS) while fixed params survive (+12%); GA fitness must be OOS/walk-forward with instability + trade-count penalties
-- [chunk-a-findings](chunk-a-findings.md) — chunk A validation: pulse is pair-specific (XRP ratios survive fragility), pair must be a gene, and the fitness symmetric-std penalty wrongly rejects all-folds-positive genomes
-- [chunk-c-search-loop](chunk-c-search-loop.md) — chunk C GA: pure seed-deterministic mechanics (search/ga.py) + runner that scores OOS and gates the winner with fragility as a post-filter; CLI `coinmon search`
-- [chunk-d-graduation-gate](chunk-d-graduation-gate.md) — chunk D graduation gate: graduate() runs the GA winner on a never-searched holdout + full fragility → hard go/no-go with reasons; `search --holdout`
-- [chunk-f-live-forward-feed](chunk-f-live-forward-feed.md) — chunk F live forward feed: shared BarStepper core + coinmon/live (LiveFeed, ForwardRunner); forward replay == backtest (parity by construction); `coinmon forward`
-- [first-live-search-graduation](first-live-search-graduation.md) — live search→graduate: median-fitness hardening landed; 5-seed sweep ALL NO-GO; gate's absolute-return rule is regime-dependent (downtrend holdout); RESOLVED → keep gate absolute, add a perp short instead
-- [perp-short-capability](perp-short-capability.md) — downtrend NO-GO fixed by ADDING a leveraged perp short (not relaxing the gate); PerpPortfolio + 3-state engine + ShortWhenFlat (K1) + GA direction genes/decode_portfolio (K2) all landed
-- [leverage-breaks-fitness-scaling](leverage-breaks-fitness-scaling.md) — first live K2 search: GA picked a 4.6x perp short, gate correctly NO-GO'd the blow-up, but the OOS fitness is mis-scaled for leverage (rewards lucky leveraged folds, under-penalizes liquidation) → search pulled toward reckless leverage; fix before declaring downtrend-GO
-- [chunk-l-live-validation](chunk-l-live-validation.md) — live run proved chunk L killed the reckless-leverage attractor (GA now picks a sane spot genome); gate-passability sweep RESOLVED: the gate IS passable (BNB/ETH long genome graduates GO +8.5%), whole recent market crashed so only BNB pairs have a survivable holdout
-- [direction-gene-overfits-regime](direction-gene-overfits-regime.md) — the binding cause of every live NO-GO: the free direction gene (chunk K short on/off) is fit to the search span but blind to the holdout regime → GA bets wrong direction (same genome GOs as long, NO-GOs as short); gate is fine, direction is the overfit vector; RESOLVED → chunk-M regime-adaptive strategy implemented + validated (first live GO)
-- [regime-adaptive-multiseed-sweep](regime-adaptive-multiseed-sweep.md) — 10-seed sweep of chunk-M regime-adaptive search: the GATE is a validated trustworthy judge (discriminates direction/evidence/robustness; NO-GO'd a +159% thin-trade and a whipsawed adaptive short), but durable ALPHA is unproven — every GO is a thin-trade leveraged crash-short on one down-regime with luck-level variance; raise min-trades, test across regimes, forward-test
-- [n2-parallelism-overhead](n2-parallelism-overhead.md) — N2 multiprocessing is bit-identical to serial but, post-N1, only beats serial at HEAVY scale (default stays serial; win reserved for N4/Q)
-- [n6-multiseed-sweep-convergence](n6-multiseed-sweep-convergence.md) — N6 `coinmon sweep`: 15-trade gate collapsed the prior lottery into ONE convergent pair (BTC/USDC ema adaptive, 2/10 GO), but still one crash regime so alpha unproven
-- [chunk-o-cross-pair-robustness](chunk-o-cross-pair-robustness.md) — chunk O: a TAGGER (golden/specialist), not a kill gate; re-graduates a GO genome on K-of-N decorrelated peers to separate structural edge from pair-specific curve-fit
-- [chunk-p-bounded-combo](chunk-p-bounded-combo.md) — chunk P: fixed-shape multi-indicator genome (N indicators + AND/OR) as a normal FAMILY; scale-free unit genotype solves cross-indicator thresholds; the GP half-step before tree-GP (Q)
-- [first-live-combo-cross-pair-sweep](first-live-combo-cross-pair-sweep.md) — first live P+O sweep (12 seeds, small search): combo competitive, gate held, but ALL GOs SPECIALIST (0 golden); superseded by the bigger grind below
-- [first-golden-structural-edge](first-golden-structural-edge.md) — the 30-seed grind (pop300/80gens): FIRST GOLDEN — rsi_meanreversion BNB/ETH adaptive 2x; looked like a structural edge, but REFUTED by the nested holdout below (regime-specific artifact)
-- [nested-holdout-refutes-golden](nested-holdout-refutes-golden.md) — strict temporal nested holdout REFUTES the golden edge: move the holdout regime and 0 golden appear / RSI(2) genome never recurs / dev-GO genomes go 0/2 OOS (lose to B&H). Confirms overfitting; gate is defensive but 'passed gate' != 'persistent edge'
-- [walk-forward-stability-harness](walk-forward-stability-harness.md) — chunk S: `coinmon stability` re-runs the full search on rolling windows + measures selection agreement (winners recur?) + forward persistence (a window's GO survive the next window's unseen bars?); rolling generalization of the nested-holdout refutation, diagnostic only
-- [alpha-definition-edge-certificate](alpha-definition-edge-certificate.md) — THE definition of alpha (the "≥51%"): pooled-OOS-ledger Edge Certificate (N≥300 trades, Wilson bound >0.50, expectancy CI >0, beats nulls, ≥2 regimes); plan in .claude/plans/alpha-hunt.md, chunks T–Y
-- [train-usdt-certify-usdc](train-usdt-certify-usdc.md) — quote currency IS the train/test split: search/train ONLY on USDT (Bybit USDT + Binance USDT long history); USDC stays pristine for the final Edge-Certificate validation only; Binance added as a backtest-history-only venue
-- [first-stability-run-expanded-universe](first-stability-run-expanded-universe.md) — first live `coinmon stability` (496-pair universe): clean calibrated NEGATIVE (no GO, winners hop, forward persistence 0/2, trade-starved 4-13 trades); gate held; ran on USDC (U must switch search to USDT)
-- [edge-certificate-implemented](edge-certificate-implemented.md) — chunk U built: per-trade OOS ledger on BacktestResult + search/evidence.py (Wilson/block-bootstrap/regime) + `coinmon certify`; C4 null + C6 fragility deferred (PENDING blocks CERTIFIED, never forces REFUTED)
-- [chunk-v-null-calibration](chunk-v-null-calibration.md) — chunk V null calibration COMPLETE (cert C4, `search/nullmodel.py` + `data/surrogate.py`, `coinmon nullcheck --mode random|matched|surrogate`): V1 random-genome best-of-M + V2 exposure-matched random-entry + V3 joint-block-bootstrap surrogate-data (full re-search on signal-destroyed universes) all DONE
-- [w1-ratio-momentum-family](w1-ratio-momentum-family.md) — chunk W1: `ratio_momentum` family (first out of the RSI valley); registration-only wiring, whole GA/fitness/certificate pipeline consumes it unchanged; makes the effect reachable, alpha still unproven
-- [w4-donchian-breakout-family](w4-donchian-breakout-family.md) — chunk W4: `donchian_breakout` family (channel entry + ATR trailing exit); registration-only, but the 5th family shifted the GA RNG → brittle test_ga budget fix (pop40/gens20, robust not re-seeded)
-- [w3-funding-cashflow](w3-funding-cashflow.md) — chunk W3 step 1: perp funding as an honest per-bar cashflow (`PerpPortfolio.apply_funding`) + `funding_rate` fed into the feed; W3 SPLIT (carry capture needs structural seams, not registration-only); step 2 = alignment/DB wiring + funding_carry family
-- [chunk-y-ensemble-certification](chunk-y-ensemble-certification.md) — chunk Y ensemble code: `certify_ensemble` pools a top-k decorrelated PORTFOLIO of winners into one ledger + certifies it as its own unit (small edges reach N≥300 only aggregated); `coinmon certify-ensemble`; payoff sweep RUN still the user's
-- [plan-b-fallback-probes](plan-b-fallback-probes.md) — Plan B frozen 2026-07-03 BEFORE Y ran: on the calibrated negative, probe NEW INPUTS (B1–B12: OI/positioning/basis/events/maker-costs) via Z-chunks; Z0 collectors start immediately (exchange lookback is finite)
-- [plan-b-p1-results](plan-b-p1-results.md) — Plan-B P1 tier (B1–B4) ALL RUN 2026-07-06 → all FAIL: post-shock reversal 0/5, volume shock 1/5, cross-venue lead-lag 0/5 (venues arb'd, corr 0.999), rebalancing premium a near-miss (weekly 68% vs 70% bar, +6.2%/yr but an overlay not a strategy). Candle-shape signals exhausted; next = P3 cost-side B9/B10 (testable now) then P2 collector-gated
-- [plan-b-p3-results](plan-b-p3-results.md) — Plan-B P3 cost-side probes: B10 (1h maker hurdle) RUN 2026-07-06 = FAIL (median move clears 2× maker round-trip on only 1/5 majors); B9 maker limit-fill infra built (`MakerLimitExecution`) but runner DEFERRED unrun — run GA-free on the 7 persisted GO genomes, 2bps maker fee, informational-only. Both fund infra (Z3), never a certificate
-- [user-infra-ui-plans](user-infra-ui-plans.md) — user-owned: k8s/build pipeline for collectors, centralized DB + stitch-CLI for relocation (keep new tables merge-friendly with natural keys), memory-system extraction = future separate project
-- [ui-roadmap](ui-roadmap.md) — three UI tiers gated on data existing: research UI (trade-dot map w/ exit reasons + monthly genome profitability) after first certify ledgers & before Y; forward-paper dashboard WITH chunk G only once something certifies; Phase-2 product UI last; TradeRecord needs an exit_reason field first
-- [plan-c-onchain-ideation](plan-c-onchain-ideation.md) — IDEATION ONLY, parked behind Plan B: DEX/on-chain hunt (insider-accumulation-before-listing signals); needs fat-tail certificate + pre-trade exit-depth gate; own-DEX rejected (venue ≠ liquidity, MiCA); no collector urgency (chain is the archive)
-- [build-roadmap](build-roadmap.md) — the chunked plan to finish the project (one chunk ≈ one session); source of truth for what's next
-- [session-build-loop](session-build-loop.md) — how each session runs: read memory → do next roadmap chunk → ask blockers → deliver a commit message
+## Read first — mission & standing directives
+- [mission-find-edge-ship-ui](mission-find-edge-ship-ui.md) — **THE MISSION: find ≥3 winner strategies → build UI → confirmed/auto trading. UI gated on ≥3 winners; Z0 collectors start immediately; ~$10 micro-live authorized for the first promising strategy**
+- [live-yield-hurdle](live-yield-hurdle.md) — **USER GATE: certified ≠ deploy. Real capital needs expected FORWARD net yield ≥5%/yr (weight recent regime). Carry certified but recent ~0.18%/yr → PARKED until premium widens**
+- [riskier-strategies-allowed](riskier-strategies-allowed.md) — **DIRECTIVE 2026-07-18: riskier strategies allowed — relaxes the DRAWDOWN/variance objection ONLY; the ≥5%/yr yield floor and honesty (survivorship/overfit/multiple-testing) are NOT relaxed. Revive a lead only if shelved on risk alone**
+- [no-strategy-preference](no-strategy-preference.md) — user has ZERO strategy/indicator preference; only "certified/winnable" matters; never favor a family from a mention
+- [no-more-rsi-ema-permutations](no-more-rsi-ema-permutations.md) — price-transform indicator strategies exhausted (0 CERTIFIED); never refocus; legacy families are baseline/control only
+- [ga-parked](ga-parked.md) — **GA HARD-BANNED: never run `coinmon sweep`/`search` or re-run old sweeps for any reason; run GA-free on persisted artifacts or surface the conflict**
+- [honest-status-reporting](honest-status-reporting.md) — never claim work done without artifact evidence; surface scope downgrades loudly (burned by ~2 wks of false sweep-progress claims)
 - [user-commits-themselves](user-commits-themselves.md) — never run git commit; hand over a commit message and stop
-- [data-package-gitignored](data-package-gitignored.md) — REPO BUG: broad `data/` .gitignore rule ignores the whole `src/coinmon/data/` source package (untracked); new data/ files need `-f` or an anchored `/data/` rule
-- [certified-sweep-calibrated-negative](certified-sweep-calibrated-negative.md) — chunk Y payoff run RAN live (first time ever): 1d moderate/heavy + 4h sweeps → 0 CERTIFIED, every t_exp negative; scale doesn't buy alpha, C3 caught a 64%-win money-loser, 4h reached N≥300 and REFUTED; price-shape valley empty → redirect to W3 carry / W5 / Plan B
+- [session-build-loop](session-build-loop.md) — session shape: read memory → next roadmap chunk → ask blockers → deliver a commit message
+
+## Current status & active leads (2026-07: still 0 deployable winners)
+- [w3-carry-first-live-diagnosis](w3-carry-first-live-diagnosis.md) — **W3 carry CERTIFIED (project's FIRST cert, 1 of 3): +2.23%/yr t+4.08, 22391 OOS bars, 2/2 regimes, C4 null + C6 fragility pass. `coinmon certify-carry`. But parked under the yield hurdle. 4h REFUTED**
+- [b13-low-vol-fresh-lead](b13-low-vol-fresh-lead.md) — **LOW-VOL LEAD CLOSED (B14d decomp 2026-07-18): long low-vol leg +12.9%/yr still loses to BTC-hold; short high-vol leg survivorship-suspect, pays off only in 2022 crash. DB is pure-survivor (0 delistings). Closed**
+- [session-2026-07-18-tsmom-oi](session-2026-07-18-tsmom-oi.md) — **2026-07-18: B17 TSMOM/CTA portfolio REFUTED (Sharpe 0.24). Built first OI collector — 66,417 daily OI points (5yr, 41 perps) in new open_interest table. B18 OI-crowding FAIL (IC=-0.03 weak reversal), B19 OI-trend-filter FAIL worse. P2-OI tested-negative**
+- [b16-funding-signal-refuted](b16-funding-signal-refuted.md) — B16 cross-sectional funding-crowding REFUTED (6/12 pos, median -0.23%/yr, win ~coin-flip)
+- [certified-sweep-calibrated-negative](certified-sweep-calibrated-negative.md) — chunk Y payoff sweep: 0 CERTIFIED, every t_exp negative; price-shape valley empty → redirect to carry/W5/Plan B
+- [xsectional-momentum-first-run](xsectional-momentum-first-run.md) — W5 X-sectional momentum NOT a winner: short leg beats beta but no certifiable per-position edge (best-of-162 REFUTED)
+
+## Plan B (new inputs) & Plan C
+- [plan-b-fallback-probes](plan-b-fallback-probes.md) — Plan B: probe NEW INPUTS (B1–B12: OI/positioning/basis/events/maker-costs); Z0 collectors start immediately (lookback finite)
+- [plan-b-p1-results](plan-b-p1-results.md) — P1 (B1–B4) all FAIL: post-shock reversal, volume shock, cross-venue lead-lag, rebalancing-premium near-miss. Candle-shape signals exhausted
+- [plan-b-p3-results](plan-b-p3-results.md) — P3 cost-side: B10 maker-hurdle FAIL; B9 maker limit-fill infra built (`MakerLimitExecution`) but runner deferred. Fund infra, never a certificate
+- [order-flow-direction](order-flow-direction.md) — taker volume delta / OI / long-short ratio candidates; h7-style probe before integration; L2 imbalance rejected
+- [order-flow-probe-h7-refuted](order-flow-probe-h7-refuted.md) — H7 taker-flow/CVD REFUTED (contemp corr +0.4 but next-bar IC≈0); OI + liq-fade collector-gated
+- [liquidation-cascade-fade](liquidation-cascade-fade.md) — event-driven post-cascade reversal; record Bybit liquidations early (websocket-only, shallow history); pool across symbols
+- [onchain-stablecoin-netflow](onchain-stablecoin-netflow.md) — stablecoin exchange netflow liquidity signal; lowest priority, paid-data burden
+- [plan-c-onchain-ideation](plan-c-onchain-ideation.md) — IDEATION only, parked behind Plan B: DEX insider-accumulation-before-listing; needs fat-tail cert + exit-depth gate; own-DEX rejected
+
+## Methodology & rig
+- [alpha-definition-edge-certificate](alpha-definition-edge-certificate.md) — THE alpha definition: pooled-OOS-ledger Edge Certificate (N≥300, Wilson>0.50, expectancy CI>0, beats nulls, ≥2 regimes)
+- [portfolio-search-protocol](portfolio-search-protocol.md) — post-GA winner-finding: no pair param, exhaustive small grid ALL recorded w/ multiple-testing deflation, portfolio cert vs EW-universe
+- [strategy-lab-model](strategy-lab-model.md) — the evaluator is the product: one-command gauntlet; candidates from research/grids w/ economic rationale; chunk vs Plan namespace decoder
+- [train-usdt-certify-usdc](train-usdt-certify-usdc.md) — quote currency IS the train/test split: search on USDT only, USDC pristine for final Edge-Certificate; Binance backtest-history-only
+- [fragility-stress-test](fragility-stress-test.md) — Monte Carlo latency/slippage stress test as a kill-filter for thin-margin strategies before live
+- [autotrading-rollout](autotrading-rollout.md) — execution modes: suggest-only → auto-on-confirm (certified) → capped full-auto; latency tolerance decides
+- [search-overfits-not-strategy](search-overfits-not-strategy.md) — the param SEARCH overfits (−23% OOS) while fixed params survive (+12%); fitness must be OOS/walk-forward w/ penalties
+- [nested-holdout-refutes-golden](nested-holdout-refutes-golden.md) — strict nested holdout REFUTES the "golden" edge; 'passed gate' ≠ 'persistent edge'; gate is defensive not alpha
+- [regime-adaptive-multiseed-sweep](regime-adaptive-multiseed-sweep.md) — the GATE is a validated trustworthy judge, but durable ALPHA unproven (every GO is a thin-trade crash-short with luck-variance)
+- [walk-forward-stability-harness](walk-forward-stability-harness.md) — chunk S `coinmon stability`: rolling re-search + selection-agreement + forward-persistence; diagnostic only
+- [first-stability-run-expanded-universe](first-stability-run-expanded-universe.md) — first stability run: clean calibrated NEGATIVE (winners hop, persistence 0/2, trade-starved); gate held
+
+## Environment, data & infra
+- [project-direction](project-direction.md) — Python/Bybit greenfield, trade-coins-efficiently, phased backtest→suggestions→automation
+- [backtester-reads-timescaledb](backtester-reads-timescaledb.md) — backtester loads candles from TimescaleDB (`db.read_candles`), not Parquet; store.py/fetch-data retired
+- [data-package-gitignored](data-package-gitignored.md) — REPO BUG: broad `data/` .gitignore ignores `src/coinmon/data/` package; new data/ files need `-f` or anchored `/data/` rule
+- [deployment-target-k8s](deployment-target-k8s.md) — runs in k8s; every component ships as a Docker image; config via env/ConfigMaps
+- [user-infra-ui-plans](user-infra-ui-plans.md) — user-owned: k8s/build pipeline for collectors, centralized DB + stitch-CLI; keep new tables merge-friendly (natural keys)
+- [ui-roadmap](ui-roadmap.md) — three UI tiers gated on data existing; research UI first (needs TradeRecord exit_reason field), then forward-paper, then product UI
+- [machines-and-tooling](machines-and-tooling.md) — user works on multiple machines; verify the stack is runnable before promising runs
+- [feature-store-seam](feature-store-seam.md) — BarView point-in-time feature-snapshot contract; post-scraper indicator engine deferred (cache not contract)
+- [build-roadmap](build-roadmap.md) — the chunked plan to finish the project; source of truth for what's next
+- [prototype-reference](prototype-reference.md) — the .NET bachelor's prototype in C:\Dev\CoinMonitor; patterns to reuse vs gaps
+- [user-quant-background](user-quant-background.md) — user has limited quant math; relies on the eval rig + search, not hand-derived strategies
+- [blackbox-evolutionary-vision](blackbox-evolutionary-vision.md) — north star: engine = live-compatible black-box exchange; sequential non-atomic legs; GA was the long-term alpha path
+
+## Candidate detail files
+- [funding-carry-harvester](funding-carry-harvester.md) — W3 detail: delta-neutral funding capture; hard part is margin/liquidation risk engineering at 1-2x, not signal
+- [cross-sectional-momentum-portfolio](cross-sectional-momentum-portfolio.md) — W5 detail: rank USDT universe weekly, hold top slice; fees are the main killer
+- [execution-plan-2026-07](execution-plan-2026-07.md) — the 2026-07-04 pivot candidate order (momentum→carry→order-flow→liq-fade→on-chain); mission file holds authoritative order
+
+## GA-era history (archival — superseded by ga-parked + calibrated-negative)
+- [ga-architecture-reality](ga-architecture-reality.md) — GA was a parameter jitterer over 7 hardcoded families, NOT a composition engine; never misdescribe it
+- [daily-meanreversion-goes-positive](daily-meanreversion-goes-positive.md) — RSI MR positive on ETH/BTC daily (+12% OOS) vs −6% 1h; fee-domination; downtrend-flattered
+- [stop-loss-hurts-mean-reversion](stop-loss-hurts-mean-reversion.md) — fixed stop-loss made RSI MR worse on every metric (stops suit trend, not MR)
+- [chunk-a-findings](chunk-a-findings.md) — pulse is pair-specific; pair must be a gene; symmetric-std fitness penalty wrongly rejects all-folds-positive genomes
+- [chunk-c-search-loop](chunk-c-search-loop.md) — chunk C GA mechanics (search/ga.py) + OOS-scoring runner + fragility post-filter; `coinmon search`
+- [chunk-d-graduation-gate](chunk-d-graduation-gate.md) — graduate() runs winner on never-searched holdout + fragility → hard go/no-go; `search --holdout`
+- [chunk-f-live-forward-feed](chunk-f-live-forward-feed.md) — shared BarStepper + coinmon/live (LiveFeed, ForwardRunner); forward replay == backtest; `coinmon forward`
+- [first-live-search-graduation](first-live-search-graduation.md) — 5-seed sweep all NO-GO; gate absolute-return rule is regime-dependent; RESOLVED → add perp short
+- [perp-short-capability](perp-short-capability.md) — added leveraged perp short (PerpPortfolio + 3-state engine + direction genes) to fix downtrend NO-GO
+- [leverage-breaks-fitness-scaling](leverage-breaks-fitness-scaling.md) — OOS fitness mis-scaled for leverage (rewards lucky leveraged folds); search pulled toward reckless leverage
+- [chunk-l-live-validation](chunk-l-live-validation.md) — chunk L killed the reckless-leverage attractor; gate IS passable (BNB/ETH long GO +8.5%)
+- [direction-gene-overfits-regime](direction-gene-overfits-regime.md) — free direction gene fit to search span but blind to holdout regime = binding cause of NO-GOs; RESOLVED → chunk-M regime-adaptive
+- [n2-parallelism-overhead](n2-parallelism-overhead.md) — N2 multiprocessing bit-identical to serial, only wins at heavy scale; default stays serial
+- [n6-multiseed-sweep-convergence](n6-multiseed-sweep-convergence.md) — 15-trade gate collapsed the lottery to one convergent pair (BTC/USDC ema adaptive), still one regime
+- [chunk-o-cross-pair-robustness](chunk-o-cross-pair-robustness.md) — chunk O is a TAGGER (golden/specialist), not a kill gate; re-graduates a GO on K-of-N decorrelated peers
+- [chunk-p-bounded-combo](chunk-p-bounded-combo.md) — chunk P: fixed-shape multi-indicator genome (N indicators + AND/OR) as a normal family; GP half-step before tree-GP
+- [first-live-combo-cross-pair-sweep](first-live-combo-cross-pair-sweep.md) — first P+O sweep: combo competitive, all GOs SPECIALIST (0 golden); superseded
+- [first-golden-structural-edge](first-golden-structural-edge.md) — 30-seed grind FIRST GOLDEN (rsi_mr BNB/ETH 2x); REFUTED by nested holdout as regime artifact
+- [edge-certificate-implemented](edge-certificate-implemented.md) — chunk U: per-trade OOS ledger + search/evidence.py (Wilson/bootstrap/regime) + `coinmon certify`
+- [chunk-v-null-calibration](chunk-v-null-calibration.md) — chunk V (cert C4): V1 random-genome + V2 exposure-matched-entry + V3 surrogate-data nulls; `coinmon nullcheck`
+- [w1-ratio-momentum-family](w1-ratio-momentum-family.md) — chunk W1 `ratio_momentum` family (registration-only; pipeline consumes unchanged)
+- [w4-donchian-breakout-family](w4-donchian-breakout-family.md) — chunk W4 `donchian_breakout` family (channel + ATR trail); 5th family shifted GA RNG → test budget fix
+- [w3-funding-cashflow](w3-funding-cashflow.md) — chunk W3 step 1: perp funding as honest per-bar cashflow (`PerpPortfolio.apply_funding`); step 2 = funding_carry family
+- [chunk-y-ensemble-certification](chunk-y-ensemble-certification.md) — chunk Y `certify_ensemble`: pool top-k decorrelated portfolio into one ledger + certify as its own unit

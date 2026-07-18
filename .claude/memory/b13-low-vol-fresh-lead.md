@@ -1,10 +1,11 @@
 ---
 name: b13-low-vol-fresh-lead
-description: "Fresh-ideation pivot (2026-07-06) after P1/P3 exhausted: the cross-sectional LOW-VOLATILITY anomaly. B13 (long-only) PASSED its frozen rule but underperforms BTC-hold. B14 (market-neutral long-low-vol/short-high-vol, honest perp-funding short costs) ALSO PASSED its frozen rule (12/12 net-positive, median +72%/yr) — BUT risk-adjusted it is NOT a winner: Sharpe 0.79-0.90, maxDD -64% to -82%, negative in 2023-2024, and survivorship-inflated short leg. It's a regime-timed short-vol/crash-hedge bet, not clean alpha. Low-vol lead now essentially exhausted; still 0 deployable winners."
+description: "LOW-VOL LEAD CLOSED (B14d decomposition, 2026-07-18). Cross-sectional low-vol anomaly: B13 long-only PASSED but underperforms BTC-hold; B14 market-neutral PASSED (12/12, median +72%/yr) but is a regime-timed crash bet (Sharpe 0.79-0.90, maxDD -64/-82%). 'Riskier allowed' removed the drawdown objection, so B14d decomposed the book: LONG low-vol leg (survivorship-ROBUST) = median +12.9%/yr but STILL loses to BTC-hold +15.6%/yr; SHORT high-vol leg (survivorship-SUSPECT) = median -5.9%/yr standalone, pays off ONLY in the 2022 crash (+216% that year). Neutral book's alpha lives entirely in the suspect short leg + crash timing (lost in calm 2023 -38%/2024 -8%). Both remaining objections untouched by risk appetite -> lead definitively closed. Still 0 deployable winners."
 metadata:
   node_type: memory
   type: project
   originSessionId: 0bad2d36-e6f2-4947-bbf3-a97230196573
+  modified: 2026-07-18T13:48:50.601Z
 ---
 
 2026-07-06 session. After Plan-B P1 (all FAIL) and P3 (B10 FAIL, B9 ran → 1/7, does NOT fund Z3;
@@ -67,3 +68,21 @@ Did NOT run an Edge Certificate — it would only formalize a strategy the risk 
 Fork for the user: (a) accept it as a crash-HEDGE overlay (not standalone alpha), (b) attempt a
 survivorship-clean universe (needs delisted-coin history we likely lack), or (c) move to Plan C on-chain
 ([[plan-c-onchain-ideation]]).
+
+**CLOSED 2026-07-18 (session after "riskier strategies allowed").** Verified the DB is a PURE-SURVIVOR
+universe: all 41 Bybit USDT legs' last 1d bar = the DB max (2026-07-01), ZERO delistings — so fork (b)
+is impossible with current data (survivorship is a data problem, not a risk-appetite one). Ran the
+decomposition `probes/b14d_decompose.py` (log `runs/b14d_decompose.log`): tracks the long and short
+legs' P&L separately across B14's full 12-config grid.
+- LONG low-vol leg (survivorship-ROBUST, no borrow): **median +12.9%/yr**, and it made +80%/+77% in the
+  calm 2023/2024 (it's a low-BETA "hold stable coins" tilt, NOT a crash bet as I'd guessed). But it
+  STILL underperforms BTC-hold (+15.6%/yr) at the median config; only cherry-picked L=90 configs
+  (+23-49%) beat BTC (3/12 = multiple-testing). => not a deploy winner vs the passive alternative.
+- SHORT high-vol leg (survivorship-SUSPECT): **median -5.9%/yr standalone** — shorting high-vol crypto
+  LOSES in every regime except the 2022 crash (+216% that year).
+- Neutral book's headline +72-100%/yr is almost entirely 2022 (+160%) and 2025 (+97%); it LOST in the
+  calm years 2023 (-38%) and 2024 (-8%). So the book's alpha = the survivorship-suspect short leg's
+  crash payoff + regime timing. "Riskier allowed" relaxed the maxDD objection but the two that matter
+  (survivorship of the short leg, long leg loses to BTC) are untouched.
+VERDICT: **low-vol lead definitively CLOSED**, no deployable version. Next fresh work went to time-series
+momentum ([[session-2026-07-18-tsmom-oi]], B17 refuted) and the OI data frontier (B18/B19).

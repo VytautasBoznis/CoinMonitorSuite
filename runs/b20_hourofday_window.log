@@ -1,0 +1,13 @@
+B20 hour-of-day window [21:00,23:00) UTC — binance 1h majors
+
+     coin  gross/yr  gross_t  net_tk/yr  net_mk/yr  recent_mk  baseline      N
+------------------------------------------------------------------------------
+ BTC/USDT   +30.7%     5.10    -42.3%    +16.1%     +9.1%   -11.7%   2743
+ ETH/USDT   +37.3%     4.67    -35.7%    +22.7%    +18.0%    -9.8%   2743
+ BNB/USDT   +42.5%     6.00    -30.5%    +27.9%    +11.2%    -9.9%   2743
+ XRP/USDT   +29.4%     2.94    -43.6%    +14.8%    -13.3%    -7.7%   2743
+ SOL/USDT   +20.6%     1.52    -52.4%     +6.0%    +30.1%    -4.2%   2155
+
+median net-maker: +16.12%/yr | positive: 5/5 | recent-half median: +11.18%/yr | beats baseline: 5/5
+
+B20 VERDICT: PASS — median net-maker>=+5%/yr [#OK] AND >=4/5 positive [#OK] AND recent-half median>0 [#OK] AND beats-baseline>=3/5 [#OK] (BTC in-sample; the 4 other majors + recent-half are the out-of-sample confirmation).

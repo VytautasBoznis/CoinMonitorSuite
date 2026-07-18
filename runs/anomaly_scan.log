@@ -1,0 +1,39 @@
+ANOMALY SCAN — bybit 41 USDT perps, 1d, 2021-07-05 -> 2026-07-01
+cross-sectional factors: long top-quintile / short bottom-quintile (signal's positive dir), net of 0.1%/side fees
+
+                factor  gross/yr  gross_t  net_tk/yr  net_mk/yr   turn  path?
+-----------------------------------------------------------------------------
+    oi-decrowd(30d) H5   +43.4%     2.55    +31.5%    +41.0%   0.82      -
+   oi-decrowd(30d) H20   +37.9%     2.19    +32.5%    +36.8%   1.48      -
+      low-vol(30d) H20   +43.3%     1.72    +40.7%    +42.8%   0.72      -
+       low-vol(30d) H5   +41.5%     1.59    +37.0%    +40.6%   0.31      -
+   ST-reversal(3d) H20   +43.4%     1.42    +37.7%    +42.3%   1.58      -
+      momentum(30d) H5   +21.2%     1.03    +11.6%    +19.2%   0.65      -
+   ST-reversal(1d) H20   +13.8%     0.64     +8.0%    +12.6%   1.58      -
+    ST-reversal(3d) H5   +14.4%     0.62     -8.1%     +9.9%   1.54      -
+   low-funding(30d) H5    +9.8%     0.53     +5.3%     +8.9%   0.31      -
+  low-funding(30d) H20    +2.9%     0.15     +0.3%     +2.4%   0.71      -
+     momentum(30d) H20    +1.8%     0.09     -3.0%     +0.8%   1.31      -
+    ST-reversal(1d) H5    -5.9%    -0.23    -28.3%    -10.4%   1.53      -
+  illiquidity(30d) H20   -18.6%    -0.71    -19.6%    -18.8%   0.28      -
+   illiquidity(30d) H5   -14.8%    -0.75    -16.4%    -15.1%   0.11      -
+
+calendar & microstructure (BTC; effect annualized, |t|>3 = notable):
+        category                    effect       ann      t       N
+-------------------------------------------------------------------
+    calendar-hod             BTC 21:00 UTC  +416.1%   3.63    2743
+    calendar-hod             BTC 22:00 UTC  +326.5%   3.08    2743
+    calendar-hod             BTC 23:00 UTC  -238.2%  -2.01    2743
+    calendar-dow                   BTC Wed  +135.2%   1.97     261
+    calendar-hod             BTC 15:00 UTC  +243.7%   1.87    2741
+    calendar-dow                   BTC Thu  -117.8%  -1.83     260
+    calendar-hod             BTC 20:00 UTC  +176.4%   1.48    2743
+    calendar-hod             BTC 00:00 UTC  +172.1%   1.42    2743
+    calendar-dow                   BTC Mon  +102.6%   1.34     260
+    calendar-hod             BTC 13:00 UTC  +134.7%   1.13    2741
+    calendar-dow                   BTC Sun   +52.8%   1.09     260
+    calendar-hod             BTC 02:00 UTC  -118.0%  -1.07    2733
+
+READ: 'path? YES' = REAL anomaly (|gross_t|>=3) that clears +5%/yr NET at maker fees (a standalone path).
+'weak' = real anomaly (|gross_t|>=3) but net<5% — a COMBINE candidate. gross_t separates
+'is the effect real' from 'can it pay'. ~20 tests — discount borderline |t|.

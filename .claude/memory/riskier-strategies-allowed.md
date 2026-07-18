@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: feedback
   originSessionId: SESSION_2026_07_18
-  modified: 2026-07-18T13:49:10.724Z
+  modified: 2026-07-18T14:42:35.041Z
 ---
 
 User, 2026-07-18, alongside "continue work, minimal prompting": **"Allowing to go to riskier
@@ -30,5 +30,12 @@ survivorship, regime-dependence, or overfitting, this directive does NOT revive 
 **First application (2026-07-18):** re-opened B14 (shelved on maxDD) — but the decomposition showed its
 edge is survivorship-suspect + crash-timed, so it stays closed ([[b13-low-vol-fresh-lead]]). Then hunted
 genuinely riskier NEW families: time-series-momentum/CTA (B17) and OI-positioning (B18/B19) —
-[[session-2026-07-18-tsmom-oi]]. All negative; still 0 deployable winners. See
-[[mission-find-edge-ship-ui]], [[autotrading-rollout]].
+[[session-2026-07-18-tsmom-oi]]. All negative.
+
+**ANOMALY-FOCUS refinement (user, same day):** "I accept there might not be an actual edge, but I'd
+expect ANOMALIES — focus on that." Bar = **path to the deploy hurdle** (>=5%/yr, alone or combined —
+NOT relaxed to 'statistically real is enough'); approach = all three eventually (scanner-map /
+exploitable-dislocations / combine-weak-signals), **rank by fastest-doable and start there**. This paid
+off immediately: the fastest tier (an anomaly scanner on existing data) found the project's FIRST
+path-to-hurdle candidate — the 21:00-23:00 UTC hour-of-day effect, execution-gated on maker fills
+([[anomaly-hourofday-lead]]). See [[mission-find-edge-ship-ui]], [[autotrading-rollout]].

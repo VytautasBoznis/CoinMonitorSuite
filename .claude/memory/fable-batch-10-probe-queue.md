@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 4520e228-25b0-4c00-a3cd-6a323fb7630d
-  modified: 2026-07-31T20:24:41.934Z
+  modified: 2026-07-31T20:41:48.560Z
 ---
 
 Delivered by the user 2026-07-31 as the authorized batch under [[fuck-it-we-ball-mode]]. Ranked by EV
@@ -109,3 +109,34 @@ certificate as a standing option, or not at all. Probably ~zero EV most years; n
 **BUILD ORDER (Fable's):** probes 1, 2, 3 today on stored data; the **Binance delisted-symbol ETL in
 parallel** (gates 4 and all future cross-sectional work); scrapes for 5 and 6 this week; collectors for
 8 and 9 started now regardless, since their lookback clocks only start when you do.
+
+---
+
+**BYBIT-ONLY DELTA (2026-07-31, Fable).** Execution constraint only — research still runs on Binance
+dumps. Leverage caps per idea live in [[bybit-only-leverage-doctrine]], which also flags the
+**MiCA/USDC-only conflict** that may shrink the tradable universe for 1/4/6/10.
+1. **Unchanged, arguably better** — Bybit retail skew runs alt funding hot, perp universe wide.
+   Re-pin fees to Bybit; the looser taker RT (~0.11%) also relaxes kill thresholds on 6 and 7.
+2. **BNB version DEAD** (Binance-only). Replacement: **Bybit Launchpool/Earn** — many pools stake USDT
+   (zero delta, no hedge leg needed at all) or MNT (MNTUSDT perp is live, hedge exists). Probe becomes
+   pure arithmetic on trailing 24mo of Bybit pool APR-days. Honest flag: Bybit yields run thinner than
+   Binance's and this may fail the 5% bar cleanly. Two hours to know.
+3. Bybit lists **USDC-settled expiries on BTC/ETH only**, books thinner than Binance. Same probe,
+   majors only, size down.
+4. **Better on Bybit** — it lists small-cap perps faster and wider, so more tradable events. Event
+   study still built on Binance dumps for delisted history; execution on Bybit perps.
+5. **Survives** only because "Bybit only" means "my CEX is Bybit". If it ever becomes strict
+   single-venue, this is out and nothing on Bybit replaces it. Keep it — best data-cost ratio.
+6. **UPGRADED** — Bybit is the aggressive lister AND runs **pre-market perps for pre-TGE tokens**,
+   where funding regularly pins the cap, sometimes on 4h/2h/1h intervals. No spot pre-TGE means no
+   hedge leg: those are naked lottery positions, **separate bucket, never blended** with hedged
+   post-listing carry.
+7. **UPGRADED N** — Bybit's non-8h funding-interval symbols multiply settlement events. Same probe,
+   add **funding-interval as a bucket dimension**.
+8. Bybit v5 has the **`allLiquidation` websocket** (the old topic was throttled to 1 print/sec/symbol —
+   use the new one). Start the collector this week. Live: isolated margin, **2-3x hard cap**.
+9. Proxy probe unchanged (DVOL is free Deribit data; data isn't venue). Execution moves to **Bybit USDC
+   options**: thin, wide; Paradigm RFQ exists but not at 100 EUR size. Plumbing only on a fat proxy pass.
+10. **Drop FDUSD** (Binance ecosystem). Keep USDC/USDT, **add USDe/USDT** — Bybit is USDe's main CEX and
+   Oct 10 2025 is already an in-sample event (USDe printed deep discounts, worst on Binance's book,
+   recovered within days). Probe unchanged.

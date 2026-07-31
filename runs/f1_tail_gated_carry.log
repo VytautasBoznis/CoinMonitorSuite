@@ -1,0 +1,89 @@
+F1 tail-gated funding carry — arm at trailing-3 funding >= 30%/yr, disarm below 10%/yr
+   maker 0.02%/leg, funding notional 0.5x deployed capital, 58 funded bybit perps
+
+COVERAGE  58 symbols with >= 200 prints, 2020-03-25 -> 2026-07-02 (6.3 calendar years)
+GATE      302 episodes, 36394 armed prints, 32.43 capital-years deployed (8.92% of the universe's available time)
+
+YIELD (per unit of DEPLOYED capital, annualized)
+  gated   gross +19.26%/yr   net +18.89%/yr   (fees 0.37%/yr)
+  always-on baseline                net  +3.10%/yr   (221 capital-years — this is the W3 book)
+  gated, unified-margin 1x notional net +37.77%/yr   (sensitivity only, NOT the judged number)
+
+  all-symbols-at-once sum +97.73%/yr — NOT an account's yield: it gives every symbol
+  its own full unit of capital. See D-A for the real one-account number.
+
+TOP 10 EPISODES BY NET PnL (per unit of capital deployed in that episode)
+          symbol       start         end  prints   days      net   share
+------------------------------------------------------------------------
+             LTC  2020-10-22  2021-05-20     629  209.7  +32.33%    5.3%
+             XTZ  2020-12-28  2021-05-20     428   71.3  +27.18%    4.4%
+            LINK  2020-12-28  2021-05-20     428  142.7  +25.93%    4.2%
+             ETH  2020-10-22  2021-05-20     629  209.7  +21.48%    3.5%
+             BCH  2020-12-17  2021-02-24     208   69.3  +15.45%    2.5%
+             BTC  2020-12-18  2021-04-19     369  123.0  +14.48%    2.4%
+             DOT  2021-03-19  2021-05-20     186   62.0  +10.32%    1.7%
+             BCH  2021-03-03  2021-05-20     233   77.7  +10.26%    1.7%
+              OP  2023-10-31  2025-05-02    1647  549.0  +10.14%    1.7%
+             UNI  2021-03-19  2021-05-20     186   62.0   +9.77%    1.6%
+
+BY CALENDAR YEAR (episodes attributed to their START year)
+  year  episodes  cap-years   net PnL   yield/yr
+------------------------------------------------
+  2020        13       2.69  +153.71%    +57.14%
+  2021        85       6.64  +207.03%    +31.16%
+  2022        22       0.62    +3.72%     +5.95%
+  2023        80      14.87  +154.05%    +10.36%
+  2024        81       7.45   +93.98%    +12.62%
+  2025        14       0.11    -0.07%     -0.66%
+  2026         7       0.04    +0.04%     +1.03%
+
+TOP 10 SYMBOLS BY NET PnL  (of 51 contributing)
+         XTZ   +48.39%
+        LINK   +45.38%
+         LTC   +44.00%
+         BCH   +34.32%
+         ETH   +30.40%
+         BTC   +29.04%
+         ADA   +27.02%
+         DOT   +20.73%
+         FIL   +17.39%
+         ETC   +16.39%
+
+FROZEN RULE
+  R1 yield on deployed  +18.89%/yr  (need >= +8.00%)      [PASS]
+  R2 breadth            51 symbols (need >= 10)            [PASS]
+  R3 episodes           302 episodes (need >= 5)              [PASS]
+  R4 concentration      top-2 = 9.7% of PnL (need < 70%)  [PASS]
+  R5 regime             6/7 years positive (need >= 2)     [PASS]
+
+F1 VERDICT: PASS — tail-gated carry clears the pre-registered bar. Gated vs always-on: +18.89%/yr vs +3.10%/yr on deployed capital.
+  NOTE: a PASS licenses the next step (basis modelling + live-paper), not deployment — basis PnL is unmodelled here (see docstring).
+
+==============================================================================
+POST-VERDICT DIAGNOSTICS — not part of the frozen rule, do not change the verdict
+==============================================================================
+
+D-A  ONE-ACCOUNT EQUAL-WEIGHT BOOK (capital split across whatever is armed; cash else)
+     calendar yield +8.75%/yr over 6.3 years, invested on 55.9% of days
+     by year:
+       2020   +9.88%/yr   invested 36.2% of days
+       2021  +32.34%/yr   invested 85.5% of days
+       2022   +1.44%/yr   invested 33.2% of days
+       2023   +4.16%/yr   invested 57.3% of days
+       2024   +7.75%/yr   invested 99.7% of days
+       2025   +1.53%/yr   invested 41.4% of days
+       2026   +0.09%/yr   invested 11.5% of days
+
+D-B  RECENT REGIME (last 24 months, 2024-07-02 -> 2026-07-02)
+     72 episodes, 6.58 capital-years deployed, net +62.89% -> +9.56%/yr on deployed
+     one-account calendar yield +2.47%/yr, invested 48.5% of days
+     ^ THIS is the number the >=5%/yr live hurdle judges, not the full-sample +18.89%.
+
+D-C  GATE-THRESHOLD SENSITIVITY (bybit baseline funding is 0.01%/8h = ~11%/yr, so a
+     30%/yr arm is only ~2.7x baseline — looser than the word 'tail' implies)
+   arm at  episodes  cap-yrs    net/yr  1-acct/yr  days in
+----------------------------------------------------------
+     30%       302    32.43   +18.89%     +8.75%    55.9%
+     60%       487     8.63   +43.94%     +6.90%    21.4%
+    100%       252     4.14   +64.51%     +6.47%    14.0%
+    200%        89     1.33  +102.88%     +5.44%     8.9%

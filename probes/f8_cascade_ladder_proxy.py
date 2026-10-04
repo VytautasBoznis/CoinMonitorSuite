@@ -35,7 +35,10 @@ ENTRY/EXIT (a mechanical rule, no lookahead):
 WHY THE CI IS CLUSTER-BOOTSTRAPPED BY DAY. Cascade events are violently clustered — Oct 10 2025
 alone can contribute hundreds of triggers across symbols. Treating them as independent draws would
 shrink the CI by roughly sqrt(N) and manufacture significance. The bootstrap resamples whole
-(symbol, UTC day) blocks, so one crash day counts as roughly one observation, not hundreds.
+UTC days (every symbol's events that day together), so one crash day counts as roughly one
+observation, not hundreds. (Fixed 2026-10-04 before the multi-symbol run: the first version
+resampled (symbol, day) blocks, which let one cross-asset cascade count once PER SYMBOL. The only
+prior output was the BTC-only smoke test, where the two are identical, so nothing leaked.)
 
 HONESTY CAVEATS (flagged before running, not after):
   * NO QUEUE POSITION. A 1m OHLC bar says the price traded through your level; it does NOT say you
@@ -73,6 +76,7 @@ SYMBOLS = [
 ]
 
 MAKER = 0.0002  # probe-standard maker fee (probes/b20_hourofday_window.py:42); Bybit perp maker
+TAKER = 0.00055  # Bybit perp taker — sensitivity only: a minute-60 time-stop cannot rest as maker
 RT_COST = 2 * MAKER  # resting bid in, resting take-profit out
 DROP = 0.025  # ladder rung: 2.5% below the prior close
 TARGET = 0.012  # take-profit, +1.2% from entry
@@ -90,13 +94,18 @@ class Event:
     day: pd.Timestamp
     year: int
     net_ladder: float  # entry at the ladder rung (the verdict)
+    net_ladder_taker_stop: float  # same, but time-stop exits pay taker (sensitivity)
     net_low: float  # entry at the bar low (upper-bound sensitivity)
     hit_target: bool
+    depth: float  # (rung - low) / rung: how far the wick traded THROUGH the bid (diagnostic)
+    after_gap: bool  # prior row is not the previous minute (exchange downtime; diagnostic)
+    mae: float  # worst low / rung - 1 from the fill bar to the exit bar (diagnostic)
 
 
 def _events(df: pd.DataFrame, symbol: str) -> list[Event]:
     """Walk one 1m series, emitting one event per cascade rung touched (no overlapping holds)."""
     ts = pd.to_datetime(df["open_time"], unit="ms", utc=True)
+    open_time = df["open_time"].to_numpy("int64")
     low = df["low"].to_numpy(float)
     high = df["high"].to_numpy(float)
     close = df["close"].to_numpy(float)
@@ -125,14 +134,20 @@ def _events(df: pd.DataFrame, symbol: str) -> list[Event]:
 
         net_ladder, hit_ladder = _net(rung)
         net_low, _ = _net(low[i])
+        tp = np.flatnonzero(window_high >= rung * (1.0 + TARGET))
+        exit_bar = i + 1 + int(tp[0]) if tp.size else end
         out.append(
             Event(
                 symbol=symbol,
                 day=ts.iloc[i].normalize(),
                 year=int(ts.iloc[i].year),
                 net_ladder=net_ladder,
+                net_ladder_taker_stop=net_ladder if hit_ladder else net_ladder - (TAKER - MAKER),
                 net_low=net_low,
                 hit_target=hit_ladder,
+                depth=(rung - low[i]) / rung,
+                after_gap=bool(open_time[i] - open_time[i - 1] != 60_000),
+                mae=float(low[i : exit_bar + 1].min() / rung - 1.0),
             )
         )
         i = end + 1  # one position per symbol at a time
@@ -140,8 +155,8 @@ def _events(df: pd.DataFrame, symbol: str) -> list[Event]:
 
 
 def _cluster_bootstrap(events: list[Event], rng: np.random.Generator) -> tuple[float, float]:
-    """95% CI on the mean net return, resampling whole (symbol, day) blocks."""
-    frame = pd.DataFrame({"k": [(e.symbol, e.day) for e in events],
+    """95% CI on the mean net return, resampling whole UTC days (all symbols together)."""
+    frame = pd.DataFrame({"k": [e.day for e in events],
                           "r": [e.net_ladder for e in events]})
     blocks = [g.to_numpy() for _, g in frame.groupby("k")["r"]]
     idx = np.arange(len(blocks))
@@ -155,11 +170,13 @@ def _cluster_bootstrap(events: list[Event], rng: np.random.Generator) -> tuple[f
 def main() -> None:
     conn = db.connect()
     events: list[Event] = []
+    span_ms: list[int] = []
     for symbol in SYMBOLS:
         df = db.read_candles(conn, EXCHANGE, symbol, TIMEFRAME)
         if df.empty:
             print(f"  {symbol}: NO 1m DATA — run probes/z1_backfill_1m.py first")
             continue
+        span_ms += [int(df["open_time"].iloc[0]), int(df["open_time"].iloc[-1])]
         ev = _events(df, symbol)
         events.extend(ev)
         print(f"  {symbol}: {len(df):>9,} bars  ->  {len(ev):>5,} events")
@@ -177,15 +194,19 @@ def main() -> None:
     year_means = by_year.mean()
     pos_years = int((year_means > 0).sum())
     n_days = len({(e.symbol, e.day) for e in events})
+    n_clusters = len({e.day for e in events})
+    taker_stop = np.mean([e.net_ladder_taker_stop for e in events])
 
     hit_rate = float(np.mean([e.hit_target for e in events]))
     counts = by_year.count()
     print(f"\n{'=' * 68}")
-    print(f"F8 CASCADE LADDER PROXY — {len(events)} events, {n_days} distinct symbol-days")
+    print(f"F8 CASCADE LADDER PROXY — {len(events)} events, {n_days} distinct symbol-days, "
+          f"{n_clusters} distinct UTC days (bootstrap clusters)")
     print(f"{'=' * 68}")
     print(f"  mean net / event (ladder fill) : {mean * 100:+.3f}%")
     print(f"  95% CI (cluster bootstrap)     : [{lo * 100:+.3f}%, {hi * 100:+.3f}%]")
     print(f"  target hit rate                : {hit_rate * 100:.1f}%")
+    print(f"  time-stop exits at TAKER       : {taker_stop * 100:+.3f}%  <- sensitivity, not the verdict")
     print(f"  UPPER BOUND (fill at wick low) : {net_low.mean() * 100:+.3f}%  <- not the verdict")
     print("\n  per-year mean net (ladder fill):")
     for y, m in year_means.items():
@@ -203,6 +224,97 @@ def main() -> None:
     print(f"\n  VERDICT: {verdict}")
     if verdict == "PASS":
         print("  Licenses the liquidation collector + the micro-live book ONLY — not a deployment.")
+
+    span = (pd.Timestamp(min(span_ms), unit="ms", tz="UTC"),
+            pd.Timestamp(max(span_ms), unit="ms", tz="UTC"))
+    _diagnostics(events, span)
+
+
+# ============================================================ POST-VERDICT DIAGNOSTICS (not frozen)
+# Added 2026-10-04 AFTER the verdict printed. They probe the verdict's weak spots; they never move it.
+
+
+def _summ(label: str, evs: list[Event]) -> None:
+    if not evs:
+        print(f"    {label:<34} N=    0")
+        return
+    lo, hi = _cluster_bootstrap(evs, np.random.default_rng(SEED))
+    m = np.mean([e.net_ladder for e in evs])
+    print(f"    {label:<34} N={len(evs):>5,}  mean {m * 100:+.3f}%  CI [{lo * 100:+.3f}%, "
+          f"{hi * 100:+.3f}%]  days={len({e.day for e in evs})}")
+
+
+def _diagnostics(events: list[Event], span: tuple[pd.Timestamp, pd.Timestamp]) -> None:
+    print(f"\n{'=' * 68}")
+    print("POST-VERDICT DIAGNOSTICS — not part of the frozen rule, do not change the verdict")
+    print(f"{'=' * 68}")
+
+    # ---- D-A: touch-fill adverse selection. A wick that only TOUCHES the rung is exactly where a
+    # resting bid likely was NOT filled (the queue ahead ate the flow) and exactly where price
+    # bounced. If the edge lives in shallow touches, it is a fill artifact. Require the wick to
+    # trade THROUGH the bid by x before counting a fill.
+    print("\nD-A  TRADE-THROUGH REQUIREMENT (fill only if low <= rung * (1 - x))")
+    for x in (0.0, 0.001, 0.0025, 0.005, 0.01):
+        _summ(f"x = {x * 100:.2f}%", [e for e in events if e.depth >= x])
+    print("     by depth bucket (where does the PnL live?):")
+    edges = (0.0, 0.001, 0.0025, 0.005, 0.01, 0.02, np.inf)
+    for a, b in zip(edges[:-1], edges[1:]):
+        _summ(f"depth [{a * 100:.2f}%, {b * 100:.2f}%)", [e for e in events if a <= e.depth < b])
+
+    # ---- D-B: exchange-downtime artifacts — prior_close from before an outage is not a live mid.
+    gap = [e for e in events if e.after_gap]
+    print(f"\nD-B  EVENTS RIGHT AFTER A DATA GAP: {len(gap)} of {len(events)}")
+    _summ("excluding gap events", [e for e in events if not e.after_gap])
+
+    # ---- D-C: what ONE account earns — the number the live hurdle judges ([[live-yield-hurdle]]).
+    # Capital split equally across the symbols; each fill uses its symbol's whole slice, UNLEVERED.
+    # Resting orders reserve margin on Bybit, so idle slices are not free to do anything else.
+    lo, hi = span
+    years = (hi - lo).days / 365.25
+    total = sum(e.net_ladder for e in events) / len(SYMBOLS)
+    print(f"\nD-C  ONE-ACCOUNT EQUAL-WEIGHT BOOK ({len(SYMBOLS)} slices, 1x): "
+          f"{total / years * 100:+.2f}%/yr simple over {years:.2f}y")
+    for y in sorted({e.year for e in events}):
+        y_lo = max(lo, pd.Timestamp(f"{y}-01-01", tz="UTC"))
+        y_hi = min(hi, pd.Timestamp(f"{y + 1}-01-01", tz="UTC"))
+        frac = (y_hi - y_lo).days / 365.25
+        s = sum(e.net_ladder for e in events if e.year == y) / len(SYMBOLS)
+        print(f"    {y}  {s / frac * 100:+6.2f}%/yr  (covers {frac:.2f}y)")
+
+    # ---- D-D: the recent regime the deploy hurdle weights.
+    cutoff = hi - pd.Timedelta(days=730)
+    recent = [e for e in events if e.day >= cutoff.normalize()]
+    r_yield = sum(e.net_ladder for e in recent) / len(SYMBOLS) / 2.0
+    print(f"\nD-D  RECENT 24 MONTHS ({cutoff.date()} -> {hi.date()}): account {r_yield * 100:+.2f}%/yr")
+    _summ("recent events", recent)
+
+    # ---- D-E: concentration — does a handful of crash days carry the result?
+    by_day = pd.Series([e.net_ladder for e in events],
+                       index=[e.day for e in events]).groupby(level=0).sum().sort_values()
+    tot = by_day.sum()
+    print(f"\nD-E  DAY CONCENTRATION: top-5 days = {by_day.tail(5).sum() / tot * 100:.1f}% of "
+          f"summed PnL; top-20 = {by_day.tail(20).sum() / tot * 100:.1f}%")
+    print("     worst 5 days (summed net across symbols):")
+    for d, v in by_day.head(5).items():
+        print(f"       {d.date()}  {v * 100:+.2f}%")
+    print("     best 5 days:")
+    for d, v in by_day.tail(5).iloc[::-1].items():
+        print(f"       {d.date()}  {v * 100:+.2f}%")
+
+    # ---- D-F: max adverse excursion vs isolated-margin liquidation distance. The live book runs
+    # levered at the owner's discretion ([[cursed-100-eur-live-ladder]]); this is the table that
+    # says how to read its fills, not a recommendation. Long liq ~ entry * (1 - 1/L + MMR), MMR
+    # 0.5% (Bybit low tier; worse on alts). SPOT wicks — perp wicks run deeper, so these
+    # breach rates are a FLOOR for the perp book.
+    mae = np.array([e.mae for e in events])
+    print(f"\nD-F  MAX ADVERSE EXCURSION during the hold (fill -> exit): median "
+          f"{np.median(mae) * 100:+.2f}%, 5th pct {np.percentile(mae, 5) * 100:+.2f}%, "
+          f"worst {mae.min() * 100:+.2f}%")
+    for lev in (3, 5, 10, 20):
+        liq = -(1.0 / lev - 0.005)
+        k = int((mae <= liq).sum())
+        print(f"    {lev:>2}x isolated (liq at {liq * 100:+.1f}%): {k:>4} of {len(mae)} fills "
+              f"breach ({k / len(mae) * 100:.1f}%)")
 
 
 if __name__ == "__main__":

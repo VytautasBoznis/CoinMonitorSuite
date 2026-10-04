@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 4520e228-25b0-4c00-a3cd-6a323fb7630d
-  modified: 2026-07-31T20:45:35.752Z
+  modified: 2026-10-04T19:45:23.694Z
 ---
 
 User, 2026-07-31: **"100 EUR is cursed either way — I'm gonna burn it, and I will be sad if none is
@@ -42,3 +42,7 @@ calibration dataset. If it never fills, nothing was lost but the skin-site story
 bound, so this is licensed as micro-live/data-gathering only — it is not a deployment and not a
 certificate ([[alpha-definition-edge-certificate]], [[live-yield-hurdle]]). Extends the ~$10 micro-live
 authorization in [[mission-find-edge-ship-ui]] to 100 EUR for this specific book.
+
+**Proxy result 2026-10-04:** PASS 4/4 on spot 1m. Its D-F table (share of fills whose wick breaches
+isolated liquidation at 3x/5x/10x/20x) is the reference for reading this book's fills against the
+leverage used → [[f8-cascade-ladder-result]].

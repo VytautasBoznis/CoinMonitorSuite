@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 4520e228-25b0-4c00-a3cd-6a323fb7630d
-  modified: 2026-07-31T20:41:48.560Z
+  modified: 2026-10-04T19:45:22.634Z
 ---
 
 Delivered by the user 2026-07-31 as the authorized batch under [[fuck-it-we-ball-mode]]. Ranked by EV
@@ -89,6 +89,8 @@ assumption yields mean >= 3x maker fee, 95% CI ex-zero, N>=300, positive in >=2 
 **NOTE: fill-at-wick-low is a strict UPPER BOUND — a pass licenses the collector + micro-live ONLY,
 never deployment.** Cert risk C6 fragility (tail fills) — correctly so, that IS the trade.
 Best fit for the pre-authorized micro-live → this is where the 100 EUR goes.
+**STATUS 2026-10-04: proxy PASSED 4/4 on spot** (+0.54%/event, N=2038); recent-24mo CI touches zero
+and the perp rerun is still open → [[f8-cascade-ladder-result]].
 
 **9. Weekend variance risk premium (Deribit)** — sell delta-hedged short-dated BTC/ETH strangles Friday,
 cover Monday; weekend realized vol systematically underruns short-dated IV. Pays: lottery-call buyers and

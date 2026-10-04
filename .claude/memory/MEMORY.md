@@ -19,6 +19,7 @@ This file indexes all memory files. One line per file; detail lives in each topi
 - [session-build-loop](session-build-loop.md) — session shape: read memory → next roadmap chunk → ask blockers → deliver a commit message
 
 ## Current status & active leads (2026-07: still 0 deployable winners)
+- [f8-cascade-ladder-result](f8-cascade-ladder-result.md) — **F8 PASSED 4/4 (2026-10-04) on 1m SPOT, 10 symbols: +0.54%/event, CI ex-zero, 6/6 yrs. BUT recent-24mo CI touches zero (+5.15%/yr acct), wicks >2% through the bid lose, 20x would liquidate 16% of fills. Licenses collector + micro-live only. NEXT: rerun on Binance USDT-M PERP 1m**
 - [f1-tail-gated-carry-result](f1-tail-gated-carry-result.md) — **F1 PASSED 5/5 (2026-07-31): tail-gated carry +18.89%/yr on deployed vs +3.10% always-on. One-account +8.75%/yr full-sample but only +2.47%/yr recent-24mo → still misses the hurdle. KEY: harder gates raise deployed-yield to +103%/yr but cut account yield → use as capital-light OVERLAY, not standalone**
 - [w3-carry-first-live-diagnosis](w3-carry-first-live-diagnosis.md) — **W3 carry CERTIFIED (project's FIRST cert, 1 of 3): +2.23%/yr t+4.08, 22391 OOS bars, 2/2 regimes, C4 null + C6 fragility pass. `coinmon certify-carry`. But parked under the yield hurdle. 4h REFUTED**
 - [b13-low-vol-fresh-lead](b13-low-vol-fresh-lead.md) — **LOW-VOL LEAD CLOSED (B14d decomp 2026-07-18): long low-vol leg +12.9%/yr still loses to BTC-hold; short high-vol leg survivorship-suspect, pays off only in 2022 crash. DB is pure-survivor (0 delistings). Closed**

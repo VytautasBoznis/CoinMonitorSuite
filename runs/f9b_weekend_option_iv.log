@@ -1,0 +1,60 @@
+F9b: 81,122 Monday-expiry option prints cached, Saturdays 2021-01-02 -> 2026-08-29
+
+==============================================================================
+BTC: 285 valid weekends, 2021-01-02 -> 2026-08-29, median 24 bid prints/weekend
+==============================================================================
+  IV (bid)  42.06   RV  43.20   gap  -1.14 pts  HAC t -1.18   gap>0  55.4%
+  straddle net/weekend +0.025%  HAC t +0.15  ->  1x yield  +1.29%/yr   win  60.4%
+  per year:
+    2021  gap  +4.27 pts   net +1.191%/wknd (+61.94%/yr)  n=45
+    2022  gap  +2.17 pts   net +0.388%/wknd (+20.20%/yr)  n=51
+    2023  gap  -1.56 pts   net -0.127%/wknd ( -6.62%/yr)  n=52
+    2024  gap  -3.38 pts   net -0.163%/wknd ( -8.49%/yr)  n=52
+    2025  gap  -4.42 pts   net -0.778%/wknd (-40.46%/yr)  n=50
+    2026  gap  -4.27 pts   net -0.352%/wknd (-18.32%/yr)  n=35
+
+  S1 N >= 150                         : PASS
+  S2 mean gap >= 3.0 pts               : FAIL
+  S3 HAC t(gap) >= 3                 : FAIL
+  S4 yield >= 5%/yr AND t(r) >= 2  : FAIL
+  S5 net > 0 in each of 2022-2025         : FAIL
+  BTC: KILL
+  diagnostics (not the verdict):
+    recent 24mo: N=103  net -0.498%/wknd -> -25.89%/yr  HAC t -2.93  gap  -3.83 pts
+    mid-IV upper bound: net +0.039%/wknd ->  +2.03%/yr (recent -25.17%/yr)
+    worst 5 weekends: 2024-08-03 -12.31%, 2022-06-11 -11.11%, 2021-07-24 -9.68%, 2023-03-11 -8.66%, 2025-04-05 -8.21%
+    weekends losing > 3% of notional: 25 of 285
+    REVERSE (long straddle at ask, snooped): N=273  -12.57%/yr  HAC t -1.47  | recent 24mo N=102 +15.89%/yr  HAC t +1.79
+      per year %/yr: 2021 -78.0  2022 -31.7  2023 -5.1  2024 -4.5  2025 +29.3  2026 +10.3
+      recent: top-3 weekends = 63% of summed PnL  (win 50.0%)
+
+==============================================================================
+ETH: 282 valid weekends, 2021-01-02 -> 2026-08-29, median 16 bid prints/weekend
+==============================================================================
+  IV (bid)  51.32   RV  56.92   gap  -5.60 pts  HAC t -3.82   gap>0  41.1%
+  straddle net/weekend -0.373%  HAC t -1.64  ->  1x yield -19.42%/yr   win  59.2%
+  per year:
+    2021  gap  +1.78 pts   net -0.418%/wknd (-21.74%/yr)  n=39
+    2022  gap  -2.33 pts   net +0.013%/wknd ( +0.67%/yr)  n=53
+    2023  gap  -5.17 pts   net -0.060%/wknd ( -3.14%/yr)  n=51
+    2024  gap  -7.42 pts   net -0.249%/wknd (-12.95%/yr)  n=52
+    2025  gap -11.45 pts   net -0.973%/wknd (-50.57%/yr)  n=52
+    2026  gap  -8.00 pts   net -0.659%/wknd (-34.29%/yr)  n=35
+
+  S1 N >= 150                         : PASS
+  S2 mean gap >= 3.0 pts               : FAIL
+  S3 HAC t(gap) >= 3                 : FAIL
+  S4 yield >= 5%/yr AND t(r) >= 2  : FAIL
+  S5 net > 0 in each of 2022-2025         : FAIL
+  ETH: KILL
+  diagnostics (not the verdict):
+    recent 24mo: N=105  net -0.707%/wknd -> -36.79%/yr  HAC t -2.39  gap  -9.38 pts
+    mid-IV upper bound: net -0.352%/wknd -> -18.29%/yr (recent -35.80%/yr)
+    worst 5 weekends: 2021-01-02 -40.45%, 2024-08-03 -18.84%, 2022-07-16 -17.78%, 2025-02-01 -17.65%, 2025-04-05 -17.02%
+    weekends losing > 3% of notional: 36 of 282
+    REVERSE (long straddle at ask, snooped): N=252   +1.80%/yr  HAC t +0.16  | recent 24mo N=93 +29.14%/yr  HAC t +1.78
+      per year %/yr: 2021 -57.6  2022 -5.3  2023 -5.8  2024 -1.2  2025 +42.1  2026 +33.4
+      recent: top-3 weekends = 89% of summed PnL  (win 48.4%)
+
+==============================================================================
+F9b VERDICT: KILL  (BTC KILL, ETH KILL)

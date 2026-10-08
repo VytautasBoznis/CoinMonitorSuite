@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 2037ad27-4d88-4989-b811-caa6ea20fa15
-  modified: 2026-10-04T19:45:06.663Z
+  modified: 2026-10-08T18:01:05.742Z
 ---
 
 Idea 8 of [[fable-batch-10-probe-queue]], run 2026-10-04. Code `probes/f8_cascade_ladder_proxy.py`,
@@ -65,6 +65,8 @@ predicted), mean **+0.509%**/event, CI [+0.360%, +0.649%], 6/6 years positive (2
 
 **Collector DONE 2026-10-08** → [[bybit-liquidation-collector]] (built, verified, RUNNING locally).
 Correction to the old NEXT line: the collector measures forced flow, it does NOT settle queue position.
-**NEXT (proposed, not yet pre-registered):** re-run F8 on Bybit's OWN 1m perp klines — a Bybit print
-below the bid is a guaranteed fill on Bybit, which retroactively settles the venue half of the queue
-question for the recent-24mo window. Exact-touch fills still need the live book.
+**Bybit-native rerun: SKIPPED by owner 2026-10-08, NEVER RUN.** Pre-registered (G1 venue
+replication, H1 hurdle on >=1-tick trade-throughs) in the probe docstring with `--bybit` code, but the
+Bybit 1m REST backfill was ~2-3h and the owner killed it ([[no-multi-hour-data-loads]]). Partial
+`bybit` 1m rows (BTC 2021-01 → ~2025) sit in the local DB; no probe read them. Queue position stays
+open — only the live book settles it now.

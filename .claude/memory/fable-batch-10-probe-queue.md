@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 4520e228-25b0-4c00-a3cd-6a323fb7630d
-  modified: 2026-10-04T19:45:22.634Z
+  modified: 2026-10-08T19:15:53.747Z
 ---
 
 Delivered by the user 2026-07-31 as the authorized batch under [[fuck-it-we-ball-mode]]. Ranked by EV
@@ -40,6 +40,7 @@ without stochastic funding. DATA: CHEAP (one ccxt pull of quarterly candles; spo
 PASS: net (maker) >=5%/yr averaged INCLUDING flat periods, positive in >=2 disjoint regimes.
 KILL: <5% avg or single-regime PnL. Cert risk C5 (basis fattens only in bulls) — if it fails there it
 becomes a regime overlay for idea 1, not standalone. Huge capacity, tiny turnover.
+**STATUS 2026-10-08: KILLED** (+3.94%/yr incl. flat; nothing qualifies since 2025-03) → [[f7-f3-killed]].
 
 **4. Token unlock cliff shorts** — short perp T-7 before scheduled cliff unlocks >=1% of circulating
 supply, cover T-0, portfolio across all events. Pays: VCs/teams with near-zero cost basis selling
@@ -61,6 +62,7 @@ PASS: realized win rate minus implied >= +1.5pp in the 90-97c bucket, N>=1000 co
 across >=3 categories (politics/sports/crypto). KILL: gap <= ~1pp fee+spread. Candle plumbing doesn't
 fit but the calibration machinery maps 1:1; C4 nulls translate directly. Taxes: capital lockup to
 resolution + UMA resolution risk. Best data-cost ratio on the list.
+**STATUS 2026-10-08: KILLED** (favorites overpriced if anything, gap −1.53pp) → [[f5-polymarket-favorites-killed]].
 
 **6. New perp listing funding capture** — first 7 days post-listing funding is chronically negative
 (easy to short the pump on perp, no spot borrow exists); be the delta-neutral long collecting it where a
@@ -68,6 +70,8 @@ hedge leg exists. DATA: CHEAP (announcement archives scrapeable; Binance funding
 PASS: mean >= +0.5%/event net of hedge cost, positive in >=60% of events, on BOTH Binance and Bybit.
 KILL below either. Cert risk C1 (~50-100 events) → ensemble across venues. **Flag: where no spot exists
 the hedge leg vanishes and it degrades to naked long perp — report those separately, never blend.**
+**STATUS 2026-10-08: KILLED both venues** (hit 45%/41%; mean is a tail; hedge = scarce borrow) →
+[[f6-new-listing-funding-killed]].
 
 **7. Funding-settlement clock scalp (00/08/16 UTC)** — when pending funding is extreme, fade the
 pre-settlement dodge flow (funding very positive -> short T-30min, cover T+15min). NOT the banned
@@ -77,6 +81,7 @@ DATA: CHEAP (one 1m-candle pull). PASS: mean gross move >= 2x maker RT fee, t>=3
 out-of-asset and in >=2 years. **KILL if gross < 2x maker fee — do not proceed to net.**
 **Pre-registered expectation: this dies** (C3 at fees; turnover brutal; maker-only makes it an execution
 bet the rig can't settle). Two days to know. Low confidence, cheap kill.
+**STATUS 2026-10-08: KILLED as expected** (fade −12bp/event, t −0.85) → [[f7-f3-killed]].
 
 **8. Liquidation-cascade ladder bids** — resting bids laddered 1.5-4% below mid on liquid perps; fills
 come from the liquidation engine's market orders; exit into reversion within minutes-hours. Distinct
@@ -101,6 +106,8 @@ collector now). PROXY CHEAP: Deribit DVOL index history is a free API call; week
 PROXY PASS: Fri-00UTC DVOL vs realized Fri-Mon vol, >=150 weekends, mean (IV - RV) >= 3 vol pts, t>=3,
 positive >=60% of weekends, holds in each of 2022-2025. KILL: gap <= ~1.5 vol pts (est. spread cross).
 Plumbing only on a fat proxy pass.
+**STATUS 2026-10-08: KILLED.** Proxy passed but was the calendar effect; real Monday-expiry option
+prints show no premium since 2023 → [[f9-weekend-vrp-killed]].
 
 **10. Stablecoin depeg lottery bids** — permanent tiny resting bids on USDC/FDUSD/USDe pairs at
 0.90-0.97, forever. Pays: panic sellers in bank-run hours (USDC printed 0.88 in March 2023, full

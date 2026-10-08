@@ -1,0 +1,36 @@
+  bybit: 755 USDT perps listed in span
+  bybit pulled in 106s
+  binance: 588 USDT perps listed in span
+  binance: 1 symbols answered 400 on klines (unserved, skipped)
+  binance pulled in 613s
+
+==========================================================================
+BINANCE: 581 listings with funding, first settlement 2021-01-21 -> 2026-09-06
+==========================================================================
+  long funding received, first 7d: mean +1.505%  median -0.159%  CI [+1.082%, +1.974%]  positive 45.3%
+  per year (mean F, n):  2021 -0.97% n=40  2022 +1.32% n=19  2023 +1.66% n=96  2024 +0.29% n=129  2025 +2.35% n=245  2026 +2.23% n=52
+  L1 N >= 50            : PASS
+  L2 mean >= +0.50%     : PASS
+  L3 positive >= 60%    : FAIL
+  L4 CI > 0              : PASS
+  binance: KILL
+  diag: recent 24mo n=369 mean +1.918% positive 49.3%
+  diag: NAKED long perp price, same window (never blended): n=417 mean -3.67% median -12.57%  -> naked total -2.11%
+  diag: top-10 listings = 36% of summed funding
+
+==========================================================================
+BYBIT: 730 listings with funding, first settlement 2021-03-15 -> 2026-09-14
+==========================================================================
+  long funding received, first 7d: mean +0.928%  median -0.099%  CI [+0.610%, +1.289%]  positive 40.8%
+  per year (mean F, n):  2021 -0.83% n=63  2022 +0.71% n=38  2023 +0.53% n=58  2024 +0.49% n=95  2025 +3.02% n=178  2026 +0.30% n=298
+  L1 N >= 50            : PASS
+  L2 mean >= +0.50%     : PASS
+  L3 positive >= 60%    : FAIL
+  L4 CI > 0              : PASS
+  bybit: KILL
+  diag: recent 24mo n=513 mean +1.255% positive 44.8%
+  diag: NAKED long perp price, same window (never blended): n=591 mean +3.70% median -3.08%  -> naked total +4.64%
+  diag: top-10 listings = 46% of summed funding
+
+==========================================================================
+F6 VERDICT (funding leg, gross of hedge): KILL  (binance KILL, bybit KILL)

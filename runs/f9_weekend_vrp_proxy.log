@@ -1,0 +1,50 @@
+
+==============================================================================
+BTC: DVOL 2021-03-24 -> 2026-10-08, weekends 2021-03-26 -> 2026-08-28
+==============================================================================
+  WEEKEND Fri->Mon (verdict) N= 282  IV  59.77  RV  44.85  gap +14.92 pts  HAC t +10.41  hit  87.9%
+  per year (weekend gap):
+    2021  +18.68 pts  n=39
+    2022  +21.81 pts  n=52
+    2023  +16.05 pts  n=52
+    2024  +15.17 pts  n=52
+    2025   +8.87 pts  n=52
+    2026   +7.45 pts  n=35
+
+  R1 N >= 150                  : PASS
+  R2 mean gap >= 3.0 pts        : PASS
+  R3 HAC t >= 3               : PASS
+  R4 hit >= 60%                : PASS
+  R5 positive in each of 2022-2025 : PASS
+  BTC: PASS
+
+  PRE-DECLARED CONTROL (reading, not verdict):
+  WEEKDAY Mon->Thu           N= 283  IV  60.66  RV  57.31  gap  +3.35 pts  HAC t +2.38  hit  71.0%
+    weekend RV / weekday RV = 0.78  (IV is the same 30d index in both)
+
+==============================================================================
+ETH: DVOL 2021-03-24 -> 2026-10-08, weekends 2021-03-26 -> 2026-08-28
+==============================================================================
+  WEEKEND Fri->Mon (verdict) N= 282  IV  73.89  RV  59.62  gap +14.27 pts  HAC t +8.56  hit  81.9%
+  per year (weekend gap):
+    2021  +21.38 pts  n=39
+    2022  +20.47 pts  n=52
+    2023  +12.98 pts  n=52
+    2024  +13.15 pts  n=52
+    2025   +7.03 pts  n=52
+    2026  +11.43 pts  n=35
+
+  R1 N >= 150                  : PASS
+  R2 mean gap >= 3.0 pts        : PASS
+  R3 HAC t >= 3               : PASS
+  R4 hit >= 60%                : PASS
+  R5 positive in each of 2022-2025 : PASS
+  ETH: PASS
+
+  PRE-DECLARED CONTROL (reading, not verdict):
+  WEEKDAY Mon->Thu           N= 283  IV  74.70  RV  73.68  gap  +1.02 pts  HAC t +0.45  hit  65.7%
+    weekend RV / weekday RV = 0.81  (IV is the same 30d index in both)
+
+==============================================================================
+F9 PROXY VERDICT: PASS  (BTC PASS, ETH PASS)
+  Licenses stage 2 (real Monday-expiry option IVs) ONLY — read the weekday control first.

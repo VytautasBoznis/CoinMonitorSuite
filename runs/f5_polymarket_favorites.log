@@ -1,0 +1,23 @@
+F5: 46,510 liquid binary markets, 32,382 open at endDate-24h, 8,000 sampled, 7,933 priced
+
+==========================================================================
+FAVORITES at 90-97c, endDate-24h: N=578, 533 events
+==========================================================================
+  mean price 93.91c   win rate 92.39%   gap -1.53pp   CI [-3.80, +0.51]pp
+  by category: Crypto -0.99pp n=193  Other -2.44pp n=81  Politics +0.21pp n=210  Sports -5.73pp n=94
+  by year:     2023 -27.00pp n=3  2024 -1.60pp n=76  2025 -1.07pp n=308  2026 -1.84pp n=191
+
+  P1 N >= 1000                         : FAIL
+  P2 gap >= +1.5pp                   : FAIL
+  P3 event-bootstrap CI > 0           : FAIL
+  P4 Politics/Sports/Crypto each > 0  : FAIL
+  P5 positive in >= 2 years (n>=100)  : FAIL
+
+  VERDICT: KILL
+
+  diagnostics (not the verdict):
+    price [0.90,0.92]: n= 120  price 90.86c  win 85.00%  gap -5.86pp
+    price [0.92,0.95]: n= 241  price 93.54c  win 92.95%  gap -0.60pp
+    price [0.95,0.97]: n= 217  price 96.02c  win 95.85%  gap -0.16pp
+    return/trade at mid -1.67%  median hold 1.3d  (mean 3.6d)  losers 44 of 578
+    recent 24mo: n=552 gap -1.17pp

@@ -1,0 +1,50 @@
+  BTC/USDT:USDT         6297 settlements  ->   231 extreme events
+  ETH/USDT:USDT         6297 settlements  ->   281 extreme events
+  SOL/USDT:USDT         6372 settlements  ->   451 extreme events
+  DOGE/USDT:USDT        6297 settlements  ->   379 extreme events
+  AVAX/USDT:USDT        6297 settlements  ->   388 extreme events
+  NEAR/USDT:USDT        6297 settlements  ->   327 extreme events
+  LINK/USDT:USDT        6297 settlements  ->   328 extreme events
+  1000SHIB/USDT:USDT    5908 settlements  ->   277 extreme events
+  ADA/USDT:USDT         6297 settlements  ->   331 extreme events
+  XRP/USDT:USDT         6297 settlements  ->   391 extreme events
+
+========================================================================
+F7 FUNDING-CLOCK SCALP — 3384 events, 930 settlement clusters, |signal| >= 0.05%
+========================================================================
+  mean gross G (T-30 -> T+15) : -12.10 bp   cluster t -0.85
+  per symbol:
+    1000SHIB/USDT:USDT     -7.81 bp  n=277
+    ADA/USDT:USDT          -4.12 bp  n=331
+    AVAX/USDT:USDT         -6.29 bp  n=388
+    BTC/USDT:USDT          -8.03 bp  n=231
+    DOGE/USDT:USDT        -16.24 bp  n=379
+    ETH/USDT:USDT         -12.00 bp  n=281
+    LINK/USDT:USDT        -12.71 bp  n=328
+    NEAR/USDT:USDT         +0.49 bp  n=327
+    SOL/USDT:USDT         -18.44 bp  n=451
+    XRP/USDT:USDT         -28.82 bp  n=391
+  per year:
+    2021   -18.09 bp  n=2605
+    2022    +3.38 bp  n=199
+    2023    -3.67 bp  n=110
+    2024   +12.75 bp  n=447
+    2025   +22.48 bp  n=18
+    2026   -36.85 bp  n=5
+
+  R1 mean G >= 8 bp (2x maker RT) : FAIL
+  R2 cluster t >= 3              : FAIL
+  R3 N >= 500                      : PASS (N=3384)
+  R4 >= 2/3 symbols positive        : FAIL (1/10 with >= 20 events)
+  R5 positive in >= 2 years         : PASS
+
+  VERDICT: KILL
+
+========================================================================
+DIAGNOSTICS — not the verdict
+========================================================================
+  dodge-then-reopen split: T-30 -> T -0.10 bp (t +1.11),  T -> T+15 -12.00 bp (t -2.35)
+  short (signal > 0)   n=2916  G -12.43 bp  t -0.77
+  long (signal < 0)    n= 468  G -10.01 bp  t -0.93
+  with funding collected at T, minus maker RT: -6.07 bp/event (funding alone +10.03 bp)
+  look-ahead sensitivity (settled-at-T also extreme): n=2392  G -18.41 bp  t -1.76

@@ -1,0 +1,43 @@
+F3 QUARTERLY BASIS CARRY — 2021-01-02 -> 2026-10-02 (5.75y), gate b > 10% ann, dte >= 30d
+  roll sanity BTCUSDT: basis at the last close before delivery, median +0.010%, max |0.414|% over 23 deliveries
+  roll sanity ETHUSDT: basis at the last close before delivery, median +0.025%, max |0.159|% over 23 deliveries
+
+  20 trades:
+    BTCUSDT  2021-02-04 -> 2021-03-26  entry b  20.1%/yr  locked net +2.70%
+    BTCUSDT  2021-03-27 -> 2021-06-25  entry b  22.1%/yr  locked net +5.38%
+    BTCUSDT  2021-06-26 -> 2021-12-31  entry b  15.8%/yr  locked net +8.07%
+    BTCUSDT  2022-01-03 -> 2022-03-25  entry b  10.1%/yr  locked net +2.16%
+    BTCUSDT  2022-04-09 -> 2022-09-30  entry b  10.7%/yr  locked net +5.01%
+    BTCUSDT  2023-07-19 -> 2023-12-29  entry b  10.6%/yr  locked net +4.67%
+    BTCUSDT  2023-12-30 -> 2024-03-29  entry b  17.4%/yr  locked net +4.23%
+    BTCUSDT  2024-03-30 -> 2024-06-28  entry b  25.5%/yr  locked net +6.23%
+    BTCUSDT  2024-06-29 -> 2024-12-27  entry b  11.7%/yr  locked net +5.75%
+    BTCUSDT  2024-12-28 -> 2025-03-28  entry b  12.9%/yr  locked net +3.12%
+    ETHUSDT  2021-02-05 -> 2021-03-26  entry b  32.5%/yr  locked net +4.32%
+    ETHUSDT  2021-03-27 -> 2021-06-25  entry b  31.2%/yr  locked net +7.64%
+    ETHUSDT  2021-07-21 -> 2021-12-31  entry b  13.2%/yr  locked net +5.81%
+    ETHUSDT  2022-01-01 -> 2022-03-25  entry b  10.5%/yr  locked net +2.31%
+    ETHUSDT  2022-04-12 -> 2022-09-30  entry b  14.0%/yr  locked net +6.47%
+    ETHUSDT  2023-12-21 -> 2024-03-29  entry b  10.2%/yr  locked net +2.68%
+    ETHUSDT  2024-03-30 -> 2024-06-28  entry b  25.7%/yr  locked net +6.29%
+    ETHUSDT  2024-06-29 -> 2024-09-27  entry b  12.0%/yr  locked net +2.89%
+    ETHUSDT  2024-10-30 -> 2024-12-27  entry b  11.2%/yr  locked net +1.71%
+    ETHUSDT  2024-12-28 -> 2025-03-28  entry b  12.6%/yr  locked net +3.04%
+
+  account accrued PnL per calendar year (0.5x book, 2 slices):
+    2021  +8.48%
+    2022  +3.99%
+    2023  +1.27%
+    2024  +7.42%
+    2025  +1.47%
+  slices deployed 52.1% of the time
+
+  account yield incl. flat: +3.94%/yr
+  Q1 yield >= 5%/yr incl. flat : FAIL
+  Q2 positive in >= 2 years     : PASS
+  Q3 no year > 70% of PnL       : PASS (max year 37%)
+
+  VERDICT: KILL
+
+  diagnostics (not the verdict):
+    recent 24mo account yield: +1.33%/yr (0.5x)  |  unified-margin 1x book would double these: full +7.87%/yr, recent +2.65%/yr

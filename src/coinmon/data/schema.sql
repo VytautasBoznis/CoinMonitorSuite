@@ -74,3 +74,39 @@ SELECT create_hypertable(
     chunk_time_interval => 2592000000,  -- 30 days in ms
     if_not_exists => TRUE
 );
+
+-- Perp liquidation prints from Bybit's v5 public allLiquidation websocket (idea-8 cascade
+-- research). Bybit serves NO liquidation history, so this holds only what a running collector
+-- saw: always read it together with liquidation_coverage. ts is Bybit's T (epoch ms UTC); side is
+-- Bybit's S verbatim: the LIQUIDATED POSITION's side, so 'Buy' = a long was liquidated = forced
+-- selling (checked on the first live sample: every 'Buy' print's price sat below the 1m close);
+-- price is the bankruptcy price; size is in base-currency contracts; recv_ms is when the collector
+-- got the push (feed-latency diagnostics). Natural key, so separate collectors stitch by upsert-merge.
+CREATE TABLE IF NOT EXISTS liquidations (
+    exchange  TEXT             NOT NULL,
+    symbol    TEXT             NOT NULL,
+    ts        BIGINT           NOT NULL,
+    side      TEXT             NOT NULL,
+    price     DOUBLE PRECISION NOT NULL,
+    size      DOUBLE PRECISION NOT NULL,
+    recv_ms   BIGINT           NOT NULL,
+    PRIMARY KEY (exchange, symbol, ts, side, price, size)
+);
+
+SELECT create_hypertable(
+    'liquidations', 'ts',
+    chunk_time_interval => 604800000,  -- 7 days in ms (cascade days are dense)
+    if_not_exists => TRUE
+);
+
+-- Per-symbol windows [start_ms, end_ms] during which a collector was subscribed to that symbol's
+-- liquidation topic AND hearing from the venue. A minute with no liquidations means "none
+-- happened" ONLY inside a span; outside one it is missing data. Receive-time bounds, so edges are
+-- fuzzy by Bybit's ~500ms push cadence. Stitch = union of spans across collectors.
+CREATE TABLE IF NOT EXISTS liquidation_coverage (
+    exchange  TEXT   NOT NULL,
+    symbol    TEXT   NOT NULL,
+    start_ms  BIGINT NOT NULL,
+    end_ms    BIGINT NOT NULL,
+    PRIMARY KEY (exchange, symbol, start_ms)
+);

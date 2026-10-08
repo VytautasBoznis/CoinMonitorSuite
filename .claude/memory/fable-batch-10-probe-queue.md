@@ -90,7 +90,8 @@ assumption yields mean >= 3x maker fee, 95% CI ex-zero, N>=300, positive in >=2 
 never deployment.** Cert risk C6 fragility (tail fills) — correctly so, that IS the trade.
 Best fit for the pre-authorized micro-live → this is where the 100 EUR goes.
 **STATUS 2026-10-08: proxy PASSED 4/4 on spot** (+0.54%/event, N=2038) **AND on perp** (+0.51%/event,
-N=2261). Recent-24mo clears 5%/yr only on touch-fills → [[f8-cascade-ladder-result]]. Next: collector.
+N=2261). Recent-24mo clears 5%/yr only on touch-fills → [[f8-cascade-ladder-result]]. Collector BUILT +
+RUNNING 2026-10-08 → [[bybit-liquidation-collector]]. Next: Bybit-native F8 rerun (proposed).
 
 **9. Weekend variance risk premium (Deribit)** — sell delta-hedged short-dated BTC/ETH strangles Friday,
 cover Monday; weekend realized vol systematically underruns short-dated IV. Pays: lottery-call buyers and

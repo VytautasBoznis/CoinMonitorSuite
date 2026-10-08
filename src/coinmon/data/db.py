@@ -210,6 +210,38 @@ def read_open_interest(
     return pd.DataFrame(rows, columns=["ts", "oi_amount"])
 
 
+def write_liquidations(
+    conn: psycopg.Connection,
+    rows: list[tuple],
+    coverage: list[tuple[str, str, int, int]],
+) -> None:
+    """Store liquidation prints ``(exchange, symbol, ts, side, price, size, recv_ms)`` and refresh
+    coverage spans ``(exchange, symbol, start_ms, end_ms)`` in ONE transaction, so a stored span
+    never claims a window whose prints were lost. Idempotent: prints are natural-keyed (re-writes
+    are no-ops) and a span keeps the furthest end any collector reported for it."""
+    with conn.cursor() as cur:
+        if rows:
+            cur.executemany(
+                """
+                INSERT INTO liquidations (exchange, symbol, ts, side, price, size, recv_ms)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (exchange, symbol, ts, side, price, size) DO NOTHING
+                """,
+                rows,
+            )
+        if coverage:
+            cur.executemany(
+                """
+                INSERT INTO liquidation_coverage (exchange, symbol, start_ms, end_ms)
+                VALUES (%s, %s, %s, %s)
+                ON CONFLICT (exchange, symbol, start_ms) DO UPDATE SET
+                    end_ms = GREATEST(liquidation_coverage.end_ms, EXCLUDED.end_ms)
+                """,
+                coverage,
+            )
+    conn.commit()
+
+
 def last_open_time(
     conn: psycopg.Connection, exchange: str, symbol: str, timeframe: str
 ) -> int | None:
@@ -240,4 +272,5 @@ __all__ = [
     "read_open_interest",
     "series_stats",
     "upsert_candles",
+    "write_liquidations",
 ]

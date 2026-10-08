@@ -35,6 +35,21 @@ services:
       timescaledb:
         condition: service_healthy
 
+  liquidations:
+    # Same image as the scraper, different entrypoint: Bybit allLiquidation websocket collector.
+    # Records every linear perp; no symbol config. Liquidations have no REST history, so data
+    # (and liquidation_coverage) only exists for the time this service is up.
+    build:
+      context: .
+      dockerfile: Dockerfile.scraper
+    entrypoint: ["python", "-m", "coinmon.scraper.liquidations"]
+    environment:
+      COINMON_DB_DSN: postgresql://coinmon:coinmon@timescaledb:5432/coinmon
+    restart: unless-stopped
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+
   viewer:
     build:
       context: .

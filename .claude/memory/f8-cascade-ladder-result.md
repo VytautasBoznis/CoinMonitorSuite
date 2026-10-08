@@ -63,5 +63,8 @@ predicted), mean **+0.509%**/event, CI [+0.360%, +0.649%], 6/6 years positive (2
   (collector + micro-live) survives.**
 - Spot rerun with D-G appended was byte-identical to the committed spot log (reproducible).
 
-**NEXT:** the Bybit v5 `allLiquidation` collector (not built yet; no code in repo) — the live book's
-fills and that collector are the only ways to settle queue position, which is now THE deciding unknown.
+**Collector DONE 2026-10-08** → [[bybit-liquidation-collector]] (built, verified, RUNNING locally).
+Correction to the old NEXT line: the collector measures forced flow, it does NOT settle queue position.
+**NEXT (proposed, not yet pre-registered):** re-run F8 on Bybit's OWN 1m perp klines — a Bybit print
+below the bid is a guaranteed fill on Bybit, which retroactively settles the venue half of the queue
+question for the recent-24mo window. Exact-touch fills still need the live book.

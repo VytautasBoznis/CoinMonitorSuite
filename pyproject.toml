@@ -10,6 +10,7 @@ dependencies = [
     "pyarrow",
     "pydantic-settings",
     "psycopg[binary]",
+    "aiohttp",
 ]
 
 [project.optional-dependencies]

@@ -24,13 +24,19 @@ are already in the 1h universe) rather than reaching further back in time.
 Idempotent: upsert on the natural key (exchange, symbol, timeframe, open_time), so re-running
 resumes rather than duplicating. Months already complete in the DB are skipped without downloading.
 
+PERP (added 2026-10-08): `--perp` loads the USDT-M perpetual dumps for the same coins instead,
+stored under the unified linear-perp symbol ("BTC/USDT:USDT", same convention as funding and OI).
+The live ladder rests bids on perps, and the spot F8 pass left SPOT -> PERP as its biggest
+untested assumption ([[f8-cascade-ladder-result]]).
+
 Run:
   COINMON_DB_DSN=postgresql://coinmon:coinmon@localhost:5433/coinmon \
-  PYTHONPATH="src;." .venv/Scripts/python probes/z1_backfill_1m.py
+  PYTHONPATH="src;." .venv/Scripts/python probes/z1_backfill_1m.py [--perp]
 """
 from __future__ import annotations
 
 import io
+import sys
 import urllib.error
 import urllib.request
 import zipfile
@@ -50,8 +56,16 @@ SYMBOLS = [
     # so the sample is widened by SYMBOL rather than by loosening the frozen 2.5% threshold.
     "DOGE/USDT", "AVAX/USDT", "NEAR/USDT", "LINK/USDT", "SHIB/USDT", "ADA/USDT", "XRP/USDT",
 ]
+# USDT-M perp counterparts of SYMBOLS. SHIB trades there only as the 1000x contract; every consumer
+# works on returns, so the price scale is irrelevant.
+PERP_SYMBOLS = [
+    "BTC/USDT:USDT", "ETH/USDT:USDT", "SOL/USDT:USDT",
+    "DOGE/USDT:USDT", "AVAX/USDT:USDT", "NEAR/USDT:USDT", "LINK/USDT:USDT", "1000SHIB/USDT:USDT",
+    "ADA/USDT:USDT", "XRP/USDT:USDT",
+]
 START = date(2021, 1, 1)
 BASE_URL = "https://data.binance.vision/data/spot/monthly/klines"
+PERP_URL = "https://data.binance.vision/data/futures/um/monthly/klines"
 
 # Binance kline CSV layout (headerless in older months, headered in newer ones).
 _COLS = [
@@ -69,11 +83,11 @@ def _months(start: date, end: date) -> list[tuple[int, int]]:
     return out
 
 
-def _fetch_month(symbol: str, year: int, month: int) -> pd.DataFrame | None:
+def _fetch_month(symbol: str, year: int, month: int, base_url: str) -> pd.DataFrame | None:
     """Download and normalize one symbol-month zip. Returns None if Binance has no such file."""
-    native = symbol.replace("/", "")
+    native = symbol.split(":")[0].replace("/", "")
     name = f"{native}-{TIMEFRAME}-{year:04d}-{month:02d}"
-    url = f"{BASE_URL}/{native}/{TIMEFRAME}/{name}.zip"
+    url = f"{base_url}/{native}/{TIMEFRAME}/{name}.zip"
     try:
         with urllib.request.urlopen(url, timeout=120) as resp:
             blob = resp.read()
@@ -149,15 +163,17 @@ def main() -> None:
     conn = db.connect()
     db.init_schema(conn)
     stored = _stored_counts(conn)
+    perp = "--perp" in sys.argv
+    symbols, base_url = (PERP_SYMBOLS, PERP_URL) if perp else (SYMBOLS, BASE_URL)
 
-    print(f"Z1 1m backfill — {EXCHANGE} {SYMBOLS} {START:%Y-%m} .. {end:%Y-%m}\n")
+    print(f"Z1 1m backfill — {EXCHANGE} {symbols} {START:%Y-%m} .. {end:%Y-%m}\n")
     total = 0
-    for symbol in SYMBOLS:
+    for symbol in symbols:
         for year, month in _months(START, end):
             # A full month is 28*1440=40320 bars at minimum; anything less may be a partial load.
             if stored.get((symbol, year, month), 0) >= 40320:
                 continue
-            df = _fetch_month(symbol, year, month)
+            df = _fetch_month(symbol, year, month, base_url)
             if df is None:
                 print(f"  {symbol} {year}-{month:02d}  no dump (404)")
                 continue

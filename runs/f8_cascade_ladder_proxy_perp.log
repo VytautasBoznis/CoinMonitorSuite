@@ -1,0 +1,93 @@
+  BTC/USDT:USDT: 3,022,560 bars  ->     55 events
+  ETH/USDT:USDT: 3,022,560 bars  ->     99 events
+  SOL/USDT:USDT: 3,015,360 bars  ->    263 events
+  DOGE/USDT:USDT: 3,022,560 bars  ->    466 events
+  AVAX/USDT:USDT: 3,022,560 bars  ->    247 events
+  NEAR/USDT:USDT: 3,015,360 bars  ->    205 events
+  LINK/USDT:USDT: 3,022,560 bars  ->    137 events
+  1000SHIB/USDT:USDT: 2,835,743 bars  ->    334 events
+  ADA/USDT:USDT: 3,022,560 bars  ->    173 events
+  XRP/USDT:USDT: 3,015,360 bars  ->    282 events
+
+====================================================================
+F8 CASCADE LADDER PROXY — 2261 events, 1572 distinct symbol-days, 521 distinct UTC days (bootstrap clusters)
+====================================================================
+  mean net / event (ladder fill) : +0.509%
+  95% CI (cluster bootstrap)     : [+0.360%, +0.649%]
+  target hit rate                : 86.3%
+  time-stop exits at TAKER       : +0.504%  <- sensitivity, not the verdict
+  UPPER BOUND (fill at wick low) : +0.936%  <- not the verdict
+
+  per-year mean net (ladder fill):
+    2021  +0.580%   n=1,033
+    2022  +0.291%   n=  315
+    2023  +0.705%   n=  327
+    2024  +0.451%   n=  352
+    2025  +0.268%   n=  148
+    2026  +0.351%   n=   86
+
+  R1 mean >= 0.12% (3x RT maker) : PASS
+  R2 95% CI excludes zero          : PASS
+  R3 N >= 300                       : PASS (N=2261)
+  R4 positive in >= 2 years        : PASS (6 yr)
+
+  VERDICT: PASS
+  Licenses the liquidation collector + the micro-live book ONLY — not a deployment.
+
+====================================================================
+POST-VERDICT DIAGNOSTICS — not part of the frozen rule, do not change the verdict
+====================================================================
+
+D-A  TRADE-THROUGH REQUIREMENT (fill only if low <= rung * (1 - x))
+    x = 0.00%                          N=2,261  mean +0.509%  CI [+0.360%, +0.649%]  days=521
+    x = 0.10%                          N=1,973  mean +0.448%  CI [+0.289%, +0.602%]  days=487
+    x = 0.25%                          N=1,654  mean +0.383%  CI [+0.211%, +0.547%]  days=449
+    x = 0.50%                          N=1,236  mean +0.264%  CI [+0.048%, +0.466%]  days=377
+    x = 1.00%                          N=  765  mean +0.084%  CI [-0.206%, +0.349%]  days=285
+     by depth bucket (where does the PnL live?):
+    depth [0.00%, 0.10%)               N=  288  mean +0.922%  CI [+0.763%, +1.046%]  days=187
+    depth [0.10%, 0.25%)               N=  319  mean +0.785%  CI [+0.589%, +0.959%]  days=195
+    depth [0.25%, 0.50%)               N=  418  mean +0.735%  CI [+0.554%, +0.900%]  days=251
+    depth [0.50%, 1.00%)               N=  471  mean +0.557%  CI [+0.315%, +0.771%]  days=241
+    depth [1.00%, 2.00%)               N=  423  mean +0.390%  CI [+0.084%, +0.651%]  days=223
+    depth [2.00%, inf%)                N=  342  mean -0.295%  CI [-0.742%, +0.101%]  days=163
+
+D-B  EVENTS RIGHT AFTER A DATA GAP: 0 of 2261
+    excluding gap events               N=2,261  mean +0.509%  CI [+0.360%, +0.649%]  days=521
+
+D-C  ONE-ACCOUNT EQUAL-WEIGHT BOOK (10 slices, 1x): +20.02%/yr simple over 5.74y
+    2021  +59.95%/yr  (covers 1.00y)
+    2022   +9.18%/yr  (covers 1.00y)
+    2023  +23.07%/yr  (covers 1.00y)
+    2024  +15.84%/yr  (covers 1.00y)
+    2025   +3.96%/yr  (covers 1.00y)
+    2026   +4.05%/yr  (covers 0.74y)
+
+D-D  RECENT 24 MONTHS (2024-09-30 -> 2026-09-30): account +6.99%/yr
+    recent events                      N=  319  mean +0.438%  CI [+0.029%, +0.823%]  days=82
+
+D-E  DAY CONCENTRATION: top-5 days = 10.6% of summed PnL; top-20 = 32.2%
+     worst 5 days (summed net across symbols):
+       2024-04-13  -65.90%
+       2023-06-10  -51.82%
+       2022-09-13  -38.73%
+       2021-12-04  -33.60%
+       2021-01-30  -26.18%
+     best 5 days:
+       2021-09-07  +27.21%
+       2026-01-31  +26.68%
+       2024-08-05  +24.36%
+       2021-05-20  +23.20%
+       2024-05-23  +20.88%
+
+D-F  MAX ADVERSE EXCURSION during the hold (fill -> exit): median -1.20%, 5th pct -11.06%, worst -62.46%
+     3x isolated (liq at -32.8%):   11 of 2261 fills breach (0.5%)
+     5x isolated (liq at -19.5%):   40 of 2261 fills breach (1.8%)
+    10x isolated (liq at -9.5%):  152 of 2261 fills breach (6.7%)
+    20x isolated (liq at -4.5%):  384 of 2261 fills breach (17.0%)
+
+D-G  RECENT 24 MONTHS x TRADE-THROUGH (fill only if low <= rung * (1 - x))
+    x = 0.00%  acct +6.99%/yr          N=  319  mean +0.438%  CI [+0.029%, +0.823%]  days=82
+    x = 0.10%  acct +5.22%/yr          N=  283  mean +0.369%  CI [-0.090%, +0.804%]  days=78
+    x = 0.25%  acct +3.32%/yr          N=  245  mean +0.271%  CI [-0.234%, +0.746%]  days=72
+    x = 0.50%  acct +2.02%/yr          N=  174  mean +0.233%  CI [-0.366%, +0.743%]  days=57

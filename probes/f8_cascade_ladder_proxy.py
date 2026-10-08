@@ -55,12 +55,21 @@ HONESTY CAVEATS (flagged before running, not after):
   * A PASS LICENSES THE COLLECTOR AND THE MICRO-LIVE BOOK ONLY. Never a deployment, never a
     certificate ([[alpha-definition-edge-certificate]], [[live-yield-hurdle]]).
 
+PERP RERUN (pre-registered 2026-10-08, written BEFORE any perp 1m bar was loaded). The spot run
+PASSED 4/4 ([[f8-cascade-ladder-result]]) and named SPOT -> PERP as its biggest untested
+assumption. `--perp` re-runs the IDENTICAL frozen rule (R1-R4, same constants, same seed, same
+bootstrap) on Binance USDT-M perp 1m for the same 10 coins (SHIB as the 1000x contract). ANY miss on
+R1-R4 = KILL of the proxy pass, and the live ladder book loses its license. A perp PASS changes
+nothing else: still micro-live + collector only. Span: perp loads through the last complete month
+(2026-09), one month past the spot run; that month is out-of-sample for both.
+
 Run:
   COINMON_DB_DSN=postgresql://coinmon:coinmon@localhost:5433/coinmon \
-  PYTHONPATH="src;." .venv/Scripts/python probes/f8_cascade_ladder_proxy.py
+  PYTHONPATH="src;." .venv/Scripts/python probes/f8_cascade_ladder_proxy.py [--perp]
 """
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass
 
 import numpy as np
@@ -73,6 +82,12 @@ TIMEFRAME = "1m"
 SYMBOLS = [
     "BTC/USDT", "ETH/USDT", "SOL/USDT",
     "DOGE/USDT", "AVAX/USDT", "NEAR/USDT", "LINK/USDT", "SHIB/USDT", "ADA/USDT", "XRP/USDT",
+]
+# Same coins as USDT-M perps (loaded by `probes/z1_backfill_1m.py --perp`).
+PERP_SYMBOLS = [
+    "BTC/USDT:USDT", "ETH/USDT:USDT", "SOL/USDT:USDT",
+    "DOGE/USDT:USDT", "AVAX/USDT:USDT", "NEAR/USDT:USDT", "LINK/USDT:USDT", "1000SHIB/USDT:USDT",
+    "ADA/USDT:USDT", "XRP/USDT:USDT",
 ]
 
 MAKER = 0.0002  # probe-standard maker fee (probes/b20_hourofday_window.py:42); Bybit perp maker
@@ -169,9 +184,10 @@ def _cluster_bootstrap(events: list[Event], rng: np.random.Generator) -> tuple[f
 
 def main() -> None:
     conn = db.connect()
+    symbols = PERP_SYMBOLS if "--perp" in sys.argv else SYMBOLS
     events: list[Event] = []
     span_ms: list[int] = []
-    for symbol in SYMBOLS:
+    for symbol in symbols:
         df = db.read_candles(conn, EXCHANGE, symbol, TIMEFRAME)
         if df.empty:
             print(f"  {symbol}: NO 1m DATA — run probes/z1_backfill_1m.py first")
@@ -227,7 +243,7 @@ def main() -> None:
 
     span = (pd.Timestamp(min(span_ms), unit="ms", tz="UTC"),
             pd.Timestamp(max(span_ms), unit="ms", tz="UTC"))
-    _diagnostics(events, span)
+    _diagnostics(events, span, len(symbols))
 
 
 # ============================================================ POST-VERDICT DIAGNOSTICS (not frozen)
@@ -244,7 +260,8 @@ def _summ(label: str, evs: list[Event]) -> None:
           f"{hi * 100:+.3f}%]  days={len({e.day for e in evs})}")
 
 
-def _diagnostics(events: list[Event], span: tuple[pd.Timestamp, pd.Timestamp]) -> None:
+def _diagnostics(events: list[Event], span: tuple[pd.Timestamp, pd.Timestamp],
+                 n_slices: int) -> None:
     print(f"\n{'=' * 68}")
     print("POST-VERDICT DIAGNOSTICS — not part of the frozen rule, do not change the verdict")
     print(f"{'=' * 68}")
@@ -271,20 +288,20 @@ def _diagnostics(events: list[Event], span: tuple[pd.Timestamp, pd.Timestamp]) -
     # Resting orders reserve margin on Bybit, so idle slices are not free to do anything else.
     lo, hi = span
     years = (hi - lo).days / 365.25
-    total = sum(e.net_ladder for e in events) / len(SYMBOLS)
-    print(f"\nD-C  ONE-ACCOUNT EQUAL-WEIGHT BOOK ({len(SYMBOLS)} slices, 1x): "
+    total = sum(e.net_ladder for e in events) / n_slices
+    print(f"\nD-C  ONE-ACCOUNT EQUAL-WEIGHT BOOK ({n_slices} slices, 1x): "
           f"{total / years * 100:+.2f}%/yr simple over {years:.2f}y")
     for y in sorted({e.year for e in events}):
         y_lo = max(lo, pd.Timestamp(f"{y}-01-01", tz="UTC"))
         y_hi = min(hi, pd.Timestamp(f"{y + 1}-01-01", tz="UTC"))
         frac = (y_hi - y_lo).days / 365.25
-        s = sum(e.net_ladder for e in events if e.year == y) / len(SYMBOLS)
+        s = sum(e.net_ladder for e in events if e.year == y) / n_slices
         print(f"    {y}  {s / frac * 100:+6.2f}%/yr  (covers {frac:.2f}y)")
 
     # ---- D-D: the recent regime the deploy hurdle weights.
     cutoff = hi - pd.Timedelta(days=730)
     recent = [e for e in events if e.day >= cutoff.normalize()]
-    r_yield = sum(e.net_ladder for e in recent) / len(SYMBOLS) / 2.0
+    r_yield = sum(e.net_ladder for e in recent) / n_slices / 2.0
     print(f"\nD-D  RECENT 24 MONTHS ({cutoff.date()} -> {hi.date()}): account {r_yield * 100:+.2f}%/yr")
     _summ("recent events", recent)
 
@@ -304,8 +321,8 @@ def _diagnostics(events: list[Event], span: tuple[pd.Timestamp, pd.Timestamp]) -
     # ---- D-F: max adverse excursion vs isolated-margin liquidation distance. The live book runs
     # levered at the owner's discretion ([[cursed-100-eur-live-ladder]]); this is the table that
     # says how to read its fills, not a recommendation. Long liq ~ entry * (1 - 1/L + MMR), MMR
-    # 0.5% (Bybit low tier; worse on alts). SPOT wicks — perp wicks run deeper, so these
-    # breach rates are a FLOOR for the perp book.
+    # 0.5% (Bybit low tier; worse on alts). On SPOT wicks these breach rates are a FLOOR for the
+    # perp book; the `--perp` run measures them directly.
     mae = np.array([e.mae for e in events])
     print(f"\nD-F  MAX ADVERSE EXCURSION during the hold (fill -> exit): median "
           f"{np.median(mae) * 100:+.2f}%, 5th pct {np.percentile(mae, 5) * 100:+.2f}%, "
@@ -315,6 +332,15 @@ def _diagnostics(events: list[Event], span: tuple[pd.Timestamp, pd.Timestamp]) -
         k = int((mae <= liq).sum())
         print(f"    {lev:>2}x isolated (liq at {liq * 100:+.1f}%): {k:>4} of {len(mae)} fills "
               f"breach ({k / len(mae) * 100:.1f}%)")
+
+    # ---- D-G (added 2026-10-08, after the perp run): D-D under D-A's trade-through fills. D-D
+    # counts a touch as a fill; on recent data that assumption alone decides whether the account
+    # clears the hurdle, and a Binance print says nothing about queue position on Bybit.
+    print("\nD-G  RECENT 24 MONTHS x TRADE-THROUGH (fill only if low <= rung * (1 - x))")
+    for x in (0.0, 0.001, 0.0025, 0.005):
+        r = [e for e in recent if e.depth >= x]
+        acct = sum(e.net_ladder for e in r) / n_slices / 2.0
+        _summ(f"x = {x * 100:.2f}%  acct {acct * 100:+.2f}%/yr", r)
 
 
 if __name__ == "__main__":

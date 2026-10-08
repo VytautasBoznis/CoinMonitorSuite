@@ -85,3 +85,9 @@ D-F  MAX ADVERSE EXCURSION during the hold (fill -> exit): median -1.16%, 5th pc
      5x isolated (liq at -19.5%):   28 of 2038 fills breach (1.4%)
     10x isolated (liq at -9.5%):  119 of 2038 fills breach (5.8%)
     20x isolated (liq at -4.5%):  326 of 2038 fills breach (16.0%)
+
+D-G  RECENT 24 MONTHS x TRADE-THROUGH (fill only if low <= rung * (1 - x))
+    x = 0.00%  acct +5.15%/yr          N=  266  mean +0.387%  CI [-0.081%, +0.822%]  days=78
+    x = 0.10%  acct +3.65%/yr          N=  236  mean +0.309%  CI [-0.189%, +0.793%]  days=71
+    x = 0.25%  acct +2.18%/yr          N=  191  mean +0.228%  CI [-0.360%, +0.784%]  days=62
+    x = 0.50%  acct +0.54%/yr          N=  144  mean +0.075%  CI [-0.670%, +0.771%]  days=52

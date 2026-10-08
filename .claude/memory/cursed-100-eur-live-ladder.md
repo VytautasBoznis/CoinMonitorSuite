@@ -43,6 +43,7 @@ bound, so this is licensed as micro-live/data-gathering only — it is not a dep
 certificate ([[alpha-definition-edge-certificate]], [[live-yield-hurdle]]). Extends the ~$10 micro-live
 authorization in [[mission-find-edge-ship-ui]] to 100 EUR for this specific book.
 
-**Proxy result 2026-10-04:** PASS 4/4 on spot 1m. Its D-F table (share of fills whose wick breaches
-isolated liquidation at 3x/5x/10x/20x) is the reference for reading this book's fills against the
-leverage used → [[f8-cascade-ladder-result]].
+**Proxy result:** PASS 4/4 on spot 1m (2026-10-04) and on Binance USDT-M perp 1m (2026-10-08). The
+PERP log's D-F table (`runs/f8_cascade_ladder_proxy_perp.log`: share of fills whose wick breaches
+isolated liquidation at 3x/5x/10x/20x = 0.5/1.8/6.7/17.0%) is the reference for reading this book's
+fills against the leverage used → [[f8-cascade-ladder-result]].

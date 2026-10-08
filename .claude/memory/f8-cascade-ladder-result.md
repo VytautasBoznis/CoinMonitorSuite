@@ -1,6 +1,6 @@
 ---
 name: f8-cascade-ladder-result
-description: "F8 liquidation-cascade ladder proxy (2026-10-04) PASSED 4/4 frozen rules on 10 symbols of 1m Binance SPOT — +0.54%/event, CI ex-zero, 6/6 years — but recent-24mo per-event CI touches zero, deep wicks lose, and it is untested on PERP data, which is what the live book trades."
+description: "F8 liquidation-cascade ladder proxy PASSED 4/4 frozen rules on 1m Binance SPOT (2026-10-04, +0.54%/event) AND on USDT-M PERP (2026-10-08, +0.51%/event, N=2261). Recent-24mo clears the yield hurdle only on touch-fills; any trade-through requirement puts it back under/at 5%/yr with CI touching zero. Queue position is now the deciding unknown."
 metadata:
   node_type: memory
   type: project
@@ -44,7 +44,24 @@ multi-symbol output existed (the earlier smoke test was BTC-only, where the two 
 **What the PASS licenses:** the Bybit `allLiquidation` collector and the micro-live ladder ONLY.
 Never a deployment or a certificate ([[alpha-definition-edge-certificate]]).
 
-**Biggest untested assumption: SPOT → PERP.** The live book rests bids on Bybit perps; perp wicks run
-deeper (more fills, more continuation, more liquidations). Next falsification step: re-run the same
-frozen rule on **Binance USDT-M perp 1m dumps** (`data.binance.vision/data/futures/um/monthly/klines`,
-free; same ETL, different base URL). Kill if the perp run fails any of R1-R4.
+**SPOT → PERP: TESTED 2026-10-08, PERP PASSES 4/4 too.** Kill rule pre-registered in the probe
+docstring before any perp bar loaded. `probes/z1_backfill_1m.py --perp` loaded Binance USDT-M perp 1m
+for the same 10 coins (SHIB as `1000SHIB/USDT:USDT`), 2021-01 → 2026-09, stored as
+`binance / <COIN>/USDT:USDT / 1m`. `f8_cascade_ladder_proxy.py --perp`, log
+`runs/f8_cascade_ladder_proxy_perp.log`. N=**2261** (+11% vs spot: deeper wicks = more fills, as
+predicted), mean **+0.509%**/event, CI [+0.360%, +0.649%], 6/6 years positive (2025 +0.27% vs spot
++0.05%). One-account full-sample +20.0%/yr.
+- **Continuation risk worse on perp, as predicted:** wick >2% through the bid −0.30%/event (spot −0.12%,
+  N 342 vs 258). Isolated-liq breach 3x 0.5% / 5x 1.8% / 10x 6.7% / **20x 17.0%** (D-F, perp-native now).
+- **Recent regime: perp better than spot, but NOT a credible hurdle clear.** On spot's exact window
+  (checked ad hoc, so the one-month window shift doesn't confound it): perp acct +6.59%/yr vs spot +5.15%,
+  CI just ex-zero vs touching. New diagnostic **D-G (recent 24mo × trade-through)**, in both logs:
+  perp touch-fill +6.99%/yr CI [+0.03%, +0.82%] → **0.1% trade-through +5.22%/yr, CI touches zero** →
+  0.25% +3.32% → 0.5% +2.02%. Spot: 5.15 / 3.65 / 2.18 / 0.54. Perp is ~+1.5pp/yr better at every
+  strictness, but the hurdle clear rests entirely on touch-fills, and a Binance print says nothing about
+  queue position on Bybit. **[[live-yield-hurdle]] verdict unchanged: not deployable; the license
+  (collector + micro-live) survives.**
+- Spot rerun with D-G appended was byte-identical to the committed spot log (reproducible).
+
+**NEXT:** the Bybit v5 `allLiquidation` collector (not built yet; no code in repo) — the live book's
+fills and that collector are the only ways to settle queue position, which is now THE deciding unknown.

@@ -1,0 +1,92 @@
+# CoinMonitorSuite on k3s. Step-by-step guide: deploy/README.md
+
+images:
+  # Built and pushed by .github/workflows/build.yml.
+  registry: ghcr.io/vytautasboznis
+  # Empty = the chart's appVersion. Charts published by CI pin it to their commit's images.
+  tag: ""
+  # Empty = Always for "latest", IfNotPresent otherwise.
+  pullPolicy: ""
+  # Needed while the GHCR packages are private, e.g. [{name: ghcr-pull}] (see the guide).
+  pullSecrets: []
+
+# Applied to every pod, e.g. to keep everything on one node: {kubernetes.io/hostname: my-node}
+nodeSelector: {}
+tolerations: []
+
+database:
+  # true: an in-cluster TimescaleDB (StatefulSet + a volume on k3s local-path storage).
+  # false: point at your own Postgres+TimescaleDB with host/port/user/name and existingSecret.
+  deploy: true
+  image: timescale/timescaledb:latest-pg16
+  storage: 20Gi
+  storageClass: "" # empty = the cluster default (local-path on k3s)
+  host: "" # only for deploy: false
+  port: 5432
+  user: coinmon
+  name: coinmon
+  # A Secret with key "password" (URL-safe characters only). Empty = the chart generates one
+  # and keeps it across upgrades and uninstalls.
+  existingSecret: ""
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { memory: 1Gi }
+
+# Hyperliquid credentials. Never put them in values files: create the Secret by hand (guide, step 6).
+#   keys: address  = your wallet's public address (watch-only for the dashboard)
+#         agentKey = the API wallet's private key (the bot trades with it; dashboard PANIC uses it)
+hyperliquid:
+  testnet: true
+  secretName: coinmon-hyperliquid
+
+# Bybit allLiquidation websocket -> the liquidations table (the dashboard's cascade pane and tape).
+collector:
+  enabled: true
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits: { memory: 512Mi }
+
+# The live F8 ladder bot. Off until the Hyperliquid Secret exists. It starts HALTED and places
+# nothing until `coinmon bot resume`. Exactly one copy runs, ever: two bots on one account would
+# double every order.
+bot:
+  enabled: false
+  rungUsd: 12 # USDC per resting bid; Hyperliquid's minimum order is $10
+  resources:
+    requests: { cpu: 50m, memory: 192Mi }
+    limits: { memory: 512Mi }
+
+dashboard:
+  enabled: true
+  service:
+    type: ClusterIP # reach it with kubectl port-forward (guide, step 5)
+    port: 8502
+  # Optional: publish it through k3s's Traefik. The dashboard has no login of its own and its
+  # PANIC/DRAIN buttons work for whoever reaches it, so set basicAuthSecret when you enable this.
+  ingress:
+    enabled: false
+    className: traefik
+    host: coinmon.local
+    tlsSecret: "" # an existing TLS Secret for the host, if you have one
+    basicAuthSecret: "" # a kubernetes.io/basic-auth Secret (username/password); guide, step 5
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits: { memory: 512Mi }
+
+# Candle scraper (research data). The live bot and dashboard do not need it.
+scraper:
+  enabled: false
+  symbols: ["BTC/USDC", "ETH/USDC"]
+  timeframes: ["1h"]
+  backfillStart: "2025-06-01"
+  pollIntervalSeconds: 60
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits: { memory: 512Mi }
+
+# Streamlit candle viewer (research tool).
+viewer:
+  enabled: false
+  resources:
+    requests: { cpu: 50m, memory: 256Mi }
+    limits: { memory: 1Gi }

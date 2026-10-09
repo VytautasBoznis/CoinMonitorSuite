@@ -1,0 +1,106 @@
+{{- $fullname := include "coinmon.fullname" . }}
+{{- if .Values.collector.enabled }}
+{{- $labels := dict "ctx" . "component" "collector" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fullname }}-collector
+  labels:
+    {{- include "coinmon.labels" $labels | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "coinmon.selector" $labels | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "coinmon.labels" $labels | nindent 8 }}
+    spec:
+      {{- include "coinmon.podCommon" . | nindent 6 }}
+      {{- include "coinmon.waitForDb" (dict "ctx" . "name" "coinmon-scraper") | nindent 6 }}
+      containers:
+        - name: collector
+          {{- include "coinmon.image" (dict "ctx" . "name" "coinmon-scraper") | nindent 10 }}
+          command: ["python", "-m", "coinmon.scraper.liquidations"]
+          env:
+            {{- include "coinmon.dbEnv" . | nindent 12 }}
+          resources:
+            {{- toYaml .Values.collector.resources | nindent 12 }}
+---
+{{- end }}
+{{- if .Values.bot.enabled }}
+{{- $labels := dict "ctx" . "component" "bot" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fullname }}-bot
+  labels:
+    {{- include "coinmon.labels" $labels | nindent 4 }}
+spec:
+  # Never more than one: two bots on one account would double every order.
+  replicas: 1
+  # The old pod is gone (its entry bids cancelled on SIGTERM) before the new one starts.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "coinmon.selector" $labels | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "coinmon.labels" $labels | nindent 8 }}
+    spec:
+      {{- include "coinmon.podCommon" . | nindent 6 }}
+      terminationGracePeriodSeconds: 30
+      {{- include "coinmon.waitForDb" (dict "ctx" . "name" "coinmon-scraper") | nindent 6 }}
+      containers:
+        - name: bot
+          {{- include "coinmon.image" (dict "ctx" . "name" "coinmon-scraper") | nindent 10 }}
+          command: ["coinmon", "bot", "run"]
+          env:
+            {{- include "coinmon.dbEnv" . | nindent 12 }}
+            {{- include "coinmon.hlEnv" (dict "ctx" . "optional" false) | nindent 12 }}
+            - name: COINMON_BOT_RUNG_USD
+              value: {{ .Values.bot.rungUsd | quote }}
+          resources:
+            {{- toYaml .Values.bot.resources | nindent 12 }}
+---
+{{- end }}
+{{- if .Values.scraper.enabled }}
+{{- $labels := dict "ctx" . "component" "scraper" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fullname }}-scraper
+  labels:
+    {{- include "coinmon.labels" $labels | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "coinmon.selector" $labels | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "coinmon.labels" $labels | nindent 8 }}
+    spec:
+      {{- include "coinmon.podCommon" . | nindent 6 }}
+      {{- include "coinmon.waitForDb" (dict "ctx" . "name" "coinmon-scraper") | nindent 6 }}
+      containers:
+        - name: scraper
+          {{- include "coinmon.image" (dict "ctx" . "name" "coinmon-scraper") | nindent 10 }}
+          env:
+            {{- include "coinmon.dbEnv" . | nindent 12 }}
+            - name: COINMON_SYMBOLS
+              value: {{ toJson .Values.scraper.symbols | quote }}
+            - name: COINMON_TIMEFRAMES
+              value: {{ toJson .Values.scraper.timeframes | quote }}
+            - name: COINMON_BACKFILL_START
+              value: {{ .Values.scraper.backfillStart | quote }}
+            - name: COINMON_POLL_INTERVAL_SECONDS
+              value: {{ .Values.scraper.pollIntervalSeconds | quote }}
+          resources:
+            {{- toYaml .Values.scraper.resources | nindent 12 }}
+---
+{{- end }}

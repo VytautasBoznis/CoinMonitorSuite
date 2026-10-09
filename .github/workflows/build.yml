@@ -1,0 +1,124 @@
+# Tests on every push and PR. On main (and v* tags), also builds the images for amd64 + arm64,
+# pushes them to GHCR, and publishes the Helm chart to GHCR pinned to those images.
+# Deploying from it: deploy/README.md
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev,dashboard]"
+      - run: pytest -q
+      - name: ruff (advisory until the 4 pre-existing findings are fixed)
+        run: ruff check src tests
+        continue-on-error: true
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run build
+
+  chart:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: azure/setup-helm@v4
+      - run: helm lint deploy/helm/coinmon
+      - name: render with every component on
+        run: >-
+          helm template coinmon deploy/helm/coinmon
+          --set bot.enabled=true --set scraper.enabled=true --set viewer.enabled=true
+          --set dashboard.ingress.enabled=true --set dashboard.ingress.basicAuthSecret=auth
+          > /dev/null
+
+  images:
+    needs: [test, web, chart]
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: coinmon-scraper # the scraper, the liquidation collector and the bot
+            dockerfile: Dockerfile.scraper
+          - name: coinmon-dashboard
+            dockerfile: Dockerfile.dashboard
+          - name: coinmon-viewer
+            dockerfile: Dockerfile.viewer
+    steps:
+      - uses: actions/checkout@v5
+      - name: GHCR names must be lowercase
+        run: echo "OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ env.OWNER }}/${{ matrix.name }}
+          tags: |
+            type=sha,prefix=sha-,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+  publish-chart:
+    needs: images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: azure/setup-helm@v4
+      - name: package and push (appVersion = this commit's image tag)
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          OWNER="${GITHUB_REPOSITORY_OWNER,,}"
+          helm package deploy/helm/coinmon -d dist \
+            --version "0.1.${GITHUB_RUN_NUMBER}" --app-version "sha-${GITHUB_SHA::7}"
+          echo "$TOKEN" | helm registry login ghcr.io -u "${{ github.actor }}" --password-stdin
+          helm push dist/coinmon-*.tgz "oci://ghcr.io/${OWNER}/charts"

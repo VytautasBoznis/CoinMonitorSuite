@@ -1,0 +1,26 @@
+CoinMonitorSuite is installed in namespace {{ .Release.Namespace }}.
+
+  kubectl -n {{ .Release.Namespace }} get pods
+
+{{- if .Values.dashboard.enabled }}
+
+Dashboard:
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "coinmon.fullname" . }}-dashboard 8502:{{ .Values.dashboard.service.port }}
+  then open http://localhost:8502
+{{- if .Values.dashboard.ingress.enabled }}
+  or http{{ if .Values.dashboard.ingress.tlsSecret }}s{{ end }}://{{ .Values.dashboard.ingress.host }}{{ if not .Values.dashboard.ingress.basicAuthSecret }}   (NO LOGIN: anyone who reaches it can PANIC/DRAIN){{ end }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.bot.enabled }}
+
+Bot ({{ if .Values.hyperliquid.testnet }}TESTNET{{ else }}MAINNET, REAL MONEY{{ end }}). It starts HALTED; arm it with:
+  kubectl -n {{ .Release.Namespace }} exec deploy/{{ include "coinmon.fullname" . }}-bot -- coinmon bot resume
+Status / stop:
+  kubectl -n {{ .Release.Namespace }} exec deploy/{{ include "coinmon.fullname" . }}-bot -- coinmon bot status
+  kubectl -n {{ .Release.Namespace }} exec deploy/{{ include "coinmon.fullname" . }}-bot -- coinmon stop --now
+Only one bot per account: stop any other copy (e.g. on your PC) first.
+{{- else }}
+
+The bot is off. To turn it on, follow deploy/README.md step 6.
+{{- end }}

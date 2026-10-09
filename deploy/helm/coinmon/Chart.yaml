@@ -1,0 +1,8 @@
+apiVersion: v2
+name: coinmon
+description: CoinMonitorSuite on k3s - TimescaleDB, the liquidation collector, the live F8 ladder bot and its dashboard.
+type: application
+# CI publishes every main build as 0.1.<run number>, with appVersion pinned to that commit's
+# image tag (sha-xxxxxxx). Installing from a git checkout uses the values below.
+version: 0.1.0
+appVersion: "latest"

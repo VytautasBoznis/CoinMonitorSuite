@@ -64,7 +64,7 @@ This file indexes all memory files. One line per file; detail lives in each topi
 - [project-direction](project-direction.md) — Python/Bybit greenfield, trade-coins-efficiently, phased backtest→suggestions→automation
 - [backtester-reads-timescaledb](backtester-reads-timescaledb.md) — backtester loads candles from TimescaleDB (`db.read_candles`), not Parquet; store.py/fetch-data retired
 - [data-package-gitignored](data-package-gitignored.md) — REPO BUG: broad `data/` .gitignore ignores `src/coinmon/data/` package; new data/ files need `-f` or anchored `/data/` rule
-- [deployment-target-k8s](deployment-target-k8s.md) — runs in k8s; every component ships as a Docker image; config via env/ConfigMaps
+- [deployment-target-k8s](deployment-target-k8s.md) — runs in k8s; every component ships as a Docker image; config via env/ConfigMaps. **BUILT 2026-10-10: Helm chart `deploy/helm/coinmon` + GH Actions `build.yml` → GHCR (images + OCI chart), verified on throwaway k3s; guide `deploy/README.md`**
 - [user-infra-ui-plans](user-infra-ui-plans.md) — user-owned: k8s/build pipeline for collectors, centralized DB + stitch-CLI; keep new tables merge-friendly (natural keys)
 - [ui-roadmap](ui-roadmap.md) — three UI tiers gated on data existing; research UI first (needs TradeRecord exit_reason field), then forward-paper, then product UI
 - [machines-and-tooling](machines-and-tooling.md) — user works on multiple machines; verify the stack is runnable before promising runs

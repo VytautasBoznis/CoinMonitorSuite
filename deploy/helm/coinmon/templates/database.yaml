@@ -1,0 +1,106 @@
+{{- if .Values.database.deploy }}
+{{- $fullname := include "coinmon.fullname" . }}
+{{- $labels := dict "ctx" . "component" "timescaledb" }}
+{{- if not .Values.database.existingSecret }}
+{{- $secret := printf "%s-db" $fullname }}
+{{- $existing := lookup "v1" "Secret" .Release.Namespace $secret }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $secret }}
+  labels:
+    {{- include "coinmon.labels" $labels | nindent 4 }}
+  annotations:
+    # Kept on uninstall: the data volume outlives the release and needs its password.
+    helm.sh/resource-policy: keep
+type: Opaque
+data:
+  password: {{ if $existing }}{{ index $existing.data "password" }}{{ else }}{{ randAlphaNum 32 | b64enc }}{{ end }}
+---
+{{- end }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fullname }}-timescaledb
+  labels:
+    {{- include "coinmon.labels" $labels | nindent 4 }}
+spec:
+  selector:
+    {{- include "coinmon.selector" $labels | nindent 4 }}
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $fullname }}-timescaledb
+  labels:
+    {{- include "coinmon.labels" $labels | nindent 4 }}
+spec:
+  serviceName: {{ $fullname }}-timescaledb
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "coinmon.selector" $labels | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "coinmon.labels" $labels | nindent 8 }}
+    spec:
+      {{- include "coinmon.podCommon" . | nindent 6 }}
+      containers:
+        - name: timescaledb
+          image: {{ .Values.database.image | quote }}
+          env:
+            - name: POSTGRES_USER
+              value: {{ .Values.database.user | quote }}
+            - name: POSTGRES_DB
+              value: {{ .Values.database.name | quote }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "coinmon.dbSecret" . }}
+                  key: password
+            # A subdirectory, so the volume's own files (lost+found) never block initdb.
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - name: postgres
+              containerPort: 5432
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", {{ .Values.database.user | quote }}, "-d", {{ .Values.database.name | quote }}]
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", {{ .Values.database.user | quote }}, "-d", {{ .Values.database.name | quote }}]
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            failureThreshold: 6
+          resources:
+            {{- toYaml .Values.database.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: shm
+              mountPath: /dev/shm
+      volumes:
+        # Postgres' parallel workers need more shared memory than a container's default 64Mi.
+        - name: shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 256Mi
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- with .Values.database.storageClass }}
+        storageClassName: {{ . }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.database.storage }}
+{{- end }}

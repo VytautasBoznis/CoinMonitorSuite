@@ -1,0 +1,144 @@
+{{- $fullname := include "coinmon.fullname" . }}
+{{- if .Values.dashboard.enabled }}
+{{- $labels := dict "ctx" . "component" "dashboard" }}
+{{- $ing := .Values.dashboard.ingress }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fullname }}-dashboard
+  labels:
+    {{- include "coinmon.labels" $labels | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "coinmon.selector" $labels | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "coinmon.labels" $labels | nindent 8 }}
+    spec:
+      {{- include "coinmon.podCommon" . | nindent 6 }}
+      containers:
+        - name: dashboard
+          {{- include "coinmon.image" (dict "ctx" . "name" "coinmon-dashboard") | nindent 10 }}
+          env:
+            {{- include "coinmon.dbEnv" . | nindent 12 }}
+            {{- include "coinmon.hlEnv" (dict "ctx" . "optional" true) | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 8502
+          readinessProbe:
+            httpGet: { path: /api/health, port: http }
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /api/health, port: http }
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.dashboard.resources | nindent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fullname }}-dashboard
+  labels:
+    {{- include "coinmon.labels" $labels | nindent 4 }}
+spec:
+  type: {{ .Values.dashboard.service.type }}
+  selector:
+    {{- include "coinmon.selector" $labels | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ .Values.dashboard.service.port }}
+      targetPort: http
+---
+{{- if $ing.enabled }}
+{{- if $ing.basicAuthSecret }}
+# k3s ships Traefik: a login in front of the dashboard.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ $fullname }}-dashboard-auth
+  labels:
+    {{- include "coinmon.labels" $labels | nindent 4 }}
+spec:
+  basicAuth:
+    secret: {{ $ing.basicAuthSecret }}
+---
+{{- end }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullname }}-dashboard
+  labels:
+    {{- include "coinmon.labels" $labels | nindent 4 }}
+  {{- if $ing.basicAuthSecret }}
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: {{ .Release.Namespace }}-{{ $fullname }}-dashboard-auth@kubernetescrd
+  {{- end }}
+spec:
+  ingressClassName: {{ $ing.className }}
+  {{- if $ing.tlsSecret }}
+  tls:
+    - hosts: [{{ $ing.host | quote }}]
+      secretName: {{ $ing.tlsSecret }}
+  {{- end }}
+  rules:
+    - host: {{ $ing.host | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullname }}-dashboard
+                port:
+                  name: http
+---
+{{- end }}
+{{- end }}
+{{- if .Values.viewer.enabled }}
+{{- $labels := dict "ctx" . "component" "viewer" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fullname }}-viewer
+  labels:
+    {{- include "coinmon.labels" $labels | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "coinmon.selector" $labels | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "coinmon.labels" $labels | nindent 8 }}
+    spec:
+      {{- include "coinmon.podCommon" . | nindent 6 }}
+      containers:
+        - name: viewer
+          {{- include "coinmon.image" (dict "ctx" . "name" "coinmon-viewer") | nindent 10 }}
+          env:
+            {{- include "coinmon.dbEnv" . | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 8501
+          resources:
+            {{- toYaml .Values.viewer.resources | nindent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fullname }}-viewer
+  labels:
+    {{- include "coinmon.labels" $labels | nindent 4 }}
+spec:
+  selector:
+    {{- include "coinmon.selector" $labels | nindent 4 }}
+  ports:
+    - name: http
+      port: 8501
+      targetPort: http
+{{- end }}

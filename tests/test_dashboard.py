@@ -225,6 +225,7 @@ def test_drain_sets_a_deadline_and_only_from_run(api):
 
 
 def test_reads(api, monkeypatch):
+    assert api.get("/api/health").json() == {"ok": True}
     assert api.get("/api/candles", params={"coin": "PEPE"}).status_code == 422
     assert api.get("/api/candles", params={"coin": "BTC"}).json()[0]["close"] == 1.5
     assert api.get("/api/account").json()["equity"] == 98.5

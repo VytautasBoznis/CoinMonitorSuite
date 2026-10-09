@@ -77,6 +77,11 @@ def create_app(store: Store | None = None, market: Market | None = None,
         except httpx.HTTPError as e:
             raise HTTPException(502, f"venue unreachable: {e}") from e
 
+    @app.get("/api/health")
+    def health():
+        """Liveness for k8s probes: the process answers. Touches neither the DB nor the venue."""
+        return {"ok": True}
+
     @app.get("/api/config")
     def config():
         coins = listed()

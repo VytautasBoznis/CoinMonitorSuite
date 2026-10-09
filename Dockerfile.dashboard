@@ -1,6 +1,8 @@
 # Live-bot dashboard image: the web frontend (built with Node) served by the FastAPI backend.
 #   docker build -f Dockerfile.dashboard -t coinmon-dashboard .
-FROM node:22-slim AS web
+# The web build runs on the builder's own platform: its output is static files, so arm64 images
+# don't need npm under emulation.
+FROM --platform=$BUILDPLATFORM node:22-slim AS web
 WORKDIR /web
 COPY web/package.json web/package-lock.json ./
 RUN npm ci --no-audit --no-fund

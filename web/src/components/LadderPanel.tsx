@@ -5,6 +5,8 @@ import { Chip, Panel } from "./Panel";
 /** One row per coin: what the ladder has on the venue right now. */
 export function LadderPanel({
   coins,
+  unlisted,
+  venue,
   account,
   trades,
   mids,
@@ -12,6 +14,8 @@ export function LadderPanel({
   now,
 }: {
   coins: string[];
+  unlisted: string[];
+  venue: string;
   account?: Account;
   trades?: TradeRow[];
   mids: Record<string, number>;
@@ -32,6 +36,11 @@ export function LadderPanel({
           <Row key={coin} coin={coin} account={account} trades={trades} mid={mids[coin]} rule={rule} now={now} />
         ))}
       </div>
+      {unlisted.length > 0 && (
+        <div className="border-t border-line px-3 py-2 text-[11px] text-ink-3">
+          {unlisted.join(", ")} not listed on {venue}: skipped.
+        </div>
+      )}
     </Panel>
   );
 }

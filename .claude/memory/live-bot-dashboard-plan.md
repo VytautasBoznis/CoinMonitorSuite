@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: f655be08-d28b-48b8-91b6-b4b28bbce97c
-  modified: 2026-10-09T19:37:53.954Z
+  modified: 2026-10-09T20:52:35.394Z
 ---
 
 Owner, in a 2026-10-09 conversation with Fable (pasted into Claude Code): a bot running headless on the
@@ -45,6 +45,10 @@ They want to SEE it, and to be entertained by it. Fable agreed and stated the li
 **BOT CORE BUILT 2026-10-09 (Hyperliquid, code + fake-venue tests only, NOT yet run on testnet).**
 Owner decisions this session: bot core before F11 (F11 spec still missing); frozen F8 rule verbatim
 (1 post-only bid/coin at prior 1m close -2.5%, reduce-only TP +1.2%, 60m market-out) on BTC/ETH/SOL.
+**COIN SET WIDENED 2026-10-09 (owner): BTC ETH SOL DOGE XRP ADA** (`ladder.COINS`). The bot skips coins
+the venue doesn't list (`Hyperliquid.listed`; testnet lacks XRP), and so does the dashboard (with a note).
+All six can fill in the same minute (6 x $12 = $72), so on ~100 EUR each coin needs >=2x isolated, set on
+the venue. That is the owner's call at go-live; the bot refuses to run unless every coin is isolated.
 Code: `src/coinmon/live/{hyperliquid,control,stop,ladder}.py`, tables `bot_control` + `bot_trades`,
 CLI `coinmon bot run|status|resume`, `coinmon stop --now | --drain [--deadline 90m]`, `tests/test_bot.py`.
 Env: `COINMON_HL_ADDRESS`, `COINMON_HL_AGENT_KEY`, `COINMON_HL_TESTNET` (default true), `COINMON_BOT_RUNG_USD` (12).
@@ -89,3 +93,34 @@ ladder, kill switch), and below the chart the fills ledger and a live liquidatio
   so direction always also has arrows, hollow candles, or position.
 - Not built yet: account-value history (a burn chart over time needs the bot to snapshot equity into the
   DB) and scoreboard + graveyard.
+- **Intent layer (owner, 2026-10-09: "I just want to see the bot doing trades and its intentions"):** on 1m,
+  a dashed blue "bid trail" (prior 1m close −2.5%) that hides while a position is open, plus a plain-English
+  INTENT sentence (waiting / holding / not running). The owner does not want to learn the screens. Keep the
+  plain-English layer when adding features.
+
+- **WAR ROOM mode (owner, 2026-10-09: "take the cool factor to a fuckin extreme… go wild"):** opened by
+  the ⚡ button in the top bar, or bookmarked as `/#warroom`. Code is in `web/src/wild/`. Every element
+  shows real data:
+  - The cascade radar puts each coin's blip at a distance = the share of the drop to its strike left
+    this minute. The anchor is one candle read on mount, then rolled from live mids at each minute.
+    Liquidations ripple out of their coin's blip.
+  - A Geiger tick speeds up as a coin nears its strike. The ECG shows the bot heartbeat and flatlines
+    when the bot is down. A pressure gauge shows forced selling over the last 60s.
+  - PANIC is a launch button: lift the hazard cover, then hold 1s. Fills and exits trigger full-screen
+    FX; whales (>= $100k) shake the screen. Sound is synthesized with Web Audio, with a mute toggle.
+  - TEST FX previews the effects and is labeled "PREVIEW · not a real trade". It is not a trade button.
+  - Verified with CDP screenshots via headless Chrome. A Chrome launched from bash works; one spawned
+    from Node never opened its debug port.
+
+**Coin set facts (checked 2026-10-09, Binance 1m perp, 2024-10 → 2026-09):**
+- Days with a 2.5%-in-1m touch: BTC **3**, ETH 23, SOL 22, DOGE 46, XRP 34, ADA 33, NEAR 31, 1000SHIB 27,
+  AVAX 25, LINK 22.
+- Distinct days by book: BTC/ETH/SOL 32 (~every 3 weeks); +DOGE/XRP/ADA 70; all 10 = 82 (~every 9 days).
+- All 10 coins touched in the SAME minute at least once, so simultaneous fills = coins × rung.
+- Re-pegs/day under the 0.1% deadband (Sept 2026): BTC 157, ETH 232, SOL 330, DOGE 396, XRP 395, ADA 506,
+  NEAR 785, SHIB 422, AVAX 453, LINK 445. 3 coins ≈ 720/day; 10 coins ≈ 4,100/day. Hyperliquid gives a
+  10k action buffer, then 1 action per USDC traded, else 1 per 10s.
+- Hyperliquid: all 10 are on mainnet (SHIB = `kSHIB`). Day volume is thin on some: DOGE $5.7M, ADA $5.3M,
+  AVAX $4.4M, LINK $6.4M, kSHIB $0.3M. **Testnet lacks XRP and LINK.**
+- The F8 PASS was pooled over all 10; BTC/ETH/SOL was the owner's first, narrower pick. It was widened
+  to 6 the same day.

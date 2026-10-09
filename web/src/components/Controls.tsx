@@ -1,59 +1,20 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 import type { BotState } from "../api";
 import { fmtDur } from "../format";
+import { useHoldToFire } from "../hooks";
 import { Panel } from "./Panel";
 
-const HOLD_MS = 1000;
 const DRAIN_OPTIONS = [30, 60, 90, 120];
 const label = (m: number) => (m >= 120 ? `${m / 60}h` : `${m}m`);
 
 /** Fires only after a continuous 1s press (pointer, Space or Enter). Letting go cancels. */
 function PanicButton({ enabled, onFire }: { enabled: boolean; onFire: () => Promise<void> }) {
-  const [progress, setProgress] = useState(0);
-  const [busy, setBusy] = useState(false);
-  const raf = useRef(0);
-  const t0 = useRef(0);
-
-  const cancel = () => {
-    cancelAnimationFrame(raf.current);
-    if (!busy) setProgress(0);
-  };
-  const start = () => {
-    if (!enabled || busy) return;
-    t0.current = performance.now();
-    const tick = () => {
-      const p = Math.min(1, (performance.now() - t0.current) / HOLD_MS);
-      setProgress(p);
-      if (p < 1) {
-        raf.current = requestAnimationFrame(tick);
-        return;
-      }
-      setBusy(true);
-      onFire().finally(() => {
-        setBusy(false);
-        setProgress(0);
-      });
-    };
-    raf.current = requestAnimationFrame(tick);
-  };
-  useEffect(() => () => cancelAnimationFrame(raf.current), []);
-
-  const isKey = (k: string) => k === " " || k === "Enter";
+  const { progress, busy, handlers } = useHoldToFire(onFire, enabled);
   return (
     <button
       disabled={!enabled || busy}
-      onPointerDown={start}
-      onPointerUp={cancel}
-      onPointerLeave={cancel}
-      onPointerCancel={cancel}
-      onKeyDown={(e) => {
-        if (isKey(e.key) && !e.repeat) {
-          e.preventDefault();
-          start();
-        }
-      }}
-      onKeyUp={(e) => isKey(e.key) && cancel()}
+      {...handlers}
       className="relative h-12 w-full touch-none select-none overflow-hidden rounded-[4px] border border-down/70 bg-down/10 text-[12px] font-bold tracking-[0.18em] text-down transition-colors hover:bg-down/15 disabled:cursor-not-allowed disabled:border-line disabled:bg-panel-2 disabled:text-ink-3"
     >
       <span className="absolute inset-y-0 left-0 bg-down/40" style={{ width: `${progress * 100}%` }} />

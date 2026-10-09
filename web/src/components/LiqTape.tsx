@@ -23,7 +23,7 @@ export function LiqTape({ prints, status }: { prints: Print[]; status: SocketSta
           return (
             <div
               key={`${p.coin}${p.ts}${p.side}${p.price}${p.size}`}
-              className={`slide-in num grid grid-cols-[62px_38px_1fr_64px_78px] items-center gap-2 border-b border-line/50 px-3 py-[5px] text-[11px] ${
+              className={`slide-in num grid grid-cols-[62px_38px_1fr_58px_72px] items-center gap-2 whitespace-nowrap border-b border-line/50 px-3 py-[5px] text-[11px] ${
                 usd >= WHALE_USD ? (longs ? "bg-down/10 font-semibold" : "bg-up/10 font-semibold") : ""
               }`}
             >

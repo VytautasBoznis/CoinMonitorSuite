@@ -3,7 +3,9 @@ import {
   ColorType,
   CrosshairMode,
   HistogramSeries,
+  LineSeries,
   LineStyle,
+  LineType,
   createChart,
   createSeriesMarkers,
   createTextWatermark,
@@ -21,8 +23,8 @@ import {
 } from "lightweight-charts";
 import { useEffect, useRef, useState } from "react";
 
-import { api, type Account, type Candle, type Config, type TradeRow } from "../api";
-import { arrow, decimals, fmtCompactUsd, fmtPct, fmtPx, tone } from "../format";
+import { api, type Account, type BotState, type Candle, type Config, type TradeRow } from "../api";
+import { arrow, decimals, fmtCompactUsd, fmtDur, fmtPct, fmtPx, tone } from "../format";
 import type { Socket } from "../hooks";
 import { Panel } from "./Panel";
 
@@ -46,6 +48,7 @@ const toBar = (c: Candle): CandlestickData<Time> => ({ time: sec(c.time), open: 
 
 type Series = {
   candles: ISeriesApi<"Candlestick">;
+  trail: ISeriesApi<"Line">;
   sell: ISeriesApi<"Histogram">;
   buy: ISeriesApi<"Histogram">;
   gapHi: ISeriesApi<"Histogram">;
@@ -60,6 +63,7 @@ export function PriceChart({
   intervals,
   onInterval,
   socket,
+  state,
   account,
   trades,
   rule,
@@ -69,6 +73,7 @@ export function PriceChart({
   intervals: string[];
   onInterval: (i: string) => void;
   socket?: Socket;
+  state?: BotState;
   account?: Account;
   trades?: TradeRow[];
   rule: Config["rule"];
@@ -78,6 +83,7 @@ export function PriceChart({
   const series = useRef<Series>(null);
   const lines = useRef<IPriceLine[]>([]);
   const linePrices = useRef<number[]>([]); // kept in the autoscale range so the bid never sits off-screen
+  const drop = rule.drop;
   const bars = useRef<Candle[]>([]);
   const [last, setLast] = useState<Candle>();
   const [hover, setHover] = useState<Candle>();
@@ -123,6 +129,17 @@ export function PriceChart({
         return { ...r, priceRange: { minValue: Math.min(minValue, ...extra), maxValue: Math.max(maxValue, ...extra) } };
       },
     });
+    // Where the bot's buy order sits each minute: the prior 1m close minus the rule's drop. A wick
+    // through this line is a fill.
+    const trail = ch.addSeries(LineSeries, {
+      color: "rgba(57, 135, 229, 0.75)",
+      lineWidth: 1,
+      lineStyle: LineStyle.Dashed,
+      lineType: LineType.WithSteps,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    });
     const usd = { type: "custom" as const, formatter: (v: number) => fmtCompactUsd(Math.abs(v)), minMove: 1 };
     const quiet = { priceLineVisible: false, lastValueVisible: false, priceFormat: usd };
     const gapHi = ch.addSeries(HistogramSeries, { ...quiet, color: C.gap }, 1);
@@ -142,7 +159,7 @@ export function PriceChart({
       setHover(d ? { time: (p.time as number) * 1000, open: d.open, high: d.high, low: d.low, close: d.close, volume: 0 } : undefined);
     });
     chart.current = ch;
-    series.current = { candles, sell, buy, gapHi, gapLo, markers, watermark };
+    series.current = { candles, trail, sell, buy, gapHi, gapLo, markers, watermark };
     return () => {
       ch.remove();
       chart.current = null;
@@ -156,6 +173,7 @@ export function PriceChart({
     let alive = true;
     bars.current = [];
     s.candles.setData([]);
+    s.trail.setData([]);
     setLast(undefined);
     setError(undefined);
     s.watermark.applyOptions({
@@ -174,6 +192,7 @@ export function PriceChart({
         const d = decimals(cs[cs.length - 1].close);
         s.candles.applyOptions({ priceFormat: { type: "price", precision: d, minMove: 10 ** -d } });
         s.candles.setData(cs.map(toBar));
+        if (interval === "1m") s.trail.setData(cs.slice(1).map((c, i) => ({ time: sec(c.time), value: cs[i].close * (1 - drop) })));
         setLast(cs[cs.length - 1]);
         setLastClosed(cs.length > 1 ? cs[cs.length - 2].close : undefined);
         chart.current!.timeScale().setVisibleLogicalRange({ from: cs.length - 160, to: cs.length + 8 });
@@ -182,7 +201,7 @@ export function PriceChart({
     return () => {
       alive = false;
     };
-  }, [coin, interval]);
+  }, [coin, interval, drop]);
 
   // Live candle from the venue websocket.
   useEffect(() => {
@@ -196,6 +215,7 @@ export function PriceChart({
       if (c.time > prev.time) {
         bars.current = [...bars.current, c];
         setLastClosed(prev.close);
+        if (interval === "1m") series.current?.trail.update({ time: sec(c.time), value: prev.close * (1 - drop) });
       } else bars.current[bars.current.length - 1] = c;
       series.current?.candles.update(toBar(c));
       setLast(c);
@@ -205,7 +225,7 @@ export function PriceChart({
       off();
       unsub();
     };
-  }, [socket, coin, interval]);
+  }, [socket, coin, interval, drop]);
 
   // Liquidation pane: per-bucket forced flow, and grey bands where the collector saw nothing.
   useEffect(() => {
@@ -263,6 +283,7 @@ export function PriceChart({
         busy = true;
       }
       const p = account.positions.find((p) => p.coin === coin);
+      s.trail.applyOptions({ visible: !p }); // one position per coin: no bid while holding
       if (p) {
         busy = true;
         add(p.entry_px, C.ink, `LONG ${p.szi}`, LineStyle.Solid);
@@ -271,7 +292,7 @@ export function PriceChart({
     }
     // Nothing on the venue: show where the frozen rule would rest the bid right now.
     if (!busy && lastClosed && interval === "1m")
-      add(lastClosed * (1 - rule.drop), C.ink3, `RULE −${(rule.drop * 100).toFixed(1)}%`, LineStyle.Dotted);
+      add(lastClosed * (1 - rule.drop), C.accent, `BUY −${(rule.drop * 100).toFixed(1)}%`, LineStyle.Dotted);
   }, [account, coin, interval, lastClosed, rule]);
 
   // Fills and exits from the ledger, at their exact prices.
@@ -299,6 +320,7 @@ export function PriceChart({
     s.markers.setMarkers(ms);
   }, [trades, coin, interval, last?.time]);
 
+  const intent = describeIntent(coin, state, account, trades, lastClosed, rule, Date.now());
   const shown = hover ?? last;
   const change = shown ? shown.close / shown.open - 1 : undefined;
   return (
@@ -348,10 +370,67 @@ export function PriceChart({
             </span>
           )}
         </div>
+        {intent && (
+          <div className="pointer-events-none absolute left-3 top-8 z-10 flex max-w-[72%] items-center gap-2.5 rounded-[4px] border border-line bg-bg/85 px-2.5 py-1.5 text-[12px] backdrop-blur-sm">
+            <span
+              className={`text-[10px] font-semibold uppercase tracking-[0.12em] ${
+                intent.kind === "hold" ? "text-up" : intent.kind === "wait" ? "text-accent" : "text-ink-3"
+              }`}
+            >
+              ● Intent
+            </span>
+            <span className="text-ink">{intent.text}</span>
+          </div>
+        )}
         {error && (
           <div className="absolute inset-0 z-20 grid place-items-center text-sm text-down">chart data: {error}</div>
         )}
       </div>
     </Panel>
   );
+}
+
+type Intent = { kind: "wait" | "hold" | "off"; text: string };
+
+/** What the bot is trying to do on this coin right now, in one plain sentence. */
+function describeIntent(
+  coin: string,
+  state: BotState | undefined,
+  account: Account | undefined,
+  trades: TradeRow[] | undefined,
+  lastClosed: number | undefined,
+  rule: Config["rule"],
+  now: number,
+): Intent | undefined {
+  const drop = `${(rule.drop * 100).toFixed(1)}%`;
+  if (account?.configured) {
+    const pos = account.positions.find((p) => p.coin === coin);
+    if (pos) {
+      const tp = account.orders.find((o) => o.coin === coin && o.reduce_only);
+      const open = trades?.find((t) => t.coin === coin && t.exit_ms == null);
+      const out = open ? `, or at market in ${fmtDur(open.fill_ms + rule.hold_ms - now)}` : "";
+      return {
+        kind: "hold",
+        text: `Holding ${pos.szi} ${coin} bought at ${fmtPx(pos.entry_px)}. Sells at ${fmtPx(tp?.px)} (+${(rule.target * 100).toFixed(1)}%)${out}.`,
+      };
+    }
+  }
+  if (!state) return undefined;
+  const level = lastClosed != null ? fmtPx(lastClosed * (1 - rule.drop)) : undefined;
+  if (!state.db) return { kind: "off", text: "Control store down, so the bot places nothing new." };
+  if (state.heartbeat !== "alive")
+    return {
+      kind: "off",
+      text: `Bot not running, so nothing is bidding.${level ? ` Running, it would bid ${level} (the dashed line, ${drop} under the last 1m close).` : ""}`,
+    };
+  if (state.mode === "HALT") return { kind: "off", text: "Bot halted: not bidding until `coinmon bot resume`." };
+  if (state.mode === "DRAIN") return { kind: "off", text: "Draining: no new bids, closing what is open." };
+  const bid = account?.configured
+    ? account.orders.find((o) => o.coin === coin && o.side === "B" && !o.reduce_only)
+    : undefined;
+  const px = bid ? fmtPx(bid.px) : level;
+  return {
+    kind: "wait",
+    text: `Waiting to buy ${coin} at ${px ?? "…"}, ${drop} under the last 1m close. It fills only if price crashes that far inside one minute.`,
+  };
 }

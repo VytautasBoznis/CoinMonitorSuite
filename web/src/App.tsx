@@ -11,8 +11,10 @@ import { TickerStrip } from "./components/TickerStrip";
 import { Toasts, type Toast } from "./components/Toasts";
 import { TopBar } from "./components/TopBar";
 import { BYBIT, BYBIT_WS, HYPERLIQUID, useMids, useNow, usePoll, useSocket } from "./hooks";
+import { sfx } from "./wild/sound";
+import { WarRoom } from "./wild/WarRoom";
 
-const TAPE_MAX = 150;
+const TAPE_MAX = 400; // the War Room's pressure gauge reads 5 minutes of it
 
 export default function App() {
   const config = usePoll(api.config, 60_000);
@@ -40,6 +42,14 @@ function Terminal({ config }: { config: Config }) {
   const mids = { ...ctxMids, ...live }; // websocket ticks win; REST context until the first tick
   const prints = useTape(bybit.socket, config.coins);
   const { toasts, push, dismiss } = useToasts();
+  const [warRoom, setWarRoom] = useState(
+    () => location.hash === "#warroom" || localStorage.getItem("coinmon.warroom") === "1",
+  );
+  const toggleWarRoom = (on: boolean) => {
+    if (on) sfx.wake(); // inside the click: browsers start audio only from a gesture
+    localStorage.setItem("coinmon.warroom", on ? "1" : "0");
+    setWarRoom(on);
+  };
 
   // DRAIN finishing is the one moment worth a browser notification (owner's planned downtime).
   const lastMode = useRef<string>(undefined);
@@ -79,17 +89,32 @@ function Terminal({ config }: { config: Config }) {
     state.refresh();
   };
 
+  const feeds = [
+    { label: "HL", status: hl.status },
+    { label: "BYBIT", status: bybit.status },
+  ];
+  if (warRoom)
+    return (
+      <>
+        <WarRoom
+          config={config}
+          state={state.data}
+          account={account.data}
+          trades={trades.data}
+          ctx={market.data}
+          mids={mids}
+          prints={prints}
+          feeds={feeds}
+          onPanic={onPanic}
+          onDrain={onDrain}
+          onExit={() => toggleWarRoom(false)}
+        />
+        <Toasts toasts={toasts} dismiss={dismiss} />
+      </>
+    );
   return (
     <div className="flex h-full min-w-[1180px] flex-col">
-      <TopBar
-        config={config}
-        state={state.data}
-        now={now}
-        feeds={[
-          { label: "HL", status: hl.status },
-          { label: "BYBIT", status: bybit.status },
-        ]}
-      />
+      <TopBar config={config} state={state.data} now={now} feeds={feeds} onWarRoom={() => toggleWarRoom(true)} />
       {(state.error || (state.data && !state.data.db)) && (
         <div className="shrink-0 bg-down/15 px-4 py-1.5 text-[12px] text-down">
           {state.error
@@ -105,13 +130,14 @@ function Terminal({ config }: { config: Config }) {
           intervals={config.intervals}
           onInterval={setChartInterval}
           socket={hl.socket}
+          state={state.data}
           account={account.data}
           trades={trades.data?.rows}
           rule={config.rule}
         />
         <aside className="row-span-2 flex min-h-0 flex-col gap-px overflow-y-auto bg-line">
           <AccountPanel account={account.data} error={account.error} address={config.address} summary={trades.data?.summary} />
-          <LadderPanel coins={config.coins} account={account.data} trades={trades.data?.rows} mids={mids} rule={config.rule} now={now} />
+          <LadderPanel coins={config.coins} unlisted={config.unlisted} venue={config.venue} account={account.data} trades={trades.data?.rows} mids={mids} rule={config.rule} now={now} />
           <Controls state={state.data} keyed={config.keyed} now={now} onPanic={onPanic} onDrain={onDrain} />
         </aside>
         <div className="grid min-h-0 grid-cols-[minmax(0,1fr)_380px] gap-px bg-line">

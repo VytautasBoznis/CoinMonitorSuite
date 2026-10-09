@@ -1,10 +1,10 @@
 """F8 liquidation-cascade ladder, live on Hyperliquid perps.
 
-The frozen F8 rule (``probes/f8_cascade_ladder_proxy.py``) run for real on BTC/ETH/SOL: one resting
-post-only bid per coin at the prior 1m close -2.5%, a resting reduce-only take-profit at +1.2% from
-the fill, and a market exit at 60 minutes. One position per coin at a time. Each round trip lands in
-``bot_trades`` with what the rule assumed next to what the venue did. Licensed as micro-live data
-gathering only ([[cursed-100-eur-live-ladder]]), never a deployment.
+The frozen F8 rule (``probes/f8_cascade_ladder_proxy.py``) run for real on six of its ten coins:
+one resting post-only bid per coin at the prior 1m close -2.5%, a resting reduce-only take-profit
+at +1.2% from the fill, and a market exit at 60 minutes. One position per coin at a time. Each
+round trip lands in ``bot_trades`` with what the rule assumed next to what the venue did. Licensed
+as micro-live data gathering only ([[cursed-100-eur-live-ladder]]), never a deployment.
 
 Safety model:
   * The persisted mode is read every cycle. A new bot starts HALT and places nothing until
@@ -33,7 +33,9 @@ from coinmon.live.hyperliquid import Hyperliquid, Order, Position
 
 log = logging.getLogger("coinmon.ladder")
 
-COINS = ("BTC", "ETH", "SOL")
+# The owner's pick (2026-10-09) from the ten F8 was tested on: the majors plus the three alts that
+# hit the rung most often. BTC alone touched it on 3 days in the 24 months to 2026-09.
+COINS = ("BTC", "ETH", "SOL", "DOGE", "XRP", "ADA")
 DROP = 0.025  # frozen F8 rung: 2.5% below the prior 1m close
 TARGET = 0.012  # frozen F8 take-profit: +1.2% from the fill
 HOLD_MS = 60 * 60_000  # frozen F8 time-stop: exit at market after 60 minutes
@@ -197,7 +199,10 @@ def _sigterm(*_) -> None:
 def run(hl: Hyperliquid, store: Store, rung_usd: float) -> None:
     """Run the ladder until stopped. On exit, entry bids are cancelled; exits stay resting."""
     store.init()
-    bot = LadderBot(hl, store, rung_usd)
+    coins = hl.listed(COINS)
+    if skipped := [c for c in COINS if c not in coins]:
+        log.warning("not listed on %s, skipped: %s", hl.venue, skipped)  # testnet lacks XRP
+    bot = LadderBot(hl, store, rung_usd, coins)
     log.info("%s %s: leverage %s, %s USDC per rung, mode %s", hl.venue, hl.address, bot.check(),
              rung_usd, store.read().mode)
     signal.signal(signal.SIGTERM, _sigterm)  # docker stop -> SystemExit -> the finally below

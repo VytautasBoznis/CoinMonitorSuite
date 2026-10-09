@@ -4,7 +4,7 @@ const MINUS = "−";
 
 export function decimals(px: number): number {
   const a = Math.abs(px);
-  return a >= 10_000 ? 1 : a >= 1_000 ? 2 : a >= 10 ? 3 : a >= 1 ? 4 : 6;
+  return a >= 10_000 ? 1 : a >= 1_000 ? 2 : a >= 10 ? 3 : a >= 1 ? 4 : a >= 0.1 ? 5 : 6;
 }
 
 export function fmtPx(px: number | null | undefined, dp?: number): string {

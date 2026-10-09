@@ -127,6 +127,10 @@ class Hyperliquid:
         """Address action budget: ``nRequestsUsed`` of ``nRequestsCap`` (cap grows with volume)."""
         return self._info({"type": "userRateLimit", "user": self.address})
 
+    def listed(self, coins: tuple[str, ...]) -> tuple[str, ...]:
+        """The subset of ``coins`` this venue lists as perps (testnet lists fewer than mainnet)."""
+        return tuple(c for c in coins if self._symbol(c) in self._x.markets)
+
     def round_px(self, coin: str, px: float) -> float:
         return float(self._x.price_to_precision(self._symbol(coin), px))
 

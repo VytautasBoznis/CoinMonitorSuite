@@ -6,7 +6,8 @@ export type Config = {
   venue: string;
   testnet: boolean;
   ws: string;
-  coins: string[];
+  coins: string[]; // the bot's coins this venue lists
+  unlisted: string[]; // the bot's coins it does not (testnet lacks some)
   intervals: string[];
   address: string | null;
   keyed: boolean;
@@ -126,8 +127,8 @@ export const api = {
   config: () => req<Config>("/api/config"),
   state: () => req<BotState>("/api/state"),
   market: () => req<Record<string, Ctx>>("/api/market"),
-  candles: (coin: string, interval: string) =>
-    req<Candle[]>(`/api/candles?coin=${coin}&interval=${interval}&limit=500`),
+  candles: (coin: string, interval: string, limit = 500) =>
+    req<Candle[]>(`/api/candles?coin=${coin}&interval=${interval}&limit=${limit}`),
   account: () => req<Account>("/api/account"),
   trades: () => req<Trades>("/api/trades?limit=200"),
   liquidations: (coin: string, interval: string, startMs: number, endMs: number) =>

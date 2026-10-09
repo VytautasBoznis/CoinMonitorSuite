@@ -14,6 +14,7 @@ is what produced [[fable-batch-10-probe-queue]]; a live-money pick was a require
 
 **The call (Mr Fable's):** idea 8 — liquidation-cascade ladder bids. Live, this week.
 - 100 EUR split into resting bid ladders **2-4% under mid on BTC/ETH/SOL perps**, isolated margin.
+  (2026-10-09: the venue is now Hyperliquid and the coin set is 6: +DOGE/XRP/ADA, see [[live-bot-dashboard-plan]].)
 - **Leverage: owner overruled Fable's cap (2026-07-31, confirmed).** Fable's doctrine says hard cap
   2-3x, non-negotiable ([[bybit-only-leverage-doctrine]]). The risk was stated in full and the owner
   declined the limit for this book. **Their call on their pre-declared burn — do not re-impose the cap

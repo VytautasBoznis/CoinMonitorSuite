@@ -225,7 +225,7 @@ def test_drain_sets_a_deadline_and_only_from_run(api):
 
 
 def test_reads(api, monkeypatch):
-    assert api.get("/api/candles", params={"coin": "DOGE"}).status_code == 422
+    assert api.get("/api/candles", params={"coin": "PEPE"}).status_code == 422
     assert api.get("/api/candles", params={"coin": "BTC"}).json()[0]["close"] == 1.5
     assert api.get("/api/account").json()["equity"] == 98.5
     assert api.get("/api/trades").json()["summary"]["wins"] == 1
@@ -237,4 +237,6 @@ def test_serves_the_built_frontend_beside_the_api(tmp_path):
     (tmp_path / "index.html").write_text("<html>terminal</html>")
     client = TestClient(create_app(store=FakeStore(None), market=_market()[0], dist=tmp_path))
     assert "terminal" in client.get("/").text
-    assert client.get("/api/config").json()["coins"] == ["BTC", "ETH", "SOL"]
+    cfg = client.get("/api/config").json()
+    assert cfg["coins"] == ["BTC", "DOGE"]  # what the (fake) venue lists, in the bot's order
+    assert cfg["unlisted"] == ["ETH", "SOL", "XRP", "ADA"]

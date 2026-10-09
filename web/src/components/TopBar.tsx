@@ -73,11 +73,13 @@ export function TopBar({
   state,
   now,
   feeds,
+  onWarRoom,
 }: {
   config: Config;
   state?: BotState;
   now: number;
   feeds: { label: string; status: SocketStatus }[];
+  onWarRoom: () => void;
 }) {
   return (
     <header className="flex h-12 shrink-0 items-center gap-4 border-b border-line bg-panel px-4">
@@ -90,6 +92,9 @@ export function TopBar({
       <Chip className={config.testnet ? "bg-warn/15 text-warn" : "bg-down/15 text-down"}>
         {config.testnet ? "TESTNET" : "MAINNET · REAL MONEY"}
       </Chip>
+      <button onClick={onWarRoom} className="wr-enter ml-2" title="the same bot, turned up to eleven">
+        ⚡ WAR ROOM
+      </button>
       <div className="flex-1" />
       <ModePill state={state} now={now} />
       <Heartbeat state={state} now={now} />

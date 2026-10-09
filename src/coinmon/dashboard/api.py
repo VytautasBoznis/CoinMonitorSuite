@@ -64,6 +64,13 @@ def create_app(store: Store | None = None, market: Market | None = None,
     def keyed() -> bool:
         return bool(settings.hl_address and settings.hl_agent_key)
 
+    def listed() -> tuple[str, ...]:
+        """The bot's coins this venue lists (testnet lacks some); all if it is unreachable."""
+        try:
+            return tuple(c for c in COINS if c in market.contexts(COINS))
+        except httpx.HTTPError:
+            return COINS
+
     def from_venue(fn, *args):
         try:
             return fn(*args)
@@ -72,9 +79,11 @@ def create_app(store: Store | None = None, market: Market | None = None,
 
     @app.get("/api/config")
     def config():
+        coins = listed()
         return {
             "venue": venue, "testnet": settings.hl_testnet, "ws": WS[settings.hl_testnet],
-            "coins": COINS, "intervals": list(INTERVAL_MS), "address": settings.hl_address or None,
+            "coins": coins, "unlisted": [c for c in COINS if c not in coins],
+            "intervals": list(INTERVAL_MS), "address": settings.hl_address or None,
             "keyed": keyed(), "stale_s": views.STALE_S,
             "rule": {"drop": DROP, "target": TARGET, "hold_ms": HOLD_MS},
         }
@@ -132,7 +141,7 @@ def create_app(store: Store | None = None, market: Market | None = None,
         end = now_ms()
         rows = []
         with db.connect() as conn:
-            for coin in COINS:
+            for coin in listed():
                 df = db.read_liquidations(conn, LIQ_EXCHANGE, f"{coin}/USDT:USDT",
                                           end - TAPE_LOOKBACK_MS, end)
                 rows += [{"coin": coin, "ts": int(r.ts), "side": r.side, "price": float(r.price),

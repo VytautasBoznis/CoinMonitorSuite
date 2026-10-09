@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 
 /** Calls ``fn`` now and every ``ms`` after the previous call settles. Keeps the last good data
  *  through errors, so a blip shows as an error badge, not an empty screen. */
@@ -29,6 +29,54 @@ export function usePoll<T>(fn: () => Promise<T>, ms: number) {
     };
   }, [fn, ms, tick]);
   return { data, error, refresh: () => setTick((t) => t + 1) };
+}
+
+/** A press that fires only after being held for ``holdMs`` (pointer, Space or Enter); letting go
+ *  cancels. ``progress`` runs 0..1 for drawing the fill. */
+export function useHoldToFire(onFire: () => Promise<void>, enabled: boolean, holdMs = 1000) {
+  const [progress, setProgress] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const raf = useRef(0);
+  const t0 = useRef(0);
+  useEffect(() => () => cancelAnimationFrame(raf.current), []);
+
+  const cancel = () => {
+    cancelAnimationFrame(raf.current);
+    if (!busy) setProgress(0);
+  };
+  const start = () => {
+    if (!enabled || busy) return;
+    t0.current = performance.now();
+    const tick = () => {
+      const p = Math.min(1, (performance.now() - t0.current) / holdMs);
+      setProgress(p);
+      if (p < 1) {
+        raf.current = requestAnimationFrame(tick);
+        return;
+      }
+      setBusy(true);
+      onFire().finally(() => {
+        setBusy(false);
+        setProgress(0);
+      });
+    };
+    raf.current = requestAnimationFrame(tick);
+  };
+  const isKey = (k: string) => k === " " || k === "Enter";
+  const handlers = {
+    onPointerDown: start,
+    onPointerUp: cancel,
+    onPointerLeave: cancel,
+    onPointerCancel: cancel,
+    onKeyDown: (e: KeyboardEvent) => {
+      if (isKey(e.key) && !e.repeat) {
+        e.preventDefault();
+        start();
+      }
+    },
+    onKeyUp: (e: KeyboardEvent) => isKey(e.key) && cancel(),
+  };
+  return { progress, busy, handlers };
 }
 
 export function useNow(ms = 1000): number {

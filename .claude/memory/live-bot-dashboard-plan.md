@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: f655be08-d28b-48b8-91b6-b4b28bbce97c
-  modified: 2026-10-09T17:29:03.156Z
+  modified: 2026-10-09T19:37:53.954Z
 ---
 
 Owner, in a 2026-10-09 conversation with Fable (pasted into Claude Code): a bot running headless on the
@@ -57,6 +57,35 @@ Env: `COINMON_HL_ADDRESS`, `COINMON_HL_AGENT_KEY`, `COINMON_HL_TESTNET` (default
 - **Testnet needs a mainnet deposit first** (faucet: 1,000 mock USDC only for addresses that deposited on mainnet).
 **Owed before real money:** (1) testnet run: ALO place/modify (does modify keep the oid?), TP, IOC close,
 fill parsing on a non-empty account, exit classification, PANIC; (2) prove the agent key CANNOT withdraw;
-(3) no dead-man switch yet: a dead bot leaves resting bids that can fill unmanaged; (4) heartbeat is recorded
-but nothing alerts on it; (5) rung size + per-coin leverage = owner's call at go-live; (6) timescaledb still
-has no `restart:` policy (bot reads HALT from the DB; DB down = no new risk, but no ledger either).
+(3) no dead-man switch: Hyperliquid `scheduleCancel` (ccxt `cancel_all_orders_after`) probably needs **$1M
+traded volume**. The only evidence is a venue error quoted in ccxt's source ("Required: $1000000"); the docs
+don't mention it, so confirm on testnet. It would also cancel the TP. So a dead bot (box asleep) leaves
+resting bids that can fill unmanaged; the exposure is <=3 rungs in isolated margin, and accepting it is
+the owner's call; (4) heartbeat is recorded and shown on the dashboard, but nothing pushes an alert;
+(5) rung size + per-coin leverage = owner's call at go-live; (6) DONE 2026-10-09: timescaledb
+`restart: unless-stopped` (compose, plus `docker update` on the running container);
+(7) Hyperliquid **$10 minimum order value**; the docs list no reduce-only exemption. A partial fill of a $12 rung
+can leave a position whose TP (maybe also the IOC close) is rejected; test on testnet.
+
+**DASHBOARD BUILT 2026-10-09 as a real web app** (a Streamlit version came first; the owner rejected it as
+"looks bad" and wanted a professional trader terminal, see [[ui-trader-terminal-look]]). Backend:
+`src/coinmon/dashboard/` (FastAPI `api.py`; pure `views.py`; `market.py`). Frontend: `web/` (Vite + React +
+TS + Tailwind v4 + TradingView lightweight-charts v5). Run it with `coinmon dashboard` on :8502 (localhost by
+default) or the compose service `dashboard`, image `Dockerfile.dashboard`, published on 127.0.0.1:8502.
+Layout: top bar (mode, bot heartbeat, websocket status, UTC clock), ticker strip, chart, sidebar (account,
+ladder, kill switch), and below the chart the fills ledger and a live liquidation tape.
+- **Chart:** candles have hollow up-bodies. Underneath is a Bybit liquidation pane with coverage gaps shaded
+  grey. The bot's BID/TP/LONG/LIQ show as price lines, plus a "RULE −2.5%" line when nothing is resting.
+  Fills are markers at their exact price.
+- **PANIC** is hold-to-fire for 1s. **DRAIN** offers 30m/60m/90m/2h, and when it ends the browser shows a
+  notification (Notification API). Resume stays CLI-only.
+- **Deliberate deviation from "UI reads only the DB":** the backend also reads PUBLIC Hyperliquid data by
+  address with no key (market contexts, candles, the account's positions, orders and equity). It caches it
+  server-side because the bot shares the 1200/min IP REST budget (dashboard ~200/min). Live prices come over
+  the venue's public WS from the browser, and the tape comes live from Bybit's WS.
+- **Writes = the stops only.** POSTs need a JSON body, which acts as the CSRF guard; a test pins this. There
+  is no login.
+- Colors: up `#12b076` / down `#ea3943`, validated on `#0b0e11`. Their CVD separation is in the 6–8 band,
+  so direction always also has arrows, hollow candles, or position.
+- Not built yet: account-value history (a burn chart over time needs the bot to snapshot equity into the
+  DB) and scoreboard + graveyard.

@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+/* Terminal palette. up/down validated as a pair on bg (dataviz validate_palette.js, dark): CVD
+   separation sits in the 6-8 band, so direction always has a second cue (hollow up-candles,
+   arrows, above/below zero, text labels). */
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+  --color-bg: #0b0e11;
+  --color-panel: #12161c;
+  --color-panel-2: #181d25;
+  --color-line: #222831;
+  --color-ink: #e6e8ea;
+  --color-ink-2: #9aa4b2;
+  --color-ink-3: #5d6673;
+  --color-up: #12b076;
+  --color-down: #ea3943;
+  --color-accent: #3987e5;
+  --color-warn: #f0b90b;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "cv11", "ss01";
+}
+
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+}
+
+@keyframes flash-up {
+  from { background-color: rgb(18 176 118 / 0.28); }
+  to { background-color: transparent; }
+}
+@keyframes flash-down {
+  from { background-color: rgb(234 57 67 / 0.28); }
+  to { background-color: transparent; }
+}
+.flash-up { animation: flash-up 0.7s ease-out; }
+.flash-down { animation: flash-down 0.7s ease-out; }
+
+@keyframes ping-dot {
+  0% { box-shadow: 0 0 0 0 currentColor; }
+  70% { box-shadow: 0 0 0 5px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+.live-dot { animation: ping-dot 1.6s ease-out infinite; }
+
+@keyframes slide-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+.slide-in { animation: slide-in 0.25s ease-out; }
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line) transparent;
+}

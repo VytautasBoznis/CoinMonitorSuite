@@ -5,7 +5,8 @@
       "Bash(.venv/Scripts/python.exe -m ruff check probes/z1_backfill_1m.py probes/f8_cascade_ladder_proxy.py)",
       "Bash(.venv/Scripts/python.exe -m ruff check probes/f8_cascade_ladder_proxy.py)",
       "Bash(COINMON_DB_DSN=postgresql://coinmon:coinmon@localhost:5433/coinmon PYTHONPATH=\"src;.\" timeout 900 .venv/Scripts/python.exe probes/f8_cascade_ladder_proxy.py)",
-      "Bash(COINMON_DB_DSN=postgresql://coinmon:coinmon@localhost:5433/coinmon PYTHONPATH=\"src;.\" .venv/Scripts/python.exe probes/f8_cascade_ladder_proxy.py)"
+      "Bash(COINMON_DB_DSN=postgresql://coinmon:coinmon@localhost:5433/coinmon PYTHONPATH=\"src;.\" .venv/Scripts/python.exe probes/f8_cascade_ladder_proxy.py)",
+      "mcp__claude-in-chrome__tabs_context_mcp"
     ]
   }
 }

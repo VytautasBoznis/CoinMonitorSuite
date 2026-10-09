@@ -47,5 +47,9 @@ class Settings(BaseSettings):
     # the bot reads and logs whatever isolated leverage the owner set per coin on the venue.
     bot_rung_usd: float = 12.0
 
+    # --- Live-bot dashboard (`coinmon dashboard`) ---
+    # The built web frontend (`npm run build` in web/). The API runs without it.
+    dashboard_dist: Path = Path("web/dist")
+
 
 settings = Settings()

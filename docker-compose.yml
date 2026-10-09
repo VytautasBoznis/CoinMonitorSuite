@@ -13,6 +13,8 @@ services:
       - "5433:5432"
     volumes:
       - timescale-data:/var/lib/postgresql/data
+    # The collector and the live bot both depend on it (10-08 outage: the box slept, the DB stayed down).
+    restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U coinmon"]
       interval: 5s
@@ -59,6 +61,26 @@ services:
       COINMON_DB_DSN: postgresql://coinmon:coinmon@timescaledb:5432/coinmon
     ports:
       - "8501:8501"
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+
+  dashboard:
+    # Live-bot dashboard: web UI + API on http://localhost:8502. PANIC/DRAIN have no login, so the
+    # port is published on localhost only.
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    environment:
+      COINMON_DB_DSN: postgresql://coinmon:coinmon@timescaledb:5432/coinmon
+      # From the host .env. The address (public) shows the account; PANIC also needs the agent
+      # key. Without the key the PANIC button is off and points at `coinmon stop --now`.
+      COINMON_HL_ADDRESS: ${COINMON_HL_ADDRESS:-}
+      COINMON_HL_AGENT_KEY: ${COINMON_HL_AGENT_KEY:-}
+      COINMON_HL_TESTNET: ${COINMON_HL_TESTNET:-true}
+    ports:
+      - "127.0.0.1:8502:8502"
+    restart: unless-stopped
     depends_on:
       timescaledb:
         condition: service_healthy

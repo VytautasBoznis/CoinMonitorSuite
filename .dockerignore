@@ -1,0 +1,3 @@
+# The dashboard image runs `npm ci` + `npm run build` itself; host (Windows) modules must not leak in.
+web/node_modules/
+web/dist/

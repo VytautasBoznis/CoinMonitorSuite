@@ -1072,6 +1072,14 @@ def _stop(args: argparse.Namespace) -> None:
     print("FLAT, mode HALT")
 
 
+def _dashboard(args: argparse.Namespace) -> None:
+    import uvicorn
+
+    from coinmon.dashboard.api import create_app
+
+    uvicorn.run(create_app(), host=args.host, port=args.port)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="coinmon", description="CoinMonitorSuite backtester")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -1727,6 +1735,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="DRAIN deadline, e.g. 90m or 2h (default 90m; F8 holds at most 60m)",
     )
     p_stop.set_defaults(func=_stop)
+
+    p_dash = sub.add_parser(
+        "dashboard", help="Live-bot dashboard: web UI + API (PANIC/DRAIN have no login)"
+    )
+    p_dash.add_argument(
+        "--host", default="127.0.0.1", help="bind address (default localhost only; 0.0.0.0 = LAN)"
+    )
+    p_dash.add_argument("--port", type=int, default=8502)
+    p_dash.set_defaults(func=_dashboard)
 
     return parser
 

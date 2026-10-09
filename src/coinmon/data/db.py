@@ -242,6 +242,32 @@ def write_liquidations(
     conn.commit()
 
 
+def read_liquidations(
+    conn: psycopg.Connection, exchange: str, symbol: str, start_ms: int, end_ms: int
+) -> pd.DataFrame:
+    """One symbol's liquidation prints with ``start_ms <= ts < end_ms`` as a
+    ``(ts, side, price, size)`` frame, oldest-first. Read with ``read_liquidation_coverage``."""
+    rows = conn.execute(
+        "SELECT ts, side, price, size FROM liquidations "
+        "WHERE exchange = %s AND symbol = %s AND ts >= %s AND ts < %s ORDER BY ts",
+        (exchange, symbol, start_ms, end_ms),
+    ).fetchall()
+    return pd.DataFrame(rows, columns=["ts", "side", "price", "size"])
+
+
+def read_liquidation_coverage(
+    conn: psycopg.Connection, exchange: str, symbol: str, start_ms: int, end_ms: int
+) -> list[tuple[int, int]]:
+    """``(start_ms, end_ms)`` coverage spans of one symbol overlapping ``[start_ms, end_ms)``."""
+    rows = conn.execute(
+        "SELECT start_ms, end_ms FROM liquidation_coverage "
+        "WHERE exchange = %s AND symbol = %s AND end_ms > %s AND start_ms < %s "
+        "ORDER BY start_ms",
+        (exchange, symbol, start_ms, end_ms),
+    ).fetchall()
+    return [(r[0], r[1]) for r in rows]
+
+
 def last_open_time(
     conn: psycopg.Connection, exchange: str, symbol: str, timeframe: str
 ) -> int | None:
@@ -269,6 +295,8 @@ __all__ = [
     "list_series",
     "read_candles",
     "read_funding",
+    "read_liquidation_coverage",
+    "read_liquidations",
     "read_open_interest",
     "series_stats",
     "upsert_candles",

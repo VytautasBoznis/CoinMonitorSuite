@@ -8,6 +8,9 @@ venv/
 build/
 dist/
 
+# Web frontend (web/)
+node_modules/
+
 # Tooling caches
 .pytest_cache/
 .ruff_cache/

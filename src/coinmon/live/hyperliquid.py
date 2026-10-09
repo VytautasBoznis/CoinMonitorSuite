@@ -46,10 +46,15 @@ class Fill:
     dir: str  # venue's direction text, e.g. "Open Long", "Close Long"
 
 
+def venue_name(testnet: bool) -> str:
+    """The ``venue`` the ledger files this account's trades under."""
+    return "hyperliquid-testnet" if testnet else "hyperliquid"
+
+
 class Hyperliquid:
     def __init__(self, address: str, agent_key: str, testnet: bool = True) -> None:
         self.address = address
-        self.venue = "hyperliquid-testnet" if testnet else "hyperliquid"
+        self.venue = venue_name(testnet)
         self._x = ccxt.hyperliquid(
             {"walletAddress": address, "privateKey": agent_key, "enableRateLimit": True}
         )

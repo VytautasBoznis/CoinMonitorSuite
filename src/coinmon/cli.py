@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import time
 from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
@@ -28,6 +29,7 @@ from coinmon.data.candles import load_candles
 from coinmon.data.discovery import rank_spot, summarize_coverage
 from coinmon.data.surrogate import surrogate_legs
 from coinmon.feed import BarView, CostModel
+from coinmon.live import control, ladder, stop
 from coinmon.live.feed import LiveFeed
 from coinmon.live.runner import ForwardRunner
 from coinmon.scraper import service
@@ -994,6 +996,82 @@ def _nullcheck(args: argparse.Namespace) -> None:
     print(f"\nwrote {args.out} — feed it to `certify --null {args.out}` for C4")
 
 
+def _hyperliquid():
+    from coinmon.live.hyperliquid import Hyperliquid
+
+    if not (settings.hl_address and settings.hl_agent_key):
+        raise SystemExit("set COINMON_HL_ADDRESS and COINMON_HL_AGENT_KEY (in .env)")
+    return Hyperliquid(settings.hl_address, settings.hl_agent_key, testnet=settings.hl_testnet)
+
+
+def _log_to_stdout() -> None:
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s"
+    )
+
+
+def _utc(ts_ms: int) -> str:
+    return datetime.fromtimestamp(ts_ms / 1000, UTC).strftime("%Y-%m-%d %H:%M:%S")
+
+
+def _ago(ts_ms: int | None) -> str:
+    return "never" if ts_ms is None else f"{(control.now_ms() - ts_ms) / 1000:.0f}s ago"
+
+
+def _duration_min(text: str) -> float:
+    """Minutes from '90m', '2h' or a plain number."""
+    if text.endswith("h"):
+        return float(text[:-1]) * 60
+    return float(text.removesuffix("m"))
+
+
+def _bot(args: argparse.Namespace) -> None:
+    store = control.Store()
+    if args.action == "resume":
+        store.set_mode(control.RUN, "resume")
+        print("mode RUN: the bot places bids from its next cycle")
+        return
+    hl = _hyperliquid()
+    if args.action == "run":
+        _log_to_stdout()
+        ladder.run(hl, store, settings.bot_rung_usd)
+        return
+    ctl = store.read()
+    print(f"{hl.venue}  mode {ctl.mode} ({ctl.reason}, {_ago(ctl.updated_ms)})"
+          f"  heartbeat {_ago(ctl.heartbeat_ms)}")
+    rl = hl.rate_limit()
+    print(f"action budget: {rl['nRequestsUsed']} of {rl['nRequestsCap']} used"
+          f" (volume {rl['cumVlm']} USDC)")
+    for p in hl.positions().values():
+        print(f"position {p.coin} {p.szi} @ {p.entry_px} ({p.leverage}, liq {p.liq_px})")
+    for o in hl.open_orders():
+        print(f"order {o.coin} {o.side} {o.sz} @ {o.px}{' reduce-only' if o.reduce_only else ''}")
+    for t in store.trades(hl.venue, limit=args.trades):
+        head = f"trade {t.coin} {_utc(t.fill_ms)} {t.sz} @ {t.fill_px} ({t.leverage})"
+        if t.exit_ms is None:
+            print(f"{head} open")
+        elif t.exit_px is None:
+            print(f"{head} closed with no fill ({t.exit_dir})")
+        else:
+            net = t.exit_px / t.fill_px - 1 - (t.entry_fee + t.exit_fee) / (t.fill_px * t.sz)
+            print(f"{head} -> {t.exit_px} {t.exit_reason} net {net:+.3%}")
+
+
+def _stop(args: argparse.Namespace) -> None:
+    _log_to_stdout()
+    hl, store = _hyperliquid(), control.Store()
+    if args.now:
+        flat = stop.panic(hl, store, "manual panic")
+        print("FLAT, mode HALT" if flat else "NOT FLAT after retries: check the venue NOW")
+        return
+    deadline = control.now_ms() + int(args.deadline * 60_000)
+    store.set_mode(control.DRAIN, "manual drain", deadline)
+    print(f"DRAIN: no new bids, exits working; flatten at market by {_utc(deadline)} UTC")
+    while not stop.drain_step(hl, store, deadline, control.now_ms()):
+        time.sleep(10)
+    print("FLAT, mode HALT")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="coinmon", description="CoinMonitorSuite backtester")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -1618,6 +1696,37 @@ def build_parser() -> argparse.ArgumentParser:
         "--out", default="null.json", metavar="FILE", help="where to write the verdict JSON",
     )
     p_null.set_defaults(func=_nullcheck)
+
+    p_bot = sub.add_parser(
+        "bot",
+        help="Live F8 ladder bot on Hyperliquid (testnet unless COINMON_HL_TESTNET=false)",
+    )
+    p_bot.add_argument(
+        "action",
+        choices=["run", "status", "resume"],
+        help="run: the bot loop (a new bot starts HALT); status: mode, heartbeat, venue state, "
+        "trades; resume: set mode RUN",
+    )
+    p_bot.add_argument("--trades", type=int, default=10, help="status: recent trades to list")
+    p_bot.set_defaults(func=_bot)
+
+    p_stop = sub.add_parser(
+        "stop", help="Stop the live bot: PANIC (--now) or DRAIN (--drain); needs no running bot"
+    )
+    how = p_stop.add_mutually_exclusive_group(required=True)
+    how.add_argument(
+        "--now", action="store_true",
+        help="PANIC: HALT, cancel every order, close every position at market",
+    )
+    how.add_argument(
+        "--drain", action="store_true",
+        help="DRAIN: no new bids, exits keep working, flatten at market at the deadline, HALT",
+    )
+    p_stop.add_argument(
+        "--deadline", type=_duration_min, default=90.0, metavar="90m",
+        help="DRAIN deadline, e.g. 90m or 2h (default 90m; F8 holds at most 60m)",
+    )
+    p_stop.set_defaults(func=_stop)
 
     return parser
 

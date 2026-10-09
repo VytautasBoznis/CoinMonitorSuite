@@ -110,3 +110,45 @@ CREATE TABLE IF NOT EXISTS liquidation_coverage (
     end_ms    BIGINT NOT NULL,
     PRIMARY KEY (exchange, symbol, start_ms)
 );
+
+-- Live-bot control, one row per bot. mode is RUN | DRAIN | HALT. `coinmon stop` / `coinmon bot
+-- resume` (and later the dashboard) write it; the bot reads it every cycle before it places
+-- anything. HALT survives restarts: a bot with no row starts HALT and stays idle until resumed.
+-- deadline_ms is DRAIN's flatten-at-market time; heartbeat_ms is the bot's last good cycle.
+CREATE TABLE IF NOT EXISTS bot_control (
+    bot          TEXT   PRIMARY KEY,
+    mode         TEXT   NOT NULL,
+    reason       TEXT   NOT NULL,
+    deadline_ms  BIGINT,
+    updated_ms   BIGINT NOT NULL,
+    heartbeat_ms BIGINT
+);
+
+-- One row per live round trip. Entry columns are written when the position appears, exit columns
+-- when it is gone; fills and fees are the venue's own. anchor_close is the 1m close the resting
+-- bid was pegged from (what the frozen rule assumed; NULL if the fill happened while the bot was
+-- down), fill_px what the venue did. leverage is as set on the venue at fill, e.g. 'isolated 5'.
+-- exit_reason: tp | time | other (panic, liquidation, manual: see exit_dir, the venue's fill
+-- direction). Natural key: oids are unique per venue, so separate machines stitch by upsert.
+CREATE TABLE IF NOT EXISTS bot_trades (
+    bot          TEXT             NOT NULL,
+    venue        TEXT             NOT NULL,
+    coin         TEXT             NOT NULL,
+    entry_oid    BIGINT           NOT NULL,
+    anchor_close DOUBLE PRECISION,
+    sz           DOUBLE PRECISION NOT NULL,
+    fill_px      DOUBLE PRECISION NOT NULL,
+    fill_ms      BIGINT           NOT NULL,
+    entry_fee    DOUBLE PRECISION NOT NULL,
+    leverage     TEXT             NOT NULL,
+    liq_px       DOUBLE PRECISION,
+    tp_px        DOUBLE PRECISION,
+    tp_oid       BIGINT,
+    time_oid     BIGINT,
+    exit_px      DOUBLE PRECISION,
+    exit_ms      BIGINT,
+    exit_fee     DOUBLE PRECISION,
+    exit_reason  TEXT,
+    exit_dir     TEXT,
+    PRIMARY KEY (bot, venue, entry_oid)
+);

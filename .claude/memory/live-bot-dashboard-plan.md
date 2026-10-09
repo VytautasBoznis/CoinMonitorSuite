@@ -31,7 +31,7 @@ They want to SEE it, and to be entertained by it. Fable agreed and stated the li
   withdrawal permission (the hard loss cap); take-profit placed exchange-side at fill; a heartbeat alert.
 - Order: F11 probe → bot core → F8 ladder live on 100 EUR → F1 in paper mode → UI screens as data appears.
 
-**Facts checked 2026-10-09 (Claude):**
+**Facts checked 2026-10-09 (Claude) — BYBIT, SUPERSEDED same day by [[bybit-dropped-no-eu-leverage]] (venue is now Hyperliquid):**
 - Bybit USDC linear perps exist for only **6 of the 10 F8 coins**: BTC, ETH, SOL, DOGE, LINK, XRP (`*PERP`
   symbols). AVAX, NEAR, ADA and SHIB are USDT-only. This matters if `config.py`'s USDC-only/MiCA rule applies
   to the owner's derivatives account.
@@ -41,3 +41,22 @@ They want to SEE it, and to be entertained by it. Fable agreed and stated the li
   entry order and verify DCP behaviour on Bybit demo before enabling it.
 - **F11 is undefined in memory/repo.** Its spec came from a later Fable message that has not been
   provided yet ("slow hedged short basket").
+
+**BOT CORE BUILT 2026-10-09 (Hyperliquid, code + fake-venue tests only, NOT yet run on testnet).**
+Owner decisions this session: bot core before F11 (F11 spec still missing); frozen F8 rule verbatim
+(1 post-only bid/coin at prior 1m close -2.5%, reduce-only TP +1.2%, 60m market-out) on BTC/ETH/SOL.
+Code: `src/coinmon/live/{hyperliquid,control,stop,ladder}.py`, tables `bot_control` + `bot_trades`,
+CLI `coinmon bot run|status|resume`, `coinmon stop --now | --drain [--deadline 90m]`, `tests/test_bot.py`.
+Env: `COINMON_HL_ADDRESS`, `COINMON_HL_AGENT_KEY`, `COINMON_HL_TESTNET` (default true), `COINMON_BOT_RUNG_USD` (12).
+- **Deviation from the frozen rule (venue-forced):** re-peg only when the rung moved >=0.1% (DEADBAND).
+  Hyperliquid budgets actions per address: 10k, then 1 per USDC traded, then 1 per 10s. Re-pegging 3 bids
+  every minute would burn the 10k in ~2 days. The ledger keeps anchor_close + fill_px per trade.
+- Leverage is NOT set by the bot: it reads/logs the venue setting and refuses to run unless every coin
+  is isolated (owner's leverage call stands, [[cursed-100-eur-live-ladder]]).
+- TP is a plain reduce-only GTC limit placed the cycle after the fill (~3s window), not attached.
+- **Testnet needs a mainnet deposit first** (faucet: 1,000 mock USDC only for addresses that deposited on mainnet).
+**Owed before real money:** (1) testnet run: ALO place/modify (does modify keep the oid?), TP, IOC close,
+fill parsing on a non-empty account, exit classification, PANIC; (2) prove the agent key CANNOT withdraw;
+(3) no dead-man switch yet: a dead bot leaves resting bids that can fill unmanaged; (4) heartbeat is recorded
+but nothing alerts on it; (5) rung size + per-coin leverage = owner's call at go-live; (6) timescaledb still
+has no `restart:` policy (bot reads HALT from the DB; DB down = no new risk, but no ledger either).

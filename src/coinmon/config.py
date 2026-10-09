@@ -36,5 +36,16 @@ class Settings(BaseSettings):
     # feeds the W3 carry family). Off by default so existing candle-only deployments are unchanged.
     scrape_funding: bool = False
 
+    # --- Live bot (F8 cascade ladder on Hyperliquid perps) ---
+    # Testnet until the owner flips it. hl_address is the master wallet that owns the funds and is
+    # the only signer that can withdraw; hl_agent_key is an approved API wallet's private key, used
+    # only to sign orders. Both go in .env, never in the repo.
+    hl_testnet: bool = True
+    hl_address: str = ""
+    hl_agent_key: str = ""
+    # USDC notional per ladder rung (Hyperliquid's minimum order is $10). Leverage is not set here:
+    # the bot reads and logs whatever isolated leverage the owner set per coin on the venue.
+    bot_rung_usd: float = 12.0
+
 
 settings = Settings()

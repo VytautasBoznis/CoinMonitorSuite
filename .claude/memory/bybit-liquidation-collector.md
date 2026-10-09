@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: f6bf275c-ead1-4b47-92c8-46a8f51a8a71
-  modified: 2026-10-08T17:38:19.963Z
+  modified: 2026-10-09T17:29:04.316Z
 ---
 
 Built 2026-10-08 as the NEXT of [[f8-cascade-ladder-result]] (idea 8 of [[fable-batch-10-probe-queue]]).
@@ -26,6 +26,12 @@ the natural key, coverage = union of spans. Stop: `docker compose stop liquidati
   `aiohttp.ThreadedResolver`. Git Bash `timeout -s INT` can't signal a native Windows python; test
   graceful shutdown in the container (SIGTERM path verified there).
 - Push lag (recv − T): median ~0.9s, max ~1.1s. Rate in a quiet hour: ~1 print / 4s across all perps.
+
+**OUTAGE 2026-10-08 19:24 → 2026-10-09 17:26 UTC (~22h).** The machine most likely slept. Docker
+came back with Timescale exited (255), and `timescaledb` has NO `restart:` policy in compose, so the
+collector crash-looped on DNS. Claude restarted the DB on 2026-10-09 and the collector recovered.
+Before the outage it had only ~2h of data (1,315 prints). Coverage spans correctly exclude the hole.
+Fix proposed, NOT applied: add `restart: unless-stopped` to timescaledb, and stop the box sleeping.
 
 **Read coverage, never prints alone:** an empty minute means "no liquidations" only inside a span.
 Crash semantics verified: coverage end stays ≤ last flush, so spans never claim lost prints.

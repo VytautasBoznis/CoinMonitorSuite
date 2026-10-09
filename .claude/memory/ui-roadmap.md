@@ -5,6 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 87eee45e-fd58-44ae-921e-2c58f2724952
+  modified: 2026-10-09T17:29:05.665Z
 ---
 
 Agreed with the user 2026-07-03. Principle: **each view is built only when it has real data to
@@ -36,6 +37,9 @@ show** — a dashboard of nothing is procrastination. Three tiers, in order:
 does not start until at least **3 winning strategies** exist. The tier-1 research/diagnostics
 viewer is a hunting *aid* and may still land as soon as certify ledgers exist; but tiers 2–3
 (and any real UI investment) wait for three winners, not one. Keep finding candidates first.
+
+**2026-10-09: the owner explicitly lifted the gate for a LIVE-BOT inspection dashboard** → see
+[[live-bot-dashboard-plan]]. The scanner/product UI (tier 3) stays gated.
 
 **How to apply:** don't pull tier 2/3 forward even if asked casually — restate the gate
 (certification + ≥3 winners) and get explicit confirmation. Priority stack around this: data-package

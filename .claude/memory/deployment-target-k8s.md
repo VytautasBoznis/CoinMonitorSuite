@@ -15,7 +15,7 @@ metadata:
 - The local Parquet `data/` store (Phase 1) is ephemeral in a container — real data needs a mounted volume / PVC, or the Phase 2+ Postgres/Timescale move. See [[project-direction]].
 - Not built yet (no Dockerfile in repo as of scaffold step 1); add per component when there's something runnable to containerize.
 
-**BUILT 2026-10-10 (owner: "I'll literally use the images and helm charts on my k3s cluster"):**
+**BUILT 2026-10-10 (owner request: images + a Helm chart they deploy themselves):**
 - **Chart:** `deploy/helm/coinmon`, with an owner's guide in `deploy/README.md`.
   - TimescaleDB is a StatefulSet with a volume on local-path. Its password Secret is generated once
     (looked up, `resource-policy: keep`), so the volume and password survive uninstall and reinstall.
@@ -38,5 +38,6 @@ metadata:
     and volume kept), collector storing prints, dashboard API, Traefik basic-auth 401/401/200.
   - The bot with fake creds reached the venue and refused on cross margin, as designed.
   - Gotcha on this machine: Git Bash rewrites `/paths`, so docker commands need `MSYS_NO_PATHCONV=1`.
-- **NOT verified:** the GitHub Actions run itself, which needs a push, and GHCR package visibility.
-  Action majors used: checkout@v5, setup-python@v6, setup-node@v5, docker/*@v3/v5/v6, azure/setup-helm@v4.
+- **Verified 2026-10-13:** the pipeline builds and publishes. Deployments ran images pulled from GHCR,
+  up to `coinmon-scraper:sha-2d5ed4a`. Action majors used: checkout@v5, setup-python@v6,
+  setup-node@v5, docker/*@v3/v5/v6, azure/setup-helm@v4.

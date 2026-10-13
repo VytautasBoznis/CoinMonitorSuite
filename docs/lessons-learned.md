@@ -4,7 +4,8 @@ What the rig has actually *told us* once it could run end-to-end (Phase 1 + 1.5)
 from [LEARNING.md](../LEARNING.md) (a study curriculum) and the
 [strategies doc](strategies.md) (how the signal layer is built). This is a findings log:
 empirical results from real runs, plus the engineering lessons that came out of building and
-operating the thing.
+operating the thing. The [going-live section](#going-live-the-f8-bot-its-dashboard-and-deployment-2026-10-09--10-13)
+at the end covers the live bot, its dashboard and the deployment.
 
 **How to read this:** every empirical result below is a **smoke test on a thin sample** —
 one synthetic ratio (ETH/BTC), ~13 months of 1h candles, a backfill starting 2025-06-01.
@@ -256,3 +257,102 @@ with `evaluate_fitness` (4 folds, embargo 5):
 - **Make pair/universe a gene.** Chunk A showed pair selection dominates parameter selection
   (same genome: garbage on ETH/USDC, strong on XRP/ETH). The genome representation (next chunk)
   should encode *what* to trade, not only *how*.
+
+---
+
+## Going live: the F8 bot, its dashboard, and deployment (2026-10-09 → 10-13)
+
+The first time the project put real orders on a real venue: the F8 liquidation-cascade ladder on
+Hyperliquid perps, with a web dashboard, packaged as Docker images and a Helm chart. Money at risk was
+deliberately tiny: six ~$12 resting bids, each in isolated margin.
+
+### What is proven, and what isn't
+
+- **Proven on mainnet:** six post-only (ALO) bids rest at −2.4 to −2.5% under mid, about $12 each. They
+  re-peg as price moves, margin is reserved as expected, and the dashboard shows the venue's true state.
+- **Not yet proven:** everything that only runs after a fill. That means placing the take-profit, the
+  60-minute market exit, fill parsing, exit classification, and PANIC with open positions. Also still
+  open: the proof that the API ("agent") key cannot withdraw, and a dead-man switch. The first real
+  fill is the test.
+
+### Lessons
+
+1. **Verify on the venue, not on your own screens.** Every "is it working?" question was settled by
+   Hyperliquid's public info API (open orders, account role, balances, approved API wallets), never by
+   the dashboard or the logs. Twice the dashboard was wrong while the venue was right: once it showed
+   $0 equity, once "ARMED" for a bot that wasn't running.
+
+2. **A headline status must show liveness, not a setting.** "ARMED" was just the RUN flag in the
+   database while the bot process crash-looped. The badge now requires a fresh heartbeat and otherwise
+   reads "ARMED · BOT DOWN" in red.
+
+3. **Arming must be per network.** One RUN/HALT switch shared by testnet and mainnet would have started
+   real bidding the moment the config flipped to mainnet. The control row is now keyed by venue, and a
+   network the bot has never been resumed on starts halted.
+
+4. **Setup mistakes are mostly paste mistakes, so validate the shape of every credential up front.**
+   The ones that actually happened:
+   - an API wallet's *address* (42 chars) pasted where its *private key* (66 chars) belongs;
+   - the API wallet's address given as the account address;
+   - an account set up on mainnet while the bot pointed at testnet.
+
+   The bot now refuses each of these at startup with a plain-English message, using the account's
+   `userRole`, the key's format, and an offline derivation of the agent address. It also refuses the
+   main wallet's own key, which can withdraw.
+
+5. **Testnet and mainnet are different accounts.** The testnet faucet only pays addresses that exist on
+   mainnet, and an email login gets a different address per network. When the testnet UI blocked
+   progress (its API-wallet "Authorize" did nothing), the fallback was to go live at minimum size: start
+   halted, verify the bids read-only, then test PANIC while only bids rest, which cancels and halts
+   without a trade.
+
+6. **Read the account mode before reading balances.** In Hyperliquid's unified account mode, one USDC
+   balance backs spot and perps. The perp `marginSummary` then reads 0 (the docs call it "not
+   meaningful"), and the money appears in `spotClearinghouseState`. Separately, ccxt hands back
+   bare-JSON-string info responses unparsed, quotes included (`'"unifiedAccount"'`).
+
+7. **Startup must ride out network blips; only bad config should kill a process.** An upstream DNS
+   resolver that intermittently timed out made the bot crash on its first lookups, and Kubernetes'
+   restart backoff stretched each blip into minutes of downtime. Startup now retries network errors
+   with backoff (5s → 60s), while config errors still exit. On the cluster side, forwarding the exchange
+   domains to a reliable resolver (CoreDNS `coredns-custom`) removed the cause.
+
+8. **Pods read Secret-backed env vars only when a container starts.** A crash-looping pod picks up an
+   edited Secret on its next restart; a healthy pod never does. After a credential change the bot was
+   right and the dashboard was stale: it showed the wrong account, and its PANIC held an outdated key.
+   After editing a Secret, restart every workload that reads it.
+
+9. **Prove a Helm chart on a real, throwaway cluster before handing it over.** k3s inside Docker, plus
+   Helm from a container, surfaced a startup race (workers came up before Postgres; fixed with a
+   `wait-for-db` init container). It also proved uninstall/reinstall keeps the database volume and its
+   generated password (`lookup` plus `helm.sh/resource-policy: keep`). Lint and `helm template` alone
+   would have passed both bugs.
+
+10. **Check how often a rule actually fires per instrument before choosing the universe.** The F8 rung
+    (−2.5% inside one minute) touched BTC on only 3 days in 24 months. The backtest that passed was
+    pooled over ten coins, and the first live pick of three majors would have filled about every three
+    weeks. Six coins catch 70 of the 82 fill-days that all ten would. Breadth has a venue cost too:
+    bid re-pegs grow from about 720 to about 2,000 actions a day against the exchange's action budget.
+
+11. **Don't assume the venue's safety features are available to a small account.** Hyperliquid's
+    scheduled cancel-all (a dead-man switch) appears to need $1M of traded volume, and every order must
+    be worth at least $10. With no venue-side dead-man switch, a dead bot's resting bids can still fill.
+    The exposure is bounded only by keeping each rung small and in isolated margin.
+
+12. **Screenshot UI work before calling it done.** Headless Chrome driven over the DevTools protocol
+    (the same tool can click buttons to trigger effects) caught bugs that type checks never would:
+    - a bid line drawn off-screen because price lines don't count toward autoscale;
+    - an SVG gauge needle that vanished because a glow filter on a zero-width line has an empty bounding
+      box;
+    - colliding radar labels;
+    - a decorative line slicing through every panel.
+
+    A throwaway demo server with fake bot data covered the states (open position, fill effects) that
+    live data couldn't show yet.
+
+13. **Show intent in plain words.** The owner did not want to learn the screens. A dashed "bid trail"
+    2.5% under price, plus one sentence saying what the bot is waiting for or holding, answered "what is
+    it doing?" better than any extra chart.
+
+14. **Make lint a gate only once the tree is clean, then keep it a gate.** Four old findings kept the
+    CI lint step advisory. Fixing them took minutes, and the step now fails the build.

@@ -125,7 +125,7 @@ ladder, kill switch), and below the chart the fills ledger and a live liquidatio
 - The F8 PASS was pooled over all 10; BTC/ETH/SOL was the owner's first, narrower pick. It was widened
   to 6 the same day.
 
-**Hyperliquid account facts (found during the owner's k3s setup, 2026-10-13):**
+**Hyperliquid account facts (found during the first live setup, 2026-10-13):**
 - **Unified account mode:** the owner's account `userAbstraction` = `unifiedAccount`. In that mode one
   USDC balance backs both spot and perps. `clearinghouseState.marginSummary` reads 0 ("not meaningful",
   per the docs), and the money shows in `spotClearinghouseState` (USDC total and hold). Both the
@@ -139,9 +139,6 @@ ladder, kill switch), and below the chart the fills ledger and a live liquidatio
 - Owner pitfalls that are now caught at bot startup with plain-English messages: the account was set
   up on the other network; the API wallet's ADDRESS (42 chars) was pasted as the agent key; the
   main-wallet key was used as the agent key.
-- k3s on the owner's box: the router DNS (192.168.1.1) drops lookups. Fixed with a `coredns-custom`
-  ConfigMap that sends hyperliquid/bybit domains to 1.1.1.1 and 8.8.8.8. Reach the cluster via
-  `wsl kubectl` (the Windows kubectl has no context).
 
 **OWNER DECISION 2026-10-13: skip testnet and go mainnet with small amounts.** The testnet API page's
 "Authorize" did nothing for them. This is their call on the pre-declared burn
@@ -165,7 +162,7 @@ Claude sets up and verifies read-only.
   3. **PANIC with only bids resting**: this tests cancel + HALT with no trade.
   4. Resume again. The first real fill is the test of TP and the time exit.
 
-**LIVE ON MAINNET 2026-10-13 ~19:27 UTC.** The owner resumed the bot on k3s, build `sha-2d5ed4a`.
+**LIVE ON MAINNET 2026-10-13 ~19:27 UTC.** The owner resumed the bot, build `sha-2d5ed4a`.
 - Verified on Hyperliquid: 6 real post-only (ALO) bids resting, about $12 each at -2.37..-2.51% vs mid,
   across BTC ETH SOL DOGE XRP ADA. 4.84 USDC of 99.62 held as margin.
 - Leverage set on the venue: BTC/ETH/SOL/XRP isolated 20x, DOGE/ADA isolated 10x.

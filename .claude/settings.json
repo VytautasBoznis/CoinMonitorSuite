@@ -27,7 +27,8 @@
       "Bash(wsl -e bash -lc 'K=$\\(kubectl -n coinmon get secret coinmon-hyperliquid -o jsonpath='\\\\''{.data.agentKey}'\\\\'' | base64 -d\\); if [ \"$K\" = '\\\\''0xTESTNET_API_KEY'\\\\'' ]; then echo '\\\\''agentKey = the literal placeholder 0xTESTNET_API_KEY'\\\\''; elif echo \"$K\" | grep -Eq '\\\\''^\\(0x\\)?[0-9a-fA-F]{64}$'\\\\''; then echo \"agentKey format OK \\(length ${#K}\\)\"; else echo \"agentKey INVALID format \\(length ${#K}; has whitespace: $\\(echo -n \"$K\" | grep -c '\\\\''[[:space:]]'\\\\''\\)\\)\"; fi; unset K')",
       "WebFetch(domain:hyperliquid.gitbook.io)",
       "Bash(.venv/Scripts/python.exe -c ' *)",
-      "Bash(.venv/Scripts/python.exe -m pytest -q tests/test_bot.py tests/test_dashboard.py)"
+      "Bash(.venv/Scripts/python.exe -m pytest -q tests/test_bot.py tests/test_dashboard.py)",
+      "Bash(.venv/Scripts/python.exe -m ruff check src tests --fix)"
     ]
   }
 }

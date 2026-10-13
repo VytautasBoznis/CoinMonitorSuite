@@ -31,6 +31,7 @@ from coinmon.data.surrogate import surrogate_legs
 from coinmon.feed import BarView, CostModel
 from coinmon.live import control, ladder, stop
 from coinmon.live.feed import LiveFeed
+from coinmon.live.hyperliquid import venue_name
 from coinmon.live.runner import ForwardRunner
 from coinmon.scraper import service
 from coinmon.search.ensemble import certify_ensemble
@@ -1028,8 +1029,13 @@ def _duration_min(text: str) -> float:
     return float(text.removesuffix("m"))
 
 
+def _store() -> control.Store:
+    """The control store of the network this config points at (COINMON_HL_TESTNET)."""
+    return control.Store(control.bot_on(venue_name(settings.hl_testnet)))
+
+
 def _bot(args: argparse.Namespace) -> None:
-    store = control.Store()
+    store = _store()
     if args.action == "resume":
         store.set_mode(control.RUN, "resume")
         print("mode RUN: the bot places bids from its next cycle")
@@ -1062,7 +1068,7 @@ def _bot(args: argparse.Namespace) -> None:
 
 def _stop(args: argparse.Namespace) -> None:
     _log_to_stdout()
-    hl, store = _hyperliquid(), control.Store()
+    hl, store = _hyperliquid(), _store()
     if args.now:
         flat = stop.panic(hl, store, "manual panic")
         print("FLAT, mode HALT" if flat else "NOT FLAT after retries: check the venue NOW")

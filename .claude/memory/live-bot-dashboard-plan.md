@@ -142,3 +142,25 @@ ladder, kill switch), and below the chart the fills ledger and a live liquidatio
 - k3s on the owner's box: the router DNS (192.168.1.1) drops lookups. Fixed with a `coredns-custom`
   ConfigMap that sends hyperliquid/bybit domains to 1.1.1.1 and 8.8.8.8. Reach the cluster via
   `wsl kubectl` (the Windows kubectl has no context).
+
+**OWNER DECISION 2026-10-13: skip testnet and go mainnet with small amounts.** The testnet API page's
+"Authorize" did nothing for them. This is their call on the pre-declared burn
+([[cursed-100-eur-live-ladder]]). Claude does not start the bot or place trades: the owner resumes it;
+Claude sets up and verifies read-only.
+- Guard added first: **one RUN/HALT switch per network** (`control.bot_on(venue)` = `f8-ladder@<venue>`).
+  Before this, a RUN left over from testnet would have armed mainnet the moment the network was flipped.
+  Every network now starts HALT.
+- **Still unproven on a real venue when going live:**
+  - post-only bid placement and modify;
+  - TP placement after a fill, the 60m IOC time exit, fill parsing, exit classification;
+  - PANIC with positions;
+  - partial fills under the $10 minimum;
+  - the agent-can't-withdraw proof;
+  - no dead-man switch.
+
+  Exposure is bounded: 6 coins x $12 rungs, with isolated margin per coin.
+- **Planned safe first steps on mainnet:**
+  1. Start HALT and check `coinmon bot status`.
+  2. Resume, then verify read-only that the bids rest at about -2.5%.
+  3. **PANIC with only bids resting**: this tests cancel + HALT with no trade.
+  4. Resume again. The first real fill is the test of TP and the time exit.

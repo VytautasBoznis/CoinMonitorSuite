@@ -27,7 +27,7 @@ from coinmon.dashboard import views
 from coinmon.dashboard.market import INTERVAL_MS, WS, Market
 from coinmon.data import db
 from coinmon.live import stop
-from coinmon.live.control import DRAIN, RUN, Store, now_ms
+from coinmon.live.control import DRAIN, RUN, Store, bot_on, now_ms
 from coinmon.live.hyperliquid import Hyperliquid, venue_name
 from coinmon.live.ladder import COINS, DROP, HOLD_MS, TARGET
 
@@ -55,10 +55,10 @@ def _venue_client() -> Hyperliquid:
 def create_app(store: Store | None = None, market: Market | None = None,
                venue_client: Callable[[], Hyperliquid] = _venue_client,
                dist: Path | None = None) -> FastAPI:
-    store = store or Store()
+    venue = venue_name(settings.hl_testnet)
+    store = store or Store(bot_on(venue))
     market = market or Market(settings.hl_testnet)
     dist = settings.dashboard_dist if dist is None else dist
-    venue = venue_name(settings.hl_testnet)
     app = FastAPI(title="coinmon dashboard", docs_url=None, redoc_url=None, openapi_url=None)
 
     def keyed() -> bool:

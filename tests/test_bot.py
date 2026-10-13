@@ -346,3 +346,11 @@ def test_startup_rides_out_network_blips_but_not_config_errors(monkeypatch):
 def test_rejects_a_malformed_agent_key_before_any_network_call(key, says):
     with pytest.raises(ValueError, match=says):
         Hyperliquid("0x" + "12" * 20, key, testnet=True)
+
+
+def test_each_network_has_its_own_run_switch():
+    from coinmon.live.control import bot_on
+    from coinmon.live.hyperliquid import venue_name
+
+    # arming testnet never arms mainnet
+    assert bot_on(venue_name(True)) != bot_on(venue_name(False))

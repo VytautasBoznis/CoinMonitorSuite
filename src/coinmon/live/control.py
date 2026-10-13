@@ -12,6 +12,12 @@ RUN, DRAIN, HALT = "RUN", "DRAIN", "HALT"
 BOT = "f8-ladder"
 
 
+def bot_on(venue: str) -> str:
+    """This bot's control row on ``venue``. One RUN/HALT switch per network, so arming testnet can
+    never arm mainnet: a network the bot has not been resumed on starts HALT."""
+    return f"{BOT}@{venue}"
+
+
 def now_ms() -> int:
     return time.time_ns() // 1_000_000
 

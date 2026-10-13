@@ -116,7 +116,7 @@ export function PressureGauge({ sell, buy, series }: { sell: number; buy: number
           );
         })}
         <g style={{ transform: `rotate(${angle}deg)`, transformOrigin: "110px 110px", transition: "transform 0.8s cubic-bezier(.2,1.6,.4,1)" }}>
-          <line x1="110" y1="110" x2="110" y2="34" stroke="white" strokeWidth="2.5" filter="url(#wr-glow)" />
+          <line x1="110" y1="110" x2="110" y2="58" stroke="white" strokeWidth="2.5" filter="url(#wr-glow)" />
         </g>
         <circle cx="110" cy="110" r="6" fill="#ff2bd6" filter="url(#wr-glow)" />
       </svg>

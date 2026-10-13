@@ -164,3 +164,14 @@ Claude sets up and verifies read-only.
   2. Resume, then verify read-only that the bids rest at about -2.5%.
   3. **PANIC with only bids resting**: this tests cancel + HALT with no trade.
   4. Resume again. The first real fill is the test of TP and the time exit.
+
+**LIVE ON MAINNET 2026-10-13 ~19:27 UTC.** The owner resumed the bot on k3s, build `sha-2d5ed4a`.
+- Verified on Hyperliquid: 6 real post-only (ALO) bids resting, about $12 each at -2.37..-2.51% vs mid,
+  across BTC ETH SOL DOGE XRP ADA. 4.84 USDC of 99.62 held as margin.
+- Leverage set on the venue: BTC/ETH/SOL/XRP isolated 20x, DOGE/ADA isolated 10x.
+- The mainnet API wallet is "CoinMon API" (`0x81a5…c8ed`).
+- Bid placement on a real venue is now PROVEN. Still unproven until the first fill: TP placement, the
+  60m exit, ledger parsing, and PANIC with positions. The agent-can't-withdraw proof is still owed.
+- **k8s gotcha:** pods read Secret env vars only at container start. After changing the secret, restart
+  BOTH the bot and the dashboard. A stale dashboard had shown the API wallet's address (equity $0)
+  and held an old key, so its PANIC would have failed.

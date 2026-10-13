@@ -34,10 +34,12 @@
     var(--wr-bg);
 }
 
+/* Sunk so only its solid top half rises behind the bottom of the radar; the stripes stay under
+   the marquee (inside the glass radar they read as a rendering glitch). */
 .wr-sun {
   position: absolute;
   left: 50%;
-  bottom: 30%;
+  bottom: -290px;
   width: 560px;
   height: 560px;
   transform: translateX(-50%);
@@ -67,17 +69,6 @@
 }
 @keyframes wr-floor {
   to { background-position: 0 64px; }
-}
-
-.wr-horizon {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 38%;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--wr-magenta), var(--wr-cyan), var(--wr-magenta), transparent);
-  box-shadow: 0 0 24px 4px rgb(255 43 214 / 0.45);
-  opacity: 0.45;
 }
 
 .wr-scan {

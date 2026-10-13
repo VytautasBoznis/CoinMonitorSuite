@@ -134,7 +134,6 @@ export function WarRoom({
     <div className="wr" onPointerDown={() => sfx.wake()}>
       <div className="wr-sky" />
       <div className="wr-sun" />
-      <div className="wr-horizon" />
       <div className="wr-floor" />
 
       <div ref={stage} className="absolute inset-0 flex flex-col">

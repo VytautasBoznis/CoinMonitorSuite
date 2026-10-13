@@ -27,8 +27,8 @@ metadata:
   - The DSN is spliced together from the Secret via k8s `$(VAR)` expansion. A `wait-for-db` init
     container fixes the collector/bot startup crash race.
 - **CI:** `.github/workflows/build.yml`.
-  - test (py3.12) + web build + helm lint run on everything. Ruff runs in advisory mode, because of 4
-    pre-existing findings.
+  - test (py3.12) + web build + helm lint run on everything. Ruff is blocking (the 4 old
+    findings were fixed 2026-10-13; repo is ruff-clean).
   - On main and `v*` tags, multi-arch (amd64+arm64) images go to `ghcr.io/vytautasboznis/coinmon-{scraper,dashboard,viewer}`,
     and the chart goes to `oci://ghcr.io/vytautasboznis/charts/coinmon` as `0.1.<run>` with
     appVersion `sha-<7>` = that commit's image tag.

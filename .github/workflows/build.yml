@@ -25,9 +25,7 @@ jobs:
           cache: pip
       - run: pip install -e ".[dev,dashboard]"
       - run: pytest -q
-      - name: ruff (advisory until the 4 pre-existing findings are fixed)
-        run: ruff check src tests
-        continue-on-error: true
+      - run: ruff check src tests
 
   web:
     runs-on: ubuntu-latest

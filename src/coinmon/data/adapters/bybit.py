@@ -70,7 +70,9 @@ class BybitAdapter(CCXTSpotAdapter):
         until: int | None = None
         while True:
             params = {"until": until} if until else {}
-            page = client.fetch_open_interest_history(symbol, timeframe=timeframe, limit=200, params=params)
+            page = client.fetch_open_interest_history(
+                symbol, timeframe=timeframe, limit=200, params=params
+            )
             if not page:
                 break
             rows = page + rows

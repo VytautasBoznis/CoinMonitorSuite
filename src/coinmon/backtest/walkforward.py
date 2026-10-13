@@ -87,10 +87,12 @@ def _run(candles: pd.DataFrame, params: dict[str, float], cash: float, fee: floa
 
 def _grid() -> list[dict[str, float]]:
     keys = list(RSI_GRID)
-    return [dict(zip(keys, combo)) for combo in product(*RSI_GRID.values())]
+    return [dict(zip(keys, combo, strict=True)) for combo in product(*RSI_GRID.values())]
 
 
-def _best_params(candles: pd.DataFrame, cash: float, fee: float, objective: str) -> dict[str, float]:
+def _best_params(
+    candles: pd.DataFrame, cash: float, fee: float, objective: str
+) -> dict[str, float]:
     """Pick the grid point with the highest ``objective`` metric on ``candles``. NaN scores
     (e.g. a param set that never trades → no profit_factor) lose to any real number."""
     best_params: dict[str, float] = {}

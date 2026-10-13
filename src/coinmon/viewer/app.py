@@ -66,7 +66,9 @@ def main() -> None:
     st.plotly_chart(fig, use_container_width=True)
 
     first, last = ts.iloc[0], ts.iloc[-1]
-    st.caption(f"{exchange} · {symbol} · {timeframe} — {len(df)} bars, {first:%Y-%m-%d} → {last:%Y-%m-%d}")
+    st.caption(
+        f"{exchange} · {symbol} · {timeframe} — {len(df)} bars, {first:%Y-%m-%d} → {last:%Y-%m-%d}"
+    )
 
 
 if __name__ == "__main__":

@@ -21,7 +21,13 @@
       "Bash(\"C:/Dev/CoinMonitorSuite/.venv/Scripts/python.exe\" -)",
       "Bash(wsl -e bash -lc \"kubectl -n kube-system get cm coredns-custom -o yaml 2>&1 | head -20; echo '=== node resolv \\(what CoreDNS forwards to\\)'; kubectl -n kube-system exec deploy/coredns -- cat /etc/resolv.conf 2>&1 | head -5\")",
       "Bash(wsl -e bash -lc \"kubectl -n coinmon get pods -o wide --no-headers | awk '{print \\\\$1, \\\\$2, \\\\$3, \\\\$4, \\\\$5}'; echo '=== bot image'; kubectl -n coinmon get deploy coinmon-bot -o jsonpath='{.spec.template.spec.containers[0].image}'; echo; echo '=== bot log'; kubectl -n coinmon logs deploy/coinmon-bot -c bot --tail=25 2>&1 | cut -c1-240; echo '=== coredns custom'; kubectl -n kube-system get cm coredns-custom -o jsonpath='{.data}'; echo; kubectl -n kube-system get pods -l k8s-app=kube-dns --no-headers\")",
-      "Bash(.venv/Scripts/python.exe -m ruff check src tests --output-format concise)"
+      "Bash(.venv/Scripts/python.exe -m ruff check src tests --output-format concise)",
+      "Bash(wsl -e bash -lc \"kubectl -n coinmon get pods --no-headers | awk '{print \\\\$1, \\\\$2, \\\\$3, \\\\$4, \\\\$5}'; echo '=== images'; kubectl -n coinmon get deploy -o jsonpath='{range .items[*]}{.metadata.name}{\\\\\"  \\\\\"}{.spec.template.spec.containers[0].image}{\\\\\"\\\\\\\\n\\\\\"}{end}'; echo '=== bot log'; kubectl -n coinmon logs deploy/coinmon-bot -c bot --tail=15 2>&1 | cut -c1-260\")",
+      "Bash(wsl -e bash -lc \"echo '=== previous run'; kubectl -n coinmon logs deploy/coinmon-bot -c bot --previous --tail=8 2>&1 | cut -c1-300; sleep 20; echo '=== current run'; kubectl -n coinmon get pods -l app.kubernetes.io/component=bot --no-headers; kubectl -n coinmon logs deploy/coinmon-bot -c bot --tail=8 2>&1 | cut -c1-300\")",
+      "Bash(wsl -e bash -lc 'K=$\\(kubectl -n coinmon get secret coinmon-hyperliquid -o jsonpath='\\\\''{.data.agentKey}'\\\\'' | base64 -d\\); if [ \"$K\" = '\\\\''0xTESTNET_API_KEY'\\\\'' ]; then echo '\\\\''agentKey = the literal placeholder 0xTESTNET_API_KEY'\\\\''; elif echo \"$K\" | grep -Eq '\\\\''^\\(0x\\)?[0-9a-fA-F]{64}$'\\\\''; then echo \"agentKey format OK \\(length ${#K}\\)\"; else echo \"agentKey INVALID format \\(length ${#K}; has whitespace: $\\(echo -n \"$K\" | grep -c '\\\\''[[:space:]]'\\\\''\\)\\)\"; fi; unset K')",
+      "WebFetch(domain:hyperliquid.gitbook.io)",
+      "Bash(.venv/Scripts/python.exe -c ' *)",
+      "Bash(.venv/Scripts/python.exe -m pytest -q tests/test_bot.py tests/test_dashboard.py)"
     ]
   }
 }

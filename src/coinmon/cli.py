@@ -1001,7 +1001,10 @@ def _hyperliquid():
 
     if not (settings.hl_address and settings.hl_agent_key):
         raise SystemExit("set COINMON_HL_ADDRESS and COINMON_HL_AGENT_KEY (in .env)")
-    return Hyperliquid(settings.hl_address, settings.hl_agent_key, testnet=settings.hl_testnet)
+    try:
+        return Hyperliquid(settings.hl_address, settings.hl_agent_key, testnet=settings.hl_testnet)
+    except ValueError as e:  # a malformed key: say so instead of a traceback
+        raise SystemExit(str(e)) from None
 
 
 def _log_to_stdout() -> None:

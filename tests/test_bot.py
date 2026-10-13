@@ -9,7 +9,7 @@ import pytest
 
 from coinmon.live import ladder, stop
 from coinmon.live.control import DRAIN, HALT, RUN, Control, Trade
-from coinmon.live.hyperliquid import Fill, Order, Position
+from coinmon.live.hyperliquid import Fill, Hyperliquid, Order, Position
 from coinmon.live.ladder import HOLD_MS, LadderBot
 
 T0 = 1_800_000_000_000 // 60_000 * 60_000  # a minute boundary
@@ -281,7 +281,7 @@ def test_warns_but_runs_on_unlisted_agent_or_empty_account(caplog):
     hl.agents, hl.value = set(), 0.0
     assert bot.check() == {"BTC": "isolated 5"}
     assert "not among the named API wallets" in caplog.text
-    assert "perps account" in caplog.text
+    assert "no USDC margin" in caplog.text
 
 
 def test_panic_flattens_everything_and_persists_halt():
@@ -337,3 +337,12 @@ def test_startup_rides_out_network_blips_but_not_config_errors(monkeypatch):
     with pytest.raises(SystemExit):
         ladder.until_reachable("leverage check", cross_margin)
     assert sleeps == [5.0, 10.0]
+
+
+@pytest.mark.parametrize("key, says", [
+    ("0x" + "ab" * 20, "an address, not a key"),  # the API wallet's address pasted as its key
+    ("0xTESTNET_API_KEY", "64 hex characters"),
+])
+def test_rejects_a_malformed_agent_key_before_any_network_call(key, says):
+    with pytest.raises(ValueError, match=says):
+        Hyperliquid("0x" + "12" * 20, key, testnet=True)

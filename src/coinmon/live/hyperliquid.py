@@ -7,10 +7,15 @@ wallet that owns the funds and the only signer that can withdraw.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 import ccxt
 
+# Account modes where each asset is one balance shared by spot and perps: the per-dex perp
+# summary is "not meaningful" there and the money shows in the spot clearinghouse state.
+UNIFIED = ("unifiedAccount", "portfolioMargin")
+PRIVATE_KEY = re.compile(r"(0x)?[0-9a-fA-F]{64}")
 SLIPPAGE = "0.05"  # IOC closes: limit 5% through the mid (Hyperliquid has no true market order)
 
 
@@ -53,6 +58,11 @@ def venue_name(testnet: bool) -> str:
 
 class Hyperliquid:
     def __init__(self, address: str, agent_key: str, testnet: bool = True) -> None:
+        if not PRIVATE_KEY.fullmatch(agent_key):
+            hint = (" (this one is 42 characters: an address, not a key)"
+                    if len(agent_key) == 42 else "")
+            raise ValueError("COINMON_HL_AGENT_KEY must be the API wallet's private key,"
+                             f" 0x + 64 hex characters{hint}")
         self.address = address
         self.venue = venue_name(testnet)
         self._x = ccxt.hyperliquid(
@@ -136,7 +146,13 @@ class Hyperliquid:
         return {a["address"].lower() for a in agents}
 
     def account_value(self) -> float:
-        """USDC in the perps account."""
+        """USDC available as margin: the perps account, or in a unified account the one USDC
+        balance (which the venue reports in the spot clearinghouse state)."""
+        # ccxt returns this bare JSON string unparsed, quotes and all: '"unifiedAccount"'.
+        mode = str(self._info({"type": "userAbstraction", "user": self.address})).strip('"')
+        if mode in UNIFIED:
+            spot = self._info({"type": "spotClearinghouseState", "user": self.address})
+            return sum(float(b["total"]) for b in spot["balances"] if b["coin"] == "USDC")
         state = self._info({"type": "clearinghouseState", "user": self.address})
         return float(state["marginSummary"]["accountValue"])
 

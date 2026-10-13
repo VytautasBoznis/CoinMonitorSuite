@@ -14,6 +14,8 @@ import time
 
 import httpx
 
+from coinmon.live.hyperliquid import UNIFIED
+
 INFO = {True: "https://api.hyperliquid-testnet.xyz/info", False: "https://api.hyperliquid.xyz/info"}
 WS = {True: "wss://api.hyperliquid-testnet.xyz/ws", False: "wss://api.hyperliquid.xyz/ws"}
 INTERVAL_MS = {"1m": 60_000, "5m": 300_000, "15m": 900_000, "1h": 3_600_000, "4h": 14_400_000}
@@ -75,7 +77,19 @@ class Market:
         """Equity, margin, positions and resting orders of ``address`` as the venue reports them."""
         state = self._info({"type": "clearinghouseState", "user": address}, ttl_s=3)
         orders = self._info({"type": "frontendOpenOrders", "user": address}, ttl_s=10)
-        summary = state["marginSummary"]
+        mode = self._info({"type": "userAbstraction", "user": address}, ttl_s=60)
+        if mode in UNIFIED:
+            # One USDC balance backs spot and perps; open PnL is reported per position instead.
+            spot = self._info({"type": "spotClearinghouseState", "user": address}, ttl_s=3)
+            usdc = [b for b in spot["balances"] if b["coin"] == "USDC"]
+            total = sum(float(b["total"]) for b in usdc)
+            hold = sum(float(b["hold"]) for b in usdc)
+            money = {"equity": total, "margin_used": hold, "withdrawable": total - hold}
+        else:
+            summary = state["marginSummary"]
+            money = {"equity": float(summary["accountValue"]),
+                     "margin_used": float(summary["totalMarginUsed"]),
+                     "withdrawable": float(state["withdrawable"])}
         positions = []
         for ap in state["assetPositions"]:
             p = ap["position"]
@@ -88,11 +102,9 @@ class Market:
                 "leverage": f"{p['leverage']['type']} {p['leverage']['value']}",
                 "margin": float(p["marginUsed"]),
             })
-        return {
-            "equity": float(summary["accountValue"]),
-            "margin_used": float(summary["totalMarginUsed"]),
-            "notional": float(summary["totalNtlPos"]),
-            "withdrawable": float(state["withdrawable"]),
+        return money | {
+            "unified": mode in UNIFIED,
+            "notional": sum(p["value"] for p in positions),
             "positions": positions,
             "orders": [
                 {"coin": o["coin"], "oid": int(o["oid"]), "side": o["side"],

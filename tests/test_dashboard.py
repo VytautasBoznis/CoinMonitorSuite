@@ -97,16 +97,19 @@ STATE = {
 }
 ORDERS = [{"coin": "BTC", "oid": 7, "side": "A", "limitPx": "80960", "sz": "0.00015",
            "reduceOnly": True, "timestamp": 1}]
+SPOT = {"balances": [{"coin": "USDC", "total": "999.0", "hold": "12.5"},
+                     {"coin": "HORSE", "total": "0.0", "hold": "0.0"}]}
 
 
-def _market() -> tuple[Market, list[dict]]:
+def _market(mode: str = "default") -> tuple[Market, list[dict]]:
     sent: list[dict] = []
 
     def handle(request: httpx.Request) -> httpx.Response:
         body = json.loads(request.content)
         sent.append(body)
         data = {"metaAndAssetCtxs": [META, CTXS], "clearinghouseState": STATE,
-                "frontendOpenOrders": ORDERS,
+                "frontendOpenOrders": ORDERS, "userAbstraction": mode,
+                "spotClearinghouseState": SPOT,
                 "candleSnapshot": [{"t": 0, "o": "1", "h": "2", "l": "0.5", "c": "1.5",
                                     "v": "3"}]}[body["type"]]
         return httpx.Response(200, json=data)
@@ -126,11 +129,19 @@ def test_market_parses_contexts_and_serves_repeats_from_cache():
 def test_market_account_skips_flat_positions():
     m, _ = _market()
     acct = m.account("0xmaster")
-    assert acct["equity"] == 98.5 and acct["withdrawable"] == 96.1
+    assert acct["equity"] == 98.5 and acct["withdrawable"] == 96.1 and not acct["unified"]
     assert [p["coin"] for p in acct["positions"]] == ["BTC"]
     assert acct["positions"][0]["leverage"] == "isolated 5"
     assert acct["orders"][0] == {"coin": "BTC", "oid": 7, "side": "A", "px": 80960.0,
                                  "sz": 0.00015, "reduce_only": True, "time": 1}
+
+
+def test_market_account_reads_a_unified_account_from_its_usdc_balance():
+    # Unified mode: the perps summary is not meaningful; the money is the spot USDC balance.
+    acct = _market("unifiedAccount")[0].account("0xmaster")
+    assert acct["unified"]
+    assert (acct["equity"], acct["margin_used"], acct["withdrawable"]) == (999.0, 12.5, 986.5)
+    assert acct["notional"] == 12.0  # from the positions
 
 
 def test_market_candle_requests_within_10s_share_the_cache():

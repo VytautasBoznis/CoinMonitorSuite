@@ -82,8 +82,8 @@ class LadderBot:
                         " will be rejected unless it is approved there",
                         hl.agent, hl.address, hl.venue)
         if hl.account_value() <= 0:
-            log.warning("the perps account of %s on %s is empty, so bids will be rejected"
-                        " (testnet: claim the faucet; mainnet: move USDC from Spot to Perps)",
+            log.warning("%s has no USDC margin on %s, so bids will be rejected (testnet: claim"
+                        " the faucet; a non-unified account: move USDC from Spot to Perps)",
                         hl.address, hl.venue)
         lev = {c: self.hl.leverage(c) for c in self.coins}
         cross = {c: v for c, v in lev.items() if not v.startswith("isolated")}

@@ -22,13 +22,16 @@ function ModePill({ state, now }: { state?: BotState; now: number }) {
       </Chip>
     );
   const { mode, reason, deadline_ms } = state;
-  const look =
-    mode === "RUN"
+  // RUN is only a setting in the DB; without a fresh heartbeat no bot is acting on it.
+  const down = mode !== "HALT" && state.heartbeat !== "alive";
+  const look = down
+    ? "bg-down/15 text-down"
+    : mode === "RUN"
       ? "bg-up/15 text-up"
       : mode === "DRAIN"
         ? "bg-warn/15 text-warn"
         : "bg-panel-2 text-ink-2";
-  const label = mode === "RUN" ? "RUNNING" : mode === "DRAIN" ? "DRAINING" : "HALTED";
+  const label = `${mode === "RUN" ? "RUNNING" : mode === "DRAIN" ? "DRAINING" : "HALTED"}${down ? " · BOT DOWN" : ""}`;
   return (
     <span className="flex items-center gap-2" title={`mode ${mode}: ${reason}`}>
       <Chip className={look}>

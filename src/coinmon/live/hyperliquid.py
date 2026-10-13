@@ -60,6 +60,8 @@ class Hyperliquid:
         )
         if testnet:
             self._x.set_sandbox_mode(True)
+        # The API wallet's own address, derived offline from its key.
+        self.agent = self._x.eth_get_address_from_private_key(agent_key).lower()
         self._x.load_markets()
 
     def _info(self, body: dict):
@@ -122,6 +124,21 @@ class Hyperliquid:
         data = self._info({"type": "activeAssetData", "user": self.address, "coin": coin})
         lev = data["leverage"]
         return f"{lev['type']} {lev['value']}"
+
+    def role(self) -> str:
+        """What ``address`` is on this network: ``user``, ``agent`` (an API wallet), ``vault``,
+        ``subAccount``, or ``missing`` (never used here; testnet and mainnet are separate)."""
+        return self._info({"type": "userRole", "user": self.address})["role"]
+
+    def approved_agents(self) -> set[str]:
+        """Named API wallets approved for ``address`` on this network (lowercase)."""
+        agents = self._info({"type": "extraAgents", "user": self.address})
+        return {a["address"].lower() for a in agents}
+
+    def account_value(self) -> float:
+        """USDC in the perps account."""
+        state = self._info({"type": "clearinghouseState", "user": self.address})
+        return float(state["marginSummary"]["accountValue"])
 
     def rate_limit(self) -> dict:
         """Address action budget: ``nRequestsUsed`` of ``nRequestsCap`` (cap grows with volume)."""

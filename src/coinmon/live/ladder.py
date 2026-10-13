@@ -41,6 +41,7 @@ TARGET = 0.012  # frozen F8 take-profit: +1.2% from the fill
 HOLD_MS = 60 * 60_000  # frozen F8 time-stop: exit at market after 60 minutes
 DEADBAND = 0.001  # re-peg a resting bid only once its rung moved >= 0.1%
 POLL_S = 3.0  # a cycle costs ~22 of the venue's 1200/min IP request weight
+STARTUP_RETRY_MAX_S = 60.0
 
 
 class LadderBot:
@@ -56,7 +57,34 @@ class LadderBot:
         self.failed: dict[str, int] = {}  # coin -> minute its bid was rejected (retry next minute)
 
     def check(self) -> dict[str, str]:
-        """Each coin's leverage as set on the venue. Refuses to run unless all are isolated."""
+        """Each coin's leverage as set on the venue. Refuses to run on a setup that cannot work or
+        is unsafe, saying which: an account this network has never seen, an API wallet's address
+        given as the account, the main wallet's own key, or any coin on cross margin."""
+        hl = self.hl
+        role = hl.role()
+        if role == "missing":
+            raise SystemExit(
+                f"{hl.address} has no account on {hl.venue} (testnet and mainnet are separate)."
+                " Set it up there: fund it (testnet: claim the faucet), create an API wallet,"
+                " set isolated margin"
+            )
+        if role == "agent":
+            raise SystemExit(
+                f"{hl.address} is an API wallet; COINMON_HL_ADDRESS must be your main wallet"
+            )
+        if hl.agent == hl.address.lower():
+            raise SystemExit(
+                "COINMON_HL_AGENT_KEY is your main wallet's key, which can withdraw:"
+                " use an API wallet's key"
+            )
+        if hl.agent not in hl.approved_agents():
+            log.warning("API wallet %s is not among the named API wallets of %s on %s; orders"
+                        " will be rejected unless it is approved there",
+                        hl.agent, hl.address, hl.venue)
+        if hl.account_value() <= 0:
+            log.warning("the perps account of %s on %s is empty, so bids will be rejected"
+                        " (testnet: claim the faucet; mainnet: move USDC from Spot to Perps)",
+                        hl.address, hl.venue)
         lev = {c: self.hl.leverage(c) for c in self.coins}
         cross = {c: v for c, v in lev.items() if not v.startswith("isolated")}
         if cross:
@@ -192,6 +220,19 @@ class LadderBot:
         self.pegged[coin] = close
 
 
+def until_reachable(what: str, fn):
+    """``fn()``, retried with backoff while the venue is unreachable (DNS, timeouts), so a network
+    blip at startup does not crash-loop the pod. Anything else, e.g. bad config, still raises."""
+    delay = 5.0
+    while True:
+        try:
+            return fn()
+        except ccxt.NetworkError as e:
+            log.warning("%s: venue unreachable, retrying in %.0fs: %s", what, delay, e)
+            time.sleep(delay)
+            delay = min(delay * 2, STARTUP_RETRY_MAX_S)
+
+
 def _sigterm(*_) -> None:
     raise SystemExit(0)
 
@@ -203,8 +244,8 @@ def run(hl: Hyperliquid, store: Store, rung_usd: float) -> None:
     if skipped := [c for c in COINS if c not in coins]:
         log.warning("not listed on %s, skipped: %s", hl.venue, skipped)  # testnet lacks XRP
     bot = LadderBot(hl, store, rung_usd, coins)
-    log.info("%s %s: leverage %s, %s USDC per rung, mode %s", hl.venue, hl.address, bot.check(),
-             rung_usd, store.read().mode)
+    log.info("%s %s: leverage %s, %s USDC per rung, mode %s", hl.venue, hl.address,
+             until_reachable("leverage check", bot.check), rung_usd, store.read().mode)
     signal.signal(signal.SIGTERM, _sigterm)  # docker stop -> SystemExit -> the finally below
     try:
         while True:

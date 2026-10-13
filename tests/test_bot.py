@@ -7,7 +7,7 @@ from dataclasses import replace
 import ccxt
 import pytest
 
-from coinmon.live import stop
+from coinmon.live import ladder, stop
 from coinmon.live.control import DRAIN, HALT, RUN, Control, Trade
 from coinmon.live.hyperliquid import Fill, Order, Position
 from coinmon.live.ladder import HOLD_MS, LadderBot
@@ -28,6 +28,11 @@ class FakeHL:
         self.pos: dict[str, Position] = {}
         self.fill_log: list[Fill] = []
         self.lev = "isolated 5"
+        self.address = "0xMaster"
+        self.agent = "0xagent"
+        self.role_ = "user"
+        self.agents = {"0xagent"}
+        self.value = 1000.0
         self.calls: list[tuple] = []
         self.reject = False
         self.now = T0
@@ -50,6 +55,15 @@ class FakeHL:
 
     def leverage(self, coin):
         return self.lev
+
+    def role(self):
+        return self.role_
+
+    def approved_agents(self):
+        return set(self.agents)
+
+    def account_value(self):
+        return self.value
 
     def round_px(self, coin, px):
         return round(px, 2)
@@ -249,6 +263,27 @@ def test_refuses_cross_margin():
         bot.check()
 
 
+@pytest.mark.parametrize("setup, says", [
+    (dict(role_="missing"), "no account on fake"),  # e.g. set up on mainnet, bot on testnet
+    (dict(role_="agent"), "is an API wallet"),
+    (dict(agent="0xmaster"), "main wallet's key"),  # the key that can withdraw
+])
+def test_refuses_setups_that_cannot_work_and_says_why(setup, says):
+    hl, _, bot = make()
+    for k, v in setup.items():
+        setattr(hl, k, v)
+    with pytest.raises(SystemExit, match=says):
+        bot.check()
+
+
+def test_warns_but_runs_on_unlisted_agent_or_empty_account(caplog):
+    hl, _, bot = make()
+    hl.agents, hl.value = set(), 0.0
+    assert bot.check() == {"BTC": "isolated 5"}
+    assert "not among the named API wallets" in caplog.text
+    assert "perps account" in caplog.text
+
+
 def test_panic_flattens_everything_and_persists_halt():
     hl, store, bot = make()
     fill_bid(hl, bot, T0 + 5_000)
@@ -280,3 +315,25 @@ def test_drain_halts_as_soon_as_flat():
     store.set_mode(DRAIN, "manual drain", T0 + 90 * MIN)
     bot.cycle(T0 + 3_000)
     assert hl.open_orders() == [] and (store.ctl.mode, store.ctl.reason) == (HALT, "drained")
+
+
+def test_startup_rides_out_network_blips_but_not_config_errors(monkeypatch):
+    sleeps: list[float] = []
+    monkeypatch.setattr(ladder.time, "sleep", sleeps.append)
+    outcomes = iter([ccxt.NetworkError("Failed to resolve"), ccxt.RequestTimeout("slow"), "hl"])
+
+    def connect():
+        r = next(outcomes)
+        if isinstance(r, Exception):
+            raise r
+        return r
+
+    assert ladder.until_reachable("connect", connect) == "hl"
+    assert sleeps == [5.0, 10.0]
+
+    def cross_margin():
+        raise SystemExit("isolated margin required")
+
+    with pytest.raises(SystemExit):
+        ladder.until_reachable("leverage check", cross_margin)
+    assert sleeps == [5.0, 10.0]

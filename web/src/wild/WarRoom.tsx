@@ -304,8 +304,10 @@ function ModeBadge({ state, now }: { state?: BotState; now: number }) {
   if (!state) return null;
   const [icon, text, glow] = !state.db
     ? ["⚠", "BLIND · DB DOWN", "wr-glow-red"]
-    : state.mode === "RUN"
-      ? ["◉", "ARMED", "wr-glow-green"]
+    : state.mode !== "HALT" && state.heartbeat !== "alive"
+      ? ["⚠", `${state.mode === "RUN" ? "ARMED" : "DRAINING"} · BOT DOWN`, "wr-glow-red"] // a setting nobody acts on
+      : state.mode === "RUN"
+        ? ["◉", "ARMED", "wr-glow-green"]
       : state.mode === "DRAIN"
         ? ["◐", `DRAINING ${state.deadline_ms ? fmtDur(state.deadline_ms - now) : ""}`, "wr-glow-amber"]
         : ["◯", "SAFE · HALTED", "wr-dim"];

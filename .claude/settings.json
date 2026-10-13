@@ -6,7 +6,22 @@
       "Bash(.venv/Scripts/python.exe -m ruff check probes/f8_cascade_ladder_proxy.py)",
       "Bash(COINMON_DB_DSN=postgresql://coinmon:coinmon@localhost:5433/coinmon PYTHONPATH=\"src;.\" timeout 900 .venv/Scripts/python.exe probes/f8_cascade_ladder_proxy.py)",
       "Bash(COINMON_DB_DSN=postgresql://coinmon:coinmon@localhost:5433/coinmon PYTHONPATH=\"src;.\" .venv/Scripts/python.exe probes/f8_cascade_ladder_proxy.py)",
-      "mcp__claude-in-chrome__tabs_context_mcp"
+      "mcp__claude-in-chrome__tabs_context_mcp",
+      "Bash(kubectl config *)",
+      "Bash(kubectl -n coinmon get pods -o wide)",
+      "Bash(awk '{print $1, $2, $3, $4, $5}')",
+      "Bash(wsl -e bash -lc \"kubectl config current-context; kubectl -n coinmon get pods -o wide | awk '{print \\\\$1, \\\\$2, \\\\$3, \\\\$4, \\\\$5, \\\\$7}' | column -t\")",
+      "Bash(wsl -e bash -lc \"kubectl -n coinmon logs deploy/coinmon-bot --previous --tail=40 2>&1 | cut -c1-260; echo '=== describe \\(last state\\)'; kubectl -n coinmon get pod -l app.kubernetes.io/component=bot -o jsonpath='{.items[0].status.containerStatuses[0].lastState}'; echo\")",
+      "Bash(wsl -e bash -lc 'P=$\\(kubectl -n coinmon get pod -l app.kubernetes.io/component=bot -o name | head -1\\); echo $P; kubectl -n coinmon logs $P -c bot --tail=60 2>&1 | cut -c1-260; echo '\\\\''=== events'\\\\''; kubectl -n coinmon get events --field-selector involvedObject.kind=Pod --sort-by=.lastTimestamp 2>&1 | grep -i bot | tail -8 | cut -c1-200')",
+      "Bash(wsl -e bash -lc 'kubectl -n coinmon exec deploy/coinmon-dashboard -- python -c \" *)",
+      "Bash(wsl -e bash -lc \"echo '=== coredns errors'; kubectl -n kube-system logs deploy/coredns --since=2h 2>&1 | grep -v '^\\\\[INFO\\\\] plugin/reload' | tail -15 | cut -c1-220; echo '=== coredns forward target'; kubectl -n kube-system get cm coredns -o jsonpath='{.data.Corefile}' | grep -n -E 'forward|errors|cache|hosts' ; echo '=== bot now'; kubectl -n coinmon get pods -l app.kubernetes.io/component=bot --no-headers; kubectl -n coinmon logs deploy/coinmon-bot -c bot --tail=4 2>&1 | cut -c1-220\")",
+      "Bash(.venv/Scripts/python.exe -)",
+      "Bash(.venv/Scripts/python.exe -m pytest tests/test_bot.py -q)",
+      "Bash(.venv/Scripts/python.exe -m ruff check src/coinmon/live/ladder.py src/coinmon/cli.py tests/test_bot.py --output-format concise)",
+      "Bash(\"C:/Dev/CoinMonitorSuite/.venv/Scripts/python.exe\" -)",
+      "Bash(wsl -e bash -lc \"kubectl -n kube-system get cm coredns-custom -o yaml 2>&1 | head -20; echo '=== node resolv \\(what CoreDNS forwards to\\)'; kubectl -n kube-system exec deploy/coredns -- cat /etc/resolv.conf 2>&1 | head -5\")",
+      "Bash(wsl -e bash -lc \"kubectl -n coinmon get pods -o wide --no-headers | awk '{print \\\\$1, \\\\$2, \\\\$3, \\\\$4, \\\\$5}'; echo '=== bot image'; kubectl -n coinmon get deploy coinmon-bot -o jsonpath='{.spec.template.spec.containers[0].image}'; echo; echo '=== bot log'; kubectl -n coinmon logs deploy/coinmon-bot -c bot --tail=25 2>&1 | cut -c1-240; echo '=== coredns custom'; kubectl -n kube-system get cm coredns-custom -o jsonpath='{.data}'; echo; kubectl -n kube-system get pods -l k8s-app=kube-dns --no-headers\")",
+      "Bash(.venv/Scripts/python.exe -m ruff check src tests --output-format concise)"
     ]
   }
 }

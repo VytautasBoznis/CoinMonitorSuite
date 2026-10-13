@@ -1031,11 +1031,11 @@ def _bot(args: argparse.Namespace) -> None:
         store.set_mode(control.RUN, "resume")
         print("mode RUN: the bot places bids from its next cycle")
         return
-    hl = _hyperliquid()
     if args.action == "run":
         _log_to_stdout()
-        ladder.run(hl, store, settings.bot_rung_usd)
+        ladder.run(ladder.until_reachable("connect", _hyperliquid), store, settings.bot_rung_usd)
         return
+    hl = _hyperliquid()
     ctl = store.read()
     print(f"{hl.venue}  mode {ctl.mode} ({ctl.reason}, {_ago(ctl.updated_ms)})"
           f"  heartbeat {_ago(ctl.heartbeat_ms)}")

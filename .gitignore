@@ -22,3 +22,6 @@ node_modules/
 # Data (candle Parquet store — fetched, not versioned; anchored so it never
 # swallows the src/coinmon/data/ SOURCE package again)
 /data/
+
+# Local-only memory: the owner's infrastructure, network and account identities. Never commit.
+/.claude/memory/confidential/

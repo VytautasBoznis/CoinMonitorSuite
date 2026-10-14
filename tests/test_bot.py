@@ -219,6 +219,46 @@ def test_time_stop_swaps_the_take_profit_for_a_market_close():
     assert (trade.exit_reason, trade.exit_px) == ("time", 97.0)
 
 
+def lagging(hl, read):
+    """Make the venue's open-orders read return ``read(real_orders)`` for one cycle."""
+    real = hl.open_orders
+    hl.open_orders = lambda: read(real())
+    return lambda: setattr(hl, "open_orders", real)
+
+
+def test_a_lagging_read_does_not_double_a_fresh_bid():
+    hl, _, bot = make()
+    bot.cycle(T0)
+    restore = lagging(hl, lambda orders: [])  # the new bid is not in the read yet
+    bot.cycle(T0 + 3_000)
+    restore()
+    assert len(bids(hl)) == 1 and [c[0] for c in hl.calls] == ["place"]
+
+
+def test_a_lagging_read_does_not_re_modify_a_fresh_repeg():
+    hl, _, bot = make()
+    bot.cycle(T0)
+    hl.prior_close["BTC"] = 100.2
+    bot.cycle(T0 + MIN)  # re-pegs to 97.70
+    restore = lagging(hl, lambda orders: [replace(o, px=97.5) for o in orders])  # stale price
+    bot.cycle(T0 + MIN + 3_000)
+    restore()
+    assert [c for c in hl.calls if c[0] == "modify"] == [("modify", "BTC", 97.7)]
+
+
+def test_a_lagging_read_does_not_double_the_take_profit_but_a_lost_one_is_replaced():
+    hl, _, bot = make()
+    fill_bid(hl, bot, T0 + 5_000)
+    restore = lagging(hl, lambda orders: [o for o in orders if not o.reduce_only])
+    bot.cycle(T0 + 8_000)  # the read misses the take-profit placed 3s ago
+    restore()
+    assert len(exits(hl)) == 1
+    [tp] = exits(hl)
+    hl.cancel("BTC", tp.oid)  # really gone (e.g. cancelled on the venue)
+    bot.cycle(T0 + 20_000)  # past the settle window: trust the read, place it again
+    assert len(exits(hl)) == 1
+
+
 def test_db_outage_is_no_new_risk():
     hl, store, bot = make()
     bot.cycle(T0)

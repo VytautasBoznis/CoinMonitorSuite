@@ -19,6 +19,7 @@ This file indexes all memory files. One line per file; detail lives in each topi
 - [ga-parked](ga-parked.md) — **GA HARD-BANNED: never run `coinmon sweep`/`search` or re-run old sweeps for any reason; run GA-free on persisted artifacts or surface the conflict**
 - [honest-status-reporting](honest-status-reporting.md) — never claim work done without artifact evidence; surface scope downgrades loudly (burned by ~2 wks of false sweep-progress claims)
 - [no-multi-hour-data-loads](no-multi-hour-data-loads.md) — **USER RULE 2026-10-08: no multi-hour backfills on the test machine; skip tests that need them; estimate load time before launching**
+- [confidential-memory-split](confidential-memory-split.md) — **RULE 2026-10-14: filter before persisting; owner's infra/network/identities/balances go ONLY to gitignored `confidential/` (index: [confidential/INDEX](confidential/INDEX.md)); never secrets anywhere**
 - [user-commits-themselves](user-commits-themselves.md) — never run git commit; hand over a commit message and stop
 - [session-build-loop](session-build-loop.md) — session shape: read memory → next roadmap chunk → ask blockers → deliver a commit message
 

@@ -134,8 +134,7 @@ ladder, kill switch), and below the chart the fills ledger and a live liquidatio
 - ccxt returns bare-JSON-string info responses unparsed, quotes included (`'"unifiedAccount"'`), so
   strip the quotes before comparing.
 - Testnet and mainnet accounts are separate. The faucet only pays an address that exists on
-  mainnet. The owner's main wallet `0x8cF0…0bf4` is used on both networks. Its mainnet API wallet is
-  "CoinMon local" (valid until 2027-04-11), and the mainnet money (99.62 USDC) sits in Spot.
+  mainnet. (The owner's wallets, API wallets and balances: confidential/owner-hyperliquid-accounts.md.)
 - Owner pitfalls that are now caught at bot startup with plain-English messages: the account was set
   up on the other network; the API wallet's ADDRESS (42 chars) was pasted as the agent key; the
   main-wallet key was used as the agent key.
@@ -164,11 +163,28 @@ Claude sets up and verifies read-only.
 
 **LIVE ON MAINNET 2026-10-13 ~19:27 UTC.** The owner resumed the bot, build `sha-2d5ed4a`.
 - Verified on Hyperliquid: 6 real post-only (ALO) bids resting, about $12 each at -2.37..-2.51% vs mid,
-  across BTC ETH SOL DOGE XRP ADA. 4.84 USDC of 99.62 held as margin.
-- Leverage set on the venue: BTC/ETH/SOL/XRP isolated 20x, DOGE/ADA isolated 10x.
-- The mainnet API wallet is "CoinMon API" (`0x81a5…c8ed`).
+  across BTC ETH SOL DOGE XRP ADA. About 5% of the account was held as margin. (Leverage and
+  identities: confidential/owner-hyperliquid-accounts.md.)
 - Bid placement on a real venue is now PROVEN. Still unproven until the first fill: TP placement, the
   60m exit, ledger parsing, and PANIC with positions. The agent-can't-withdraw proof is still owed.
 - **k8s gotcha:** pods read Secret env vars only at container start. After changing the secret, restart
   BOTH the bot and the dashboard. A stale dashboard had shown the API wallet's address (equity $0)
   and held an old key, so its PANIC would have failed.
+
+**FIRST REAL FILL 2026-10-14 (ADA): the fill path is PROVEN on mainnet.**
+- The bid filled, the TP was placed at exactly +1.2% about 11s later, it never hit, and the 60m time-stop
+  cancelled the TP and closed with a reduce-only IOC. The ledger recorded `time`, net +0.09%.
+- Read from Hyperliquid `historicalOrders`, not from our own logs.
+- Still unproven: PANIC with a position open, a partial fill under $10, the agent-can't-withdraw proof.
+
+**Venue behaviour learned from that fill** (it answers the old "does modify keep the oid?"):
+- **Modify REPLACES the order.** The old oid is cancelled and a new oid is created.
+- **`frontendOpenOrders` lags writes by seconds.** The bot re-placed the fresh TP twice; HL's reduce-only
+  guard cancelled the extras (`reduceOnlyCanceled`). Stale old oids caused the
+  "Cannot modify canceled or filled order" log noise. The dangerous case is a stale "no bid" read right
+  after placing one, which would double the bid exactly in a cascade.
+- **Fix:** `ladder.SETTLE_MS` = 10s. After a write, distrust contradicting reads, with separate clocks for
+  bids and exits. Three tests fake the lag, and all three fail with the fix switched off.
+- **Action budget burn** is about 1,600 per day with 6 coins (1,585 of 10,023 in ~19h). The 10k free buffer
+  lasts about 6 days; after that the account is throttled to 1 action per 10s, which is tight during a
+  cascade. **OPEN:** cut re-peg churn, e.g. a wider deadband or re-peg only when near the rung.

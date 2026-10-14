@@ -70,3 +70,15 @@ replication, H1 hurdle on >=1-tick trade-throughs) in the probe docstring with `
 Bybit 1m REST backfill was ~2-3h and the owner killed it ([[no-multi-hour-data-loads]]). Partial
 `bybit` 1m rows (BTC 2021-01 → ~2025) sit in the local DB; no probe read them. Queue position stays
 open — only the live book settles it now.
+
+**F8S — the short side, PRE-REGISTERED 2026-10-14, NOT YET RUN.** `probes/f8s_squeeze_ladder_proxy.py`:
+- The rule: F8 mirrored, with resting asks at prior close +2.5%, TP -1.2%, out at 60m. It uses the same
+  frozen R1-R4, seed and day-clustered bootstrap on the same 10 perps. A KILL keeps the short side out
+  of the live book.
+- Why: owner, after the first live fill: "in a bear market longs get rekt more; look at both sides".
+- Pre-registered diagnostics: Q1 events and PnL per side split by the coin's 30-day trend; Q2 the
+  two-sided vs long-only book per year and over the recent 24 months; plus the short-side trade-through,
+  day concentration and liquidation-breach table.
+- The self-check passed on synthetic data: the generalized long side equals F8's own code event for event.
+- **Blocked on the local DB being up.** Docker Desktop was stopped 2026-10-14; the 1m data lives only in the
+  local Timescale. Run time is about 5-10 min.

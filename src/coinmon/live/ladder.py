@@ -41,6 +41,10 @@ TARGET = 0.012  # frozen F8 take-profit: +1.2% from the fill
 HOLD_MS = 60 * 60_000  # frozen F8 time-stop: exit at market after 60 minutes
 DEADBAND = 0.001  # re-peg a resting bid only once its rung moved >= 0.1%
 POLL_S = 3.0  # a cycle costs ~22 of the venue's 1200/min IP request weight
+# The venue's open-orders read lags its writes by seconds (seen live: a fresh take-profit missing
+# from the read, so it was placed three times; a modified bid's old, cancelled order still listed).
+# After writing an order, the bot trusts no read that contradicts it for this long.
+SETTLE_MS = 10_000
 STARTUP_RETRY_MAX_S = 60.0
 
 
@@ -55,6 +59,8 @@ class LadderBot:
         self.anchor: dict[str, tuple[int, float]] = {}  # coin -> (minute, prior 1m close)
         self.pegged: dict[str, float] = {}  # coin -> close its resting bid was pegged from
         self.failed: dict[str, int] = {}  # coin -> minute its bid was rejected (retry next minute)
+        self.bid_wrote: dict[str, int] = {}  # coin -> when its bid was last placed or modified
+        self.exit_wrote: dict[str, int] = {}  # coin -> when its take-profit or close was last sent
 
     def check(self) -> dict[str, str]:
         """Each coin's leverage as set on the venue. Refuses to run on a setup that cannot work or
@@ -138,14 +144,18 @@ class LadderBot:
     def _work_exit(self, coin: str, ts_ms: int, pos: Position, trade: Trade,
                    exits: list[Order]) -> None:
         """Keep a take-profit resting; at the time-stop, swap it for a market close."""
+        if ts_ms - self.exit_wrote.get(coin, -SETTLE_MS) < SETTLE_MS:
+            return  # the read may not show the exit order just sent
         if ts_ms >= trade.fill_ms + HOLD_MS:
             for o in exits:
                 self.hl.cancel(coin, o.oid)
             trade.time_oid = self.hl.close(coin, pos.szi, self.hl.mids()[coin])
+            self.exit_wrote[coin] = ts_ms
             self.store.save_trade(trade)
         elif not exits:
             trade.tp_px = self.hl.round_px(coin, trade.fill_px * (1 + TARGET))
             trade.tp_oid = self.hl.place(coin, "sell", pos.szi, trade.tp_px, reduce_only=True)
+            self.exit_wrote[coin] = ts_ms
             self.store.save_trade(trade)
 
     def _entry(self, coin: str, pos: Position) -> Trade:
@@ -196,6 +206,8 @@ class LadderBot:
         minute = ts_ms // 60_000 * 60_000
         if self.failed.get(coin) == minute:
             return
+        if ts_ms - self.bid_wrote.get(coin, -SETTLE_MS) < SETTLE_MS:
+            return  # the read may not show the bid just placed or modified
         if self.anchor.get(coin, (None,))[0] != minute:
             close = self.hl.last_close(coin, minute)
             if close is None:
@@ -217,6 +229,7 @@ class LadderBot:
             self.failed[coin] = minute
             log.warning("%s: bid at %s rejected, retrying next minute: %s", coin, rung, e)
             return
+        self.bid_wrote[coin] = ts_ms
         self.pegged[coin] = close
 
 

@@ -31,7 +31,29 @@
       "Bash(.venv/Scripts/python.exe -m ruff check src tests --fix)",
       "Bash(wsl -e bash -lc \"kubectl -n coinmon get deploy coinmon-bot -o jsonpath='{.spec.template.spec.containers[0].image}{\\\\\"  testnet=\\\\\"}{.spec.template.spec.containers[0].env[?\\(@.name==\\\\\"COINMON_HL_TESTNET\\\\\"\\)].value}'; echo; kubectl -n coinmon get pods --no-headers | awk '{print \\\\$1, \\\\$3, \\\\$4}'; echo '=== bot log'; kubectl -n coinmon logs deploy/coinmon-bot -c bot --tail=8 2>&1 | cut -c1-260; echo '=== status'; kubectl -n coinmon exec deploy/coinmon-bot -c bot -- coinmon bot status 2>&1 | cut -c1-200 | head -12\")",
       "Bash(wsl -e bash -lc 'kubectl -n coinmon rollout restart deploy/coinmon-dashboard >/dev/null && kubectl -n coinmon rollout status deploy/coinmon-dashboard --timeout=120s 2>&1 | tail -1; D=$\\(kubectl -n coinmon exec deploy/coinmon-dashboard -- printenv COINMON_HL_ADDRESS\\); echo \"dashboard now: ${D:0:6}…${D: -4}\"; kubectl -n coinmon exec deploy/coinmon-dashboard -- python -c \" *)",
-      "Bash(COINMON_DB_DSN=postgresql://coinmon:coinmon@localhost:5433/coinmon COINMON_HL_ADDRESS=0x8cF0CD557b2352d5A6acCd31B38A72a092720bf4 COINMON_HL_AGENT_KEY= COINMON_HL_TESTNET=false .venv/Scripts/python.exe -c \"from coinmon.cli import main; main\\(['dashboard', '--port', '8505']\\)\")"
+      "Bash(COINMON_DB_DSN=postgresql://coinmon:coinmon@localhost:5433/coinmon COINMON_HL_ADDRESS=0x8cF0CD557b2352d5A6acCd31B38A72a092720bf4 COINMON_HL_AGENT_KEY= COINMON_HL_TESTNET=false .venv/Scripts/python.exe -c \"from coinmon.cli import main; main\\(['dashboard', '--port', '8505']\\)\")",
+      "Bash(git grep *)",
+      "Bash(echo \"PATH=$PATH\"; ls /usr/bin/grep /mingw64/bin/git* \"/c/Program Files/Git/usr/bin/grep.exe\" \"/c/Program Files/Git/cmd/git.exe\" 2>&1 | head -5)",
+      "Read(//usr/bin/**)",
+      "Bash(export PATH=\"/usr/bin:/bin:/mingw64/bin:/c/Program Files/Git/cmd:/c/WINDOWS/system32\")",
+      "Bash(echo ...)",
+      "Bash(echo)",
+      "Bash(tail -5 .gitignore)",
+      "Bash(export PATH=\"/usr/bin:/bin:/c/WINDOWS/system32\")",
+      "Bash(wsl -e bash -lc \"kubectl -n coinmon exec deploy/coinmon-bot -c bot -- coinmon bot status --trades 5 2>&1 | cut -c1-200; echo '=== fill/exit log lines'; kubectl -n coinmon logs deploy/coinmon-bot -c bot 2>&1 | grep -E 'filled|exit |rejected|step failed|Traceback' | tail -8 | cut -c1-200\")",
+      "Bash(grep -n \"def _manage\" -A 26 src/coinmon/live/ladder.py)",
+      "Bash(grep -n \"def _work_exit\" -A 14 src/coinmon/live/ladder.py)",
+      "Bash(grep -n \"def _peg\" -A 30 src/coinmon/live/ladder.py)",
+      "Bash(grep -n \"^def \\\\|^    def \" tests/test_bot.py)",
+      "Bash(export PATH=\"/usr/bin:/bin:/c/WINDOWS/system32:/c/Program Files/Docker/Docker/resources/bin\")",
+      "Bash(export PATH=\"/usr/bin:/bin:/c/WINDOWS/system32:/c/WINDOWS/System32/WindowsPowerShell/v1.0\")",
+      "Bash(powershell -NoProfile -Command \"Get-Process -Name 'Docker Desktop','com.docker.backend' -ErrorAction SilentlyContinue | Select-Object Name, StartTime | Format-Table -HideTableHeaders; \\(Get-Service com.docker.service -ErrorAction SilentlyContinue\\).Status\")",
+      "Bash(\"/c/Program Files/Docker/Docker/resources/bin/docker.exe\" context ls)",
+      "Bash(export PATH=\"/usr/bin:/bin\")",
+      "Bash(ls runs/)",
+      "Bash(ls probes/__init__.py)",
+      "Bash(grep -n \"^from probes\\\\|^import probes\" probes/*.py)",
+      "Bash(.venv/Scripts/python.exe -m ruff check probes/f8s_squeeze_ladder_proxy.py --output-format concise)"
     ]
   }
 }

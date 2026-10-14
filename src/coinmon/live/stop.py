@@ -10,6 +10,8 @@ from __future__ import annotations
 import logging
 import time
 
+import ccxt
+
 from coinmon.live.control import HALT, Store
 from coinmon.live.hyperliquid import Hyperliquid
 
@@ -27,11 +29,12 @@ def panic(hl: Hyperliquid, store: Store, reason: str, tries: int = 5, wait_s: fl
     for _ in range(tries):
         for o in hl.open_orders():
             hl.cancel(o.coin, o.oid)
-        positions = hl.positions()
-        if positions:
-            mids = hl.mids()
-            for p in positions.values():
-                hl.close(p.coin, p.szi, mids[p.coin])
+        for p in hl.positions().values():
+            try:
+                time.sleep(hl.write_wait_s())  # a throttled venue takes one close per 10s
+                hl.close(p.coin, p.szi, hl.mids()[p.coin])
+            except ccxt.BaseError:
+                log.exception("%s: close failed; the next pass retries it", p.coin)
         time.sleep(wait_s)
         if not hl.positions() and not hl.open_orders():
             return True

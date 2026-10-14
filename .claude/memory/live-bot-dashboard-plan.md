@@ -52,7 +52,8 @@ the venue. That is the owner's call at go-live; the bot refuses to run unless ev
 Code: `src/coinmon/live/{hyperliquid,control,stop,ladder}.py`, tables `bot_control` + `bot_trades`,
 CLI `coinmon bot run|status|resume`, `coinmon stop --now | --drain [--deadline 90m]`, `tests/test_bot.py`.
 Env: `COINMON_HL_ADDRESS`, `COINMON_HL_AGENT_KEY`, `COINMON_HL_TESTNET` (default true), `COINMON_BOT_RUNG_USD` (12).
-- **Deviation from the frozen rule (venue-forced):** re-peg only when the rung moved >=0.1% (DEADBAND).
+- **Deviation from the frozen rule (venue-forced):** re-peg only when the rung moved >=0.1% (DEADBAND;
+  made asymmetric 0.1% shallow / 1% deep on 2026-10-14, see "Action budget" below).
   Hyperliquid budgets actions per address: 10k, then 1 per USDC traded, then 1 per 10s. Re-pegging 3 bids
   every minute would burn the 10k in ~2 days. The ledger keeps anchor_close + fill_px per trade.
 - Leverage is NOT set by the bot: it reads/logs the venue setting and refuses to run unless every coin
@@ -185,6 +186,35 @@ Claude sets up and verifies read-only.
   after placing one, which would double the bid exactly in a cascade.
 - **Fix:** `ladder.SETTLE_MS` = 10s. After a write, distrust contradicting reads, with separate clocks for
   bids and exits. Three tests fake the lag, and all three fail with the fix switched off.
-- **Action budget burn** is about 1,600 per day with 6 coins (1,585 of 10,023 in ~19h). The 10k free buffer
-  lasts about 6 days; after that the account is throttled to 1 action per 10s, which is tight during a
-  cascade. **OPEN:** cut re-peg churn, e.g. a wider deadband or re-peg only when near the rung.
+- **Action budget: churn cut + throttle-safe, CODE DONE 2026-10-14 (not yet deployed; owner deploys).**
+  - **Measured live** (public `userRateLimit` + `historicalOrders`): 1 re-peg = 1 action. That was
+    90-140 an hour (~2,000-3,300/day; the US session is busiest). 1,658 of 10,023 used at 17:37 UTC
+    10-14, so the old code would have run the buffer out around 10-17/18.
+  - **Venue rules (docs, verified):**
+    - When the budget is spent, the account can send one action per 10s, forever. Volume earns
+      +1 per USDC traded, about 24 per round trip: nothing.
+    - Cancels have their own cap, `min(limit+100k, 2*limit)`.
+    - A batch of n orders counts as n.
+    - `reserveRequestWeight` sells actions at 0.0005 USDC each (~$1/day at the old churn), which
+      dwarfs this book's expected PnL of ~$6/yr. Don't buy.
+  - **Fix 1, asymmetric deadband** (`ladder.REPEG_SHALLOW` 0.1% / `REPEG_DEEP` 1%). The bid re-pegs
+    once it sits 0.1% above its rung (price fell) or 1% below it (price rose).
+    - Priced by `probes/f8_repeg_deadband.py` (log `runs/f8_repeg_deadband.log`) on Binance perp 1m,
+      for the 6 coins, 2021-01 → 2026-09. Its frozen row reproduces F8 exactly (N=1,338).
+    - Actions: 1,725 → **259/day** (-85%; the 0.1%-both-ways row matches live).
+    - N: 1,343 → 1,257. Mean +0.541% → **+0.597%**/event. Recent-24mo account +7.16% → +7.81%/yr.
+      All of these are inside the CI, so read them as no measurable cost.
+    - Minutes needing ≥2 writes: 29% → 3.4%.
+    - New buffer life is about a month, so the bot WILL end up throttled anyway.
+  - **Fix 2, throttle-safe writes.** `Hyperliquid.write_wait_s()` re-reads the budget once a minute
+    and paces writes at 10.5s once the account is within 50 actions of its cap.
+    - Bot: exits are written first, then the longest-unmoved bid. A coin with no free slot retries
+      next cycle and never sends a request the venue would reject.
+    - **PANIC was broken under throttle:** the 2nd close would be rejected, the exception aborted
+      the flatten. It now waits for a slot before each close, reads a fresh mid, and survives a
+      rejected close.
+    - 5 new tests fail on the old code.
+  - **Still unknown (watch after exhaustion):**
+    - Does a throttled or rejected request still count in `nRequestsUsed`? If it does, the ~10k
+      cancel headroom erodes too.
+    - The exact error text of the venue's rejection.

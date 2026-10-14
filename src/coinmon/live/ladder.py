@@ -14,9 +14,12 @@ Safety model:
   * State lives on the venue and is re-read every cycle, so a restart loses only the anchor close
     of a fill that happened while the bot was down.
 
-One deviation from the frozen rule, forced by the venue: a resting bid is re-pegged only once its
-rung has moved >= DEADBAND. Hyperliquid budgets actions per address (10k, then 1 per USDC traded);
-re-pegging three bids every minute would spend that in about two days.
+One deviation from the frozen rule, forced by the venue: a resting bid is re-pegged only once it
+sits >= REPEG_SHALLOW above its rung or >= REPEG_DEEP below it. Hyperliquid budgets actions per
+address (10k, then 1 per USDC traded, then one per 10s); a 0.1% band both ways spent ~2,000 a day
+on six coins. ``probes/f8_repeg_deadband.py`` priced the asymmetric band on 2021-2026 perp 1m: 85%
+fewer actions, F8 per-event net unchanged. Once the budget is spent, writes wait for the venue's
+next slot (``Hyperliquid.write_wait_s``), exits ahead of bids.
 """
 
 from __future__ import annotations
@@ -39,7 +42,10 @@ COINS = ("BTC", "ETH", "SOL", "DOGE", "XRP", "ADA")
 DROP = 0.025  # frozen F8 rung: 2.5% below the prior 1m close
 TARGET = 0.012  # frozen F8 take-profit: +1.2% from the fill
 HOLD_MS = 60 * 60_000  # frozen F8 time-stop: exit at market after 60 minutes
-DEADBAND = 0.001  # re-peg a resting bid only once its rung moved >= 0.1%
+# Re-peg a resting bid once it sits 0.1% above its rung (price fell: it would buy a smaller drop
+# than the rule) or 1% below it (price rose: it only misses fills).
+REPEG_SHALLOW = 0.001
+REPEG_DEEP = 0.01
 POLL_S = 3.0  # a cycle costs ~22 of the venue's 1200/min IP request weight
 # The venue's open-orders read lags its writes by seconds (seen live: a fresh take-profit missing
 # from the read, so it was placed three times; a modified bid's old, cancelled order still listed).
@@ -106,7 +112,9 @@ class LadderBot:
         mode = ctl.mode if ctl else None
         positions = self.hl.positions()
         orders = self.hl.open_orders()
-        for coin in self.coins:
+        # Who gets a throttled venue's next write: exits first, then the longest-unmoved bid.
+        for coin in sorted(self.coins, key=lambda c: (c not in positions,
+                                                      self.bid_wrote.get(c, -SETTLE_MS))):
             try:
                 self._manage(coin, ts_ms, mode, positions.get(coin),
                              [o for o in orders if o.coin == coin])
@@ -146,13 +154,16 @@ class LadderBot:
         """Keep a take-profit resting; at the time-stop, swap it for a market close."""
         if ts_ms - self.exit_wrote.get(coin, -SETTLE_MS) < SETTLE_MS:
             return  # the read may not show the exit order just sent
-        if ts_ms >= trade.fill_ms + HOLD_MS:
+        due = ts_ms >= trade.fill_ms + HOLD_MS
+        if (exits and not due) or self.hl.write_wait_s() > 0:
+            return
+        if due:
             for o in exits:
                 self.hl.cancel(coin, o.oid)
             trade.time_oid = self.hl.close(coin, pos.szi, self.hl.mids()[coin])
             self.exit_wrote[coin] = ts_ms
             self.store.save_trade(trade)
-        elif not exits:
+        else:
             trade.tp_px = self.hl.round_px(coin, trade.fill_px * (1 + TARGET))
             trade.tp_oid = self.hl.place(coin, "sell", pos.szi, trade.tp_px, reduce_only=True)
             self.exit_wrote[coin] = ts_ms
@@ -202,7 +213,7 @@ class LadderBot:
         log.info("%s: exit %s @ %s", coin, trade.exit_reason, trade.exit_px)
 
     def _peg(self, coin: str, ts_ms: int, bids: list[Order]) -> None:
-        """Rest one post-only bid at the prior 1m close -DROP, re-pegged past DEADBAND."""
+        """Rest one post-only bid at the prior 1m close -DROP, re-pegged past the REPEG bands."""
         minute = ts_ms // 60_000 * 60_000
         if self.failed.get(coin) == minute:
             return
@@ -218,13 +229,15 @@ class LadderBot:
         sz = self.rung_usd / rung
         for b in bids[1:]:
             self.hl.cancel(coin, b.oid)
+        if bids and -REPEG_DEEP < bids[0].px / rung - 1 < REPEG_SHALLOW:
+            return
+        if self.hl.write_wait_s() > 0:
+            return
         try:
             if not bids:
                 self.hl.place(coin, "buy", sz, rung, post_only=True)
-            elif abs(bids[0].px / rung - 1) >= DEADBAND:
-                self.hl.modify(bids[0].oid, coin, sz, rung)
             else:
-                return
+                self.hl.modify(bids[0].oid, coin, sz, rung)
         except ccxt.ExchangeError as e:
             self.failed[coin] = minute
             log.warning("%s: bid at %s rejected, retrying next minute: %s", coin, rung, e)

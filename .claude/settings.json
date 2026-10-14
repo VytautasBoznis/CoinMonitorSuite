@@ -67,7 +67,16 @@
       "Bash(grep -q \"isolated\" /c/Dev/CoinMonitorSuite/runs/f8s_squeeze_ladder_proxy.log)",
       "Bash(sleep 2)",
       "Bash(cd \"/c/Users/Vytautas/.claude/projects/c--Dev-CoinMonitorSuite/memory\")",
-      "Bash(grep -c \"F8S\" f8-cascade-ladder-result.md MEMORY.md)"
+      "Bash(grep -c \"F8S\" f8-cascade-ladder-result.md MEMORY.md)",
+      "Bash(cmd //c dir \"C:\\\\Users\\\\Vytautas\\\\.claude\\\\projects\\\\c--Dev-CoinMonitorSuite\")",
+      "Bash(curl -s -X POST https://api.hyperliquid.xyz/info -H 'Content-Type: application/json' -d '{\"type\":\"historicalOrders\",\"user\":\"0x8cF0CD557b2352d5A6acCd31B38A72a092720bf4\"}')",
+      "Bash(time COINMON_DB_DSN=postgresql://coinmon:coinmon@localhost:5433/coinmon PYTHONPATH=\"src;.\" .venv/Scripts/python probes/f8_repeg_deadband.py)",
+      "Bash(tee runs/f8_repeg_deadband.log)",
+      "Bash(.venv/Scripts/python -m pytest tests/test_bot.py -q)",
+      "Bash(.venv/Scripts/python -m pytest -q -x)",
+      "Bash(.venv/Scripts/python -m ruff check src tests probes/f8_repeg_deadband.py)",
+      "Bash(.venv/Scripts/python -m ruff check src tests probes/f8_repeg_deadband.py --output-format concise)",
+      "Bash(.venv/Scripts/python -m ruff check probes/f8_repeg_deadband.py --output-format concise)"
     ]
   }
 }

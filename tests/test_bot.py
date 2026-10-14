@@ -37,6 +37,20 @@ class FakeHL:
         self.reject = False
         self.now = T0
         self._oid = 0
+        self.throttled = False  # action budget spent: one write per 10s, the rest rejected
+        self.last_write: int | None = None
+        self.rejected = 0
+
+    def write_wait_s(self):
+        if not self.throttled or self.last_write is None:
+            return 0.0
+        return max(0.0, (self.last_write + 10_000 - self.now) / 1000)
+
+    def _write(self):
+        if self.write_wait_s() > 0:
+            self.rejected += 1
+            raise ccxt.ExchangeError("Too many cumulative requests sent")
+        self.last_write = self.now
 
     def positions(self):
         return dict(self.pos)
@@ -72,6 +86,7 @@ class FakeHL:
         self.calls.append(("place", coin, side, post_only, reduce_only))
         if self.reject:
             raise ccxt.InvalidOrder("Post only order would have immediately matched, bbo was ...")
+        self._write()
         self._oid += 1
         self.orders[self._oid] = Order(coin, self._oid, "B" if side == "buy" else "A", px, sz,
                                        reduce_only)
@@ -79,6 +94,7 @@ class FakeHL:
 
     def modify(self, oid, coin, sz, px):
         self.calls.append(("modify", coin, px))
+        self._write()
         self.orders[oid] = replace(self.orders[oid], px=px, sz=sz)
 
     def cancel(self, coin, oid):
@@ -86,6 +102,7 @@ class FakeHL:
         del self.orders[oid]
 
     def close(self, coin, szi, mid):
+        self._write()
         self._oid += 1
         self._fill(coin, self._oid, "A", mid, abs(szi), crossed=True)
         return self._oid
@@ -173,15 +190,19 @@ def test_run_rests_one_post_only_bid_at_the_rung():
     assert hl.calls == [("place", "BTC", "buy", True, False)]
 
 
-def test_bid_repegs_only_past_the_deadband():
+@pytest.mark.parametrize("prior_close, repeg", [
+    (99.96, None),  # rung 97.46: the 97.50 bid sits 0.04% above it
+    (99.6, 97.11),  # 0.4% above: it would buy a smaller drop than the rule
+    (100.8, None),  # rung 98.28: 0.8% below, it only misses fills
+    (101.2, 98.67),  # 1.2% below
+])
+def test_bid_repegs_past_the_asymmetric_band(prior_close, repeg):
     hl, _, bot = make()
     bot.cycle(T0)
-    hl.prior_close["BTC"] = 100.05  # rung 97.55: moved 0.05%
+    hl.prior_close["BTC"] = prior_close
     bot.cycle(T0 + MIN)
-    assert not [c for c in hl.calls if c[0] == "modify"]
-    hl.prior_close["BTC"] = 100.2  # rung 97.70: moved 0.2%
-    bot.cycle(T0 + 2 * MIN)
-    assert [c for c in hl.calls if c[0] == "modify"] == [("modify", "BTC", 97.7)]
+    modifies = [c for c in hl.calls if c[0] == "modify"]
+    assert modifies == ([("modify", "BTC", repeg)] if repeg else [])
 
 
 def test_fill_rests_a_take_profit_and_records_the_entry():
@@ -238,12 +259,12 @@ def test_a_lagging_read_does_not_double_a_fresh_bid():
 def test_a_lagging_read_does_not_re_modify_a_fresh_repeg():
     hl, _, bot = make()
     bot.cycle(T0)
-    hl.prior_close["BTC"] = 100.2
-    bot.cycle(T0 + MIN)  # re-pegs to 97.70
+    hl.prior_close["BTC"] = 99.6
+    bot.cycle(T0 + MIN)  # re-pegs to 97.11
     restore = lagging(hl, lambda orders: [replace(o, px=97.5) for o in orders])  # stale price
     bot.cycle(T0 + MIN + 3_000)
     restore()
-    assert [c for c in hl.calls if c[0] == "modify"] == [("modify", "BTC", 97.7)]
+    assert [c for c in hl.calls if c[0] == "modify"] == [("modify", "BTC", 97.11)]
 
 
 def test_a_lagging_read_does_not_double_the_take_profit_but_a_lost_one_is_replaced():
@@ -294,6 +315,78 @@ def test_rejected_bid_retries_next_minute_not_next_cycle():
     assert len(hl.calls) == 1
     bot.cycle(T0 + MIN)
     assert len(hl.calls) == 2
+
+
+def step(hl, bot, ts):
+    hl.now = ts
+    bot.cycle(ts)
+
+
+def test_a_throttled_venue_gets_one_write_per_slot_exits_first():
+    hl, store = FakeHL(), MemStore(RUN)
+    hl.mid["ETH"] = hl.prior_close["ETH"] = 100.0
+    bot = LadderBot(hl, store, rung_usd=12.0, coins=("BTC", "ETH"))
+    hl.throttled = True
+    step(hl, bot, T0)
+    step(hl, bot, T0 + 3_000)  # ETH's bid waits for the venue's next slot
+    assert [c[1] for c in hl.calls] == ["BTC"]
+    step(hl, bot, T0 + 11_000)
+    assert [c[1] for c in hl.calls] == ["BTC", "ETH"]
+    hl.now = T0 + 30_000
+    hl.trade_at("ETH", 97.0)  # ETH fills while BTC's rung falls 0.4%
+    hl.prior_close["BTC"] = 99.6
+    step(hl, bot, T0 + MIN)
+    assert hl.calls[2:] == [("place", "ETH", "sell", False, True)]  # the take-profit first
+    step(hl, bot, T0 + MIN + 11_000)
+    assert hl.calls[3:] == [("modify", "BTC", 97.11)]
+    assert hl.rejected == 0
+
+
+def two_positions(hl):
+    for coin in ("BTC", "ETH"):
+        hl.mid[coin] = 97.0
+        hl._fill(coin, 0, "B", 97.0, 0.1, crossed=False)
+
+
+def test_panic_paces_its_closes_on_a_throttled_venue(monkeypatch):
+    hl, store = FakeHL(), MemStore(RUN)
+    two_positions(hl)
+    hl.throttled, hl.last_write = True, hl.now  # the venue just took a write
+    monkeypatch.setattr(stop.time, "sleep", lambda s: setattr(hl, "now", hl.now + int(s * 1000)))
+    assert stop.panic(hl, store, "manual panic", wait_s=0)
+    assert hl.positions() == {} and hl.rejected == 0
+
+
+def test_panic_keeps_flattening_past_a_rejected_close():
+    hl, store = FakeHL(), MemStore(RUN)
+    two_positions(hl)
+    real, failed = hl.close, []
+
+    def flaky(coin, szi, mid):
+        if not failed:
+            failed.append(coin)
+            raise ccxt.InvalidOrder("rejected")
+        return real(coin, szi, mid)
+
+    hl.close = flaky
+    assert stop.panic(hl, store, "manual panic", wait_s=0)
+    assert hl.positions() == {} and failed == ["BTC"]
+
+
+def test_writes_are_paced_only_once_the_action_budget_is_nearly_spent(monkeypatch):
+    from coinmon.live import hyperliquid
+    clock = [1_000.0]
+    monkeypatch.setattr(hyperliquid.time, "monotonic", lambda: clock[0])
+    hl = object.__new__(Hyperliquid)
+    hl._throttled, hl._budget_read, hl._last_write = False, -float("inf"), clock[0]
+    budget = {"nRequestsUsed": 100, "nRequestsCap": 10_000}
+    hl.rate_limit = lambda: dict(budget)
+    assert hl.write_wait_s() == 0
+    budget["nRequestsUsed"] = 9_960
+    assert hl.write_wait_s() == 0  # the budget is re-read once a minute
+    clock[0] += 60
+    hl._last_write = clock[0] - 4
+    assert hl.write_wait_s() == pytest.approx(6.5)
 
 
 def test_refuses_cross_margin():

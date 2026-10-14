@@ -8,6 +8,7 @@ wallet that owns the funds and the only signer that can withdraw.
 from __future__ import annotations
 
 import re
+import time
 from dataclasses import dataclass
 
 import ccxt
@@ -17,6 +18,11 @@ import ccxt
 UNIFIED = ("unifiedAccount", "portfolioMargin")
 PRIVATE_KEY = re.compile(r"(0x)?[0-9a-fA-F]{64}")
 SLIPPAGE = "0.05"  # IOC closes: limit 5% through the mid (Hyperliquid has no true market order)
+# An address that has spent its action budget may send one action per 10s; the venue rejects the
+# rest. Cancels have their own, larger budget and are never paced.
+WRITE_GAP_S = 10.5
+BUDGET_TTL_S = 60.0  # how often the budget is re-read
+BUDGET_MARGIN = 50  # pace this many actions early: the budget is only re-read once a minute
 
 
 @dataclass(frozen=True)
@@ -72,6 +78,8 @@ class Hyperliquid:
             self._x.set_sandbox_mode(True)
         # The API wallet's own address, derived offline from its key.
         self.agent = self._x.eth_get_address_from_private_key(agent_key).lower()
+        self._throttled = False
+        self._budget_read = self._last_write = -float("inf")
         self._x.load_markets()
 
     def _info(self, body: dict):
@@ -160,6 +168,16 @@ class Hyperliquid:
         """Address action budget: ``nRequestsUsed`` of ``nRequestsCap`` (cap grows with volume)."""
         return self._info({"type": "userRateLimit", "user": self.address})
 
+    def write_wait_s(self) -> float:
+        """Seconds until the next order (place, modify, close) may go out: 0 until the address
+        has nearly spent its action budget, then one write per WRITE_GAP_S."""
+        now = time.monotonic()
+        if now - self._budget_read >= BUDGET_TTL_S:
+            rl = self.rate_limit()
+            self._throttled = rl["nRequestsUsed"] + BUDGET_MARGIN >= rl["nRequestsCap"]
+            self._budget_read = now
+        return max(0.0, self._last_write + WRITE_GAP_S - now) if self._throttled else 0.0
+
     def listed(self, coins: tuple[str, ...]) -> tuple[str, ...]:
         """The subset of ``coins`` this venue lists as perps (testnet lists fewer than mainnet)."""
         return tuple(c for c in coins if self._symbol(c) in self._x.markets)
@@ -173,11 +191,13 @@ class Hyperliquid:
               reduce_only: bool = False) -> int:
         """Limit order (``side`` "buy"/"sell"); ``post_only`` = ALO, else GTC. Returns the oid."""
         params = {"postOnly": post_only, "reduceOnly": reduce_only}
+        self._last_write = time.monotonic()
         o = self._x.create_order(self._symbol(coin), "limit", side, sz, px, params)
         return int(o["id"])
 
     def modify(self, oid: int, coin: str, sz: float, px: float) -> None:
         """Re-price a resting post-only bid."""
+        self._last_write = time.monotonic()
         self._x.edit_order(str(oid), self._symbol(coin), "limit", "buy", sz, px, {"postOnly": True})
 
     def cancel(self, coin: str, oid: int) -> None:
@@ -187,5 +207,6 @@ class Hyperliquid:
         """Reduce-only IOC that flattens a position of signed size ``szi``. Returns the oid."""
         side = "sell" if szi > 0 else "buy"
         params = {"reduceOnly": True, "slippage": SLIPPAGE}
+        self._last_write = time.monotonic()
         o = self._x.create_order(self._symbol(coin), "market", side, abs(szi), mid, params)
         return int(o["id"])

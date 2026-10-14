@@ -429,8 +429,10 @@ function describeIntent(
     ? account.orders.find((o) => o.coin === coin && o.side === "B" && !o.reduce_only)
     : undefined;
   const px = bid ? fmtPx(bid.px) : level;
+  // The bot re-pegs a bid only past a band (venue action budget), so a real bid can sit off the rule.
+  const under = bid && lastClosed != null ? `${((1 - bid.px / lastClosed) * 100).toFixed(1)}%` : drop;
   return {
     kind: "wait",
-    text: `Waiting to buy ${coin} at ${px ?? "…"}, ${drop} under the last 1m close. It fills only if price crashes that far inside one minute.`,
+    text: `Waiting to buy ${coin} at ${px ?? "…"}, ${under} under the last 1m close. It fills only if price crashes that far inside one minute.`,
   };
 }

@@ -53,7 +53,21 @@
       "Bash(ls runs/)",
       "Bash(ls probes/__init__.py)",
       "Bash(grep -n \"^from probes\\\\|^import probes\" probes/*.py)",
-      "Bash(.venv/Scripts/python.exe -m ruff check probes/f8s_squeeze_ladder_proxy.py --output-format concise)"
+      "Bash(.venv/Scripts/python.exe -m ruff check probes/f8s_squeeze_ladder_proxy.py --output-format concise)",
+      "Bash(seq 1 20)",
+      "Bash(break)",
+      "Bash(sleep 3)",
+      "Bash(docker ps *)",
+      "Bash(COINMON_DB_DSN=postgresql://coinmon:coinmon@localhost:5433/coinmon PYTHONPATH=\"src;.\" .venv/Scripts/python.exe -u probes/f8s_squeeze_ladder_proxy.py)",
+      "Bash(tee runs/f8s_squeeze_ladder_proxy.log)",
+      "Bash(sleep 90)",
+      "Bash(cat /c/Dev/CoinMonitorSuite/runs/f8s_squeeze_ladder_proxy.log)",
+      "Bash(seq 1 40)",
+      "Bash(grep -q \"D-C\" /c/Dev/CoinMonitorSuite/runs/f8s_squeeze_ladder_proxy.log)",
+      "Bash(grep -q \"isolated\" /c/Dev/CoinMonitorSuite/runs/f8s_squeeze_ladder_proxy.log)",
+      "Bash(sleep 2)",
+      "Bash(cd \"/c/Users/Vytautas/.claude/projects/c--Dev-CoinMonitorSuite/memory\")",
+      "Bash(grep -c \"F8S\" f8-cascade-ladder-result.md MEMORY.md)"
     ]
   }
 }

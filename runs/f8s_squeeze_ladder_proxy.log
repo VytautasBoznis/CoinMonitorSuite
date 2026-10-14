@@ -1,0 +1,71 @@
+  BTC/USDT:USDT        3,022,560 bars  ->  long   55  short   52
+  ETH/USDT:USDT        3,022,560 bars  ->  long   99  short   83
+  SOL/USDT:USDT        3,015,360 bars  ->  long  263  short  257
+  DOGE/USDT:USDT       3,022,560 bars  ->  long  466  short  436
+  AVAX/USDT:USDT       3,022,560 bars  ->  long  247  short  193
+  NEAR/USDT:USDT       3,015,360 bars  ->  long  205  short  237
+  LINK/USDT:USDT       3,022,560 bars  ->  long  137  short   85
+  1000SHIB/USDT:USDT   2,835,743 bars  ->  long  334  short  254
+  ADA/USDT:USDT        3,022,560 bars  ->  long  173  short  104
+  XRP/USDT:USDT        3,015,360 bars  ->  long  282  short  150
+
+SELF-CHECK long side vs F8's own code: N 2261 vs 2261, identical events: True; mean +0.509% (F8 perp log: N=2261, +0.509%)
+
+========================================================================
+F8S SHORT-SQUEEZE LADDER — 1851 events, 540 distinct UTC days
+========================================================================
+  mean net / event (ladder fill) : -0.669%
+  95% CI (cluster bootstrap)     : [-0.938%, -0.403%]
+  target hit rate                : 72.4%
+  time-stop exits at TAKER       : -0.679%  <- sensitivity
+  per-year mean net:
+    2021  -0.572%   n=  925
+    2022  -0.354%   n=  392
+    2023  -0.677%   n=  164
+    2024  -1.168%   n=  192
+    2025  -1.535%   n=  103
+    2026  -1.038%   n=   75
+
+  R1 mean >= 0.12% (3x RT maker) : FAIL
+  R2 95% CI excludes zero          : FAIL
+  R3 N >= 300                       : PASS (N=1851)
+  R4 positive in >= 2 years        : FAIL (0 yr)
+
+  VERDICT: KILL
+
+========================================================================
+DIAGNOSTICS — pre-registered, never change the verdict
+========================================================================
+
+Q1  BY MARKET REGIME (the coin's trailing 30-day return at the event)
+    long  in a DOWN market (30d < 0)         N=  813  mean +0.267%  CI [-0.063%, +0.567%]  days=240
+    long  in an UP market (30d >= 0)         N=1,181  mean +0.684%  CI [+0.552%, +0.799%]  days=347
+    short in a DOWN market (30d < 0)         N=  790  mean -0.939%  CI [-1.400%, -0.484%]  days=257
+    short in an UP market (30d >= 0)         N=  803  mean -0.529%  CI [-0.810%, -0.258%]  days=330
+
+Q2  ONE-ACCOUNT BOOK, 10 slices, 1x, simple %/yr
+    full span (5.74y): long-only +20.02%  short-only -21.57%  both -1.55%
+    2021: long +59.95% (n=1033)  short -52.93% (n= 925)  both  +7.02%
+    2022: long  +9.18% (n= 315)  short -13.88% (n= 392)  both  -4.70%
+    2023: long +23.07% (n= 327)  short -11.11% (n= 164)  both +11.96%
+    2024: long +15.84% (n= 352)  short -22.38% (n= 192)  both  -6.54%
+    2025: long  +3.96% (n= 148)  short -15.82% (n= 103)  both -11.86%
+    2026: long  +4.05% (n=  86)  short -10.46% (n=  75)  both  -6.41%
+    recent 24 months (from 2024-09-30): long-only +6.99%  short-only -14.42%  both -7.43%
+    recent short events                      N=  221  mean -1.305%  CI [-2.376%, -0.264%]  days=78
+
+D-A  SHORT TRADE-THROUGH (fill only if the spike passes the ask by x)
+    x = 0.00%                                N=1,851  mean -0.669%  CI [-0.938%, -0.403%]  days=540
+    x = 0.10%                                N=1,622  mean -0.808%  CI [-1.107%, -0.508%]  days=492
+    x = 0.25%                                N=1,333  mean -0.988%  CI [-1.307%, -0.662%]  days=441
+    x = 0.50%                                N=  975  mean -1.428%  CI [-1.846%, -1.015%]  days=374
+
+D-B  SHORT DAY CONCENTRATION
+    top-5 days = -7.2% of summed PnL; top-20 = -19.9%
+    worst 5 days: 2025-03-02 -82.77%, 2021-01-28 -81.67%, 2021-05-21 -76.41%, 2025-10-10 -75.81%, 2021-12-04 -71.31%
+
+D-C  SHORT ADVERSE EXCURSION (price above the fill): median 1.66%, 95th pct 12.32%, worst 100.69%
+     3x isolated (liq at +32.8%):   12 of 1851 fills breach (0.6%)
+     5x isolated (liq at +19.5%):   41 of 1851 fills breach (2.2%)
+    10x isolated (liq at +9.5%):  165 of 1851 fills breach (8.9%)
+    20x isolated (liq at +4.5%):  468 of 1851 fills breach (25.3%)

@@ -71,14 +71,22 @@ Bybit 1m REST backfill was ~2-3h and the owner killed it ([[no-multi-hour-data-l
 `bybit` 1m rows (BTC 2021-01 → ~2025) sit in the local DB; no probe read them. Queue position stays
 open — only the live book settles it now.
 
-**F8S — the short side, PRE-REGISTERED 2026-10-14, NOT YET RUN.** `probes/f8s_squeeze_ladder_proxy.py`:
-- The rule: F8 mirrored, with resting asks at prior close +2.5%, TP -1.2%, out at 60m. It uses the same
-  frozen R1-R4, seed and day-clustered bootstrap on the same 10 perps. A KILL keeps the short side out
-  of the live book.
-- Why: owner, after the first live fill: "in a bear market longs get rekt more; look at both sides".
-- Pre-registered diagnostics: Q1 events and PnL per side split by the coin's 30-day trend; Q2 the
-  two-sided vs long-only book per year and over the recent 24 months; plus the short-side trade-through,
-  day concentration and liquidation-breach table.
-- The self-check passed on synthetic data: the generalized long side equals F8's own code event for event.
-- **Blocked on the local DB being up.** Docker Desktop was stopped 2026-10-14; the 1m data lives only in the
-  local Timescale. Run time is about 5-10 min.
+**F8S — the short side: KILLED 2026-10-14** (`probes/f8s_squeeze_ladder_proxy.py`, log
+`runs/f8s_squeeze_ladder_proxy.log`). The rule was F8 mirrored: asks at prior close +2.5%, TP -1.2%,
+out at 60m, judged by the same frozen R1-R4 on the same 10 perps. The self-check reproduced F8 exactly
+(2261 events, +0.509%).
+- **Result:** N=1851, mean **-0.669%/event**, CI [-0.938%, -0.403%], **0 of 6 years positive**, recent 24
+  months -1.31%/event. R1, R2 and R4 FAIL.
+- The TP hits 72% of the time, but the misses are huge. A squeeze keeps running: adverse excursion median
+  +1.66%, 95th pct +12.3%, worst +100%; at 20x, 25% of fills breach liquidation. Crashes snap back; squeezes
+  don't.
+- Worst days include 2025-10-10, the post-cascade V-recovery.
+- **The two-sided book is worse than long-only:** full span -1.55%/yr vs +20.02%; recent 24 months
+  -7.43%/yr vs +6.99%. Do NOT add a short ladder.
+- **Q1, the owner's bear-market question, came out reversed.**
+  - The LONG ladder pays less in DOWN markets (coin's 30d return < 0): +0.267%/event with CI
+    [-0.06%, +0.57%] spanning zero, against +0.684% (CI [+0.55%, +0.80%]) in UP markets. Buying a crash
+    in a downtrend is catching a falling knife.
+  - The SHORT ladder loses in both regimes, and worst in down markets (-0.94%).
+  - A "bid only when the 30d trend >= 0" filter is a **POST-HOC idea** (seen in the data). It needs its
+    own pre-registered, out-of-sample test before it touches the live book.

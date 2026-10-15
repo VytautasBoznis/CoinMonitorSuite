@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: f655be08-d28b-48b8-91b6-b4b28bbce97c
-  modified: 2026-10-09T20:52:35.394Z
+  modified: 2026-10-15T16:15:12.349Z
 ---
 
 Owner, in a 2026-10-09 conversation with Fable (pasted into Claude Code): a bot running headless on the
@@ -39,8 +39,7 @@ They want to SEE it, and to be entertained by it. Fable agreed and stated the li
   others ~$5. One rung per coin across the 6 coins is ~$133 notional, which is more than 100 EUR at 1x.
 - Open conflict: Disconnect-Cancel-All also cancels resting take-profit orders. Attach the TP to the
   entry order and verify DCP behaviour on Bybit demo before enabling it.
-- **F11 is undefined in memory/repo.** Its spec came from a later Fable message that has not been
-  provided yet ("slow hedged short basket").
+- **F11 ran 2026-10-15: KILLED, see [[f11-post-listing-drift-killed]].** The bot needs no third strategy shape.
 
 **BOT CORE BUILT 2026-10-09 (Hyperliquid, code + fake-venue tests only, NOT yet run on testnet).**
 Owner decisions this session: bot core before F11 (F11 spec still missing); frozen F8 rule verbatim

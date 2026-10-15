@@ -1,0 +1,70 @@
+  bybit: pulling 566 events
+  bybit pulled in 267s
+  binance: pulling 575 events
+  binance pulled in 1455s
+  basket pulled in 1608s
+
+==============================================================================
+BINANCE: 575 F6 events with a complete window, 2 unserved, 1 without an entry bar -> N=572
+  t1 2021-01-21 -> 2026-07-03   exits: full 419, liq 153   basket legs 5-37
+==============================================================================
+  HEDGED (37-leg alt basket) -- the verdict:
+    N >= 150              : PASS   572
+    mean >= +5%           : FAIL   +1.65%
+    median > 0            : PASS   +20.68%
+    95% CI ex-zero        : FAIL   [-6.69%, +10.61%] (61 month clusters)
+    recent-24mo mean > 0  : PASS   +0.41% (n=381)
+    top-5 < 50% of PnL    : FAIL   80%
+  binance: KILL
+  components (mean / median): short perp leg +2.38% / +27.52%, perp funding received -0.66%, basket +1.30% / -5.69%, basket funding paid +1.16%
+  per year (mean net, n): 2021 +10.7% n=38  2022 -7.0% n=19  2023 +7.5% n=95  2024 +19.8% n=129  2025 -8.5% n=245  2026 -11.2% n=46
+  sensitivity, literal 41-leg basket: KILL
+    N >= 150              : PASS   572
+    mean >= +5%           : FAIL   +1.90%
+    median > 0            : PASS   +21.99%
+    95% CI ex-zero        : FAIL   [-6.22%, +10.46%] (61 month clusters)
+    recent-24mo mean > 0  : PASS   +0.89% (n=381)
+    top-5 < 50% of PnL    : FAIL   68%
+  UNHEDGED short (never blended; thresholds shown for scale only):
+    N >= 150              : PASS   572
+    mean >= +5%           : FAIL   +1.62%
+    median > 0            : PASS   +26.07%
+    95% CI ex-zero        : FAIL   [-7.17%, +10.88%] (61 month clusters)
+    recent-24mo mean > 0  : PASS   +0.41% (n=381)
+    top-5 < 50% of PnL    : FAIL   53%
+  worst 5 hedged: RIVERUSDT -183% (liq), FUNUSDT -169% (liq), MUSDT -133% (liq), TRUSTUSDT -129% (liq), 1000CHEEMSUSDT -126% (liq)
+  best 5 hedged:  NEIROETHUSDT +214% (full), DOGSUSDT +159% (full), LOOMUSDT +131% (full), SUNUSDT +128% (full), HMSTRUSDT +126% (full)
+
+==============================================================================
+BYBIT: 566 F6 events with a complete window, 0 unserved, 0 without an entry bar -> N=566
+  t1 2021-03-15 -> 2026-07-08   exits: full 429, liq 137   basket legs 7-37
+==============================================================================
+  HEDGED (37-leg alt basket) -- the verdict:
+    N >= 150              : PASS   566
+    mean >= +5%           : FAIL   -4.80%
+    median > 0            : PASS   +11.53%
+    95% CI ex-zero        : FAIL   [-13.38%, +4.52%] (60 month clusters)
+    recent-24mo mean > 0  : FAIL   -3.28% (n=359)
+    top-5 < 50% of PnL    : FAIL   total PnL <= 0
+  bybit: KILL
+  components (mean / median): short perp leg +0.03% / +20.18%, perp funding received -1.58%, basket -2.44% / -10.04%, basket funding paid +0.59%
+  per year (mean net, n): 2021 -1.9% n=63  2022 -17.6% n=38  2023 -5.7% n=58  2024 -8.4% n=95  2025 -11.6% n=178  2026 +9.4% n=134
+  sensitivity, literal 41-leg basket: KILL
+    N >= 150              : PASS   566
+    mean >= +5%           : FAIL   -4.71%
+    median > 0            : PASS   +12.02%
+    95% CI ex-zero        : FAIL   [-12.88%, +4.00%] (60 month clusters)
+    recent-24mo mean > 0  : FAIL   -3.08% (n=359)
+    top-5 < 50% of PnL    : FAIL   total PnL <= 0
+  UNHEDGED short (never blended; thresholds shown for scale only):
+    N >= 150              : PASS   566
+    mean >= +5%           : FAIL   -1.66%
+    median > 0            : PASS   +17.49%
+    95% CI ex-zero        : FAIL   [-10.29%, +6.01%] (60 month clusters)
+    recent-24mo mean > 0  : FAIL   -3.36% (n=359)
+    top-5 < 50% of PnL    : FAIL   total PnL <= 0
+  worst 5 hedged: RIVERUSDT -195% (liq), XCNUSDT -157% (liq), WAVESUSDT -140% (liq), POWERUSDT -134% (liq), COAIUSDT -133% (liq)
+  best 5 hedged:  ORDERUSDT +128% (full), USTCUSDT +110% (full), FLNCUSDT +108% (full), GLWUSDT +106% (full), JTOUSDT +104% (full)
+
+==============================================================================
+F11 VERDICT: KILL  (binance KILL, bybit KILL)

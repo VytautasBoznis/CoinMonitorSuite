@@ -1,0 +1,93 @@
+
+==============================================================================
+BINANCE: 575 F6 events with a complete window, 2 unserved, 1 without an entry bar -> N=572
+  t1 2021-01-21 -> 2026-07-03   exits: full 421, liq 151   basket legs 5-37
+==============================================================================
+  HEDGED (37-leg alt basket) -- the verdict:
+    N >= 150              : PASS   572
+    mean >= +5%           : FAIL   +2.03%
+    median > 0            : PASS   +21.32%
+    95% CI ex-zero        : FAIL   [-6.33%, +10.85%] (61 month clusters)
+    recent-24mo mean > 0  : PASS   +0.68% (n=381)
+    top-5 < 50% of PnL    : FAIL   65%
+  binance: KILL
+  components (mean / median): short perp leg +2.51% / +27.02%, perp funding received -0.40%, basket +1.30% / -4.89%, basket funding paid +1.17%
+  per year (mean net, n): 2021 +10.2% n=38  2022 -7.0% n=19  2023 +8.7% n=95  2024 +19.9% n=129  2025 -8.2% n=245  2026 -10.1% n=46
+  sensitivity, literal 41-leg basket: KILL
+    N >= 150              : PASS   572
+    mean >= +5%           : FAIL   +2.28%
+    median > 0            : PASS   +22.20%
+    95% CI ex-zero        : FAIL   [-5.80%, +10.81%] (61 month clusters)
+    recent-24mo mean > 0  : PASS   +1.16% (n=381)
+    top-5 < 50% of PnL    : FAIL   57%
+  sensitivity, CLOSE-LIQ (liquidated only on a 1h close, a generous mark-price proxy): KILL
+    N >= 150              : PASS   572
+    mean >= +5%           : FAIL   +4.34%
+    median > 0            : PASS   +21.93%
+    95% CI ex-zero        : FAIL   [-4.05%, +13.12%] (61 month clusters)
+    recent-24mo mean > 0  : PASS   +2.77% (n=381)
+    top-5 < 50% of PnL    : PASS   31%
+  sensitivity, NO-LIQ (never liquidated, floored at -100%): PASS  <-- DIFFERS from the verdict
+    N >= 150              : PASS   572
+    mean >= +5%           : PASS   +18.61%
+    median > 0            : PASS   +25.46%
+    95% CI ex-zero        : PASS   [+11.39%, +26.82%] (61 month clusters)
+    recent-24mo mean > 0  : PASS   +20.51% (n=381)
+    top-5 < 50% of PnL    : PASS   7%
+  UNHEDGED short (never blended; thresholds shown for scale only):
+    N >= 150              : PASS   572
+    mean >= +5%           : FAIL   +2.01%
+    median > 0            : PASS   +26.27%
+    95% CI ex-zero        : FAIL   [-6.65%, +11.24%] (61 month clusters)
+    recent-24mo mean > 0  : PASS   +0.57% (n=381)
+    top-5 < 50% of PnL    : PASS   43%
+  worst 5 hedged: TAKEUSDT -134% (liq), 1000CHEEMSUSDT -132% (liq), POWERUSDT -128% (liq), RIVERUSDT -126% (liq), XPINUSDT -125% (liq)
+  best 5 hedged:  NEIROETHUSDT +214% (full), DOGSUSDT +159% (full), LOOMUSDT +131% (full), SUNUSDT +128% (full), HMSTRUSDT +126% (full)
+
+==============================================================================
+BYBIT: 566 F6 events with a complete window, 0 unserved, 0 without an entry bar -> N=566
+  t1 2021-03-15 -> 2026-07-08   exits: full 429, liq 137   basket legs 7-37
+==============================================================================
+  HEDGED (37-leg alt basket) -- the verdict:
+    N >= 150              : PASS   566
+    mean >= +5%           : FAIL   -4.61%
+    median > 0            : PASS   +11.24%
+    95% CI ex-zero        : FAIL   [-13.03%, +4.62%] (60 month clusters)
+    recent-24mo mean > 0  : FAIL   -3.13% (n=359)
+    top-5 < 50% of PnL    : FAIL   total PnL <= 0
+  bybit: KILL
+  components (mean / median): short perp leg -0.01% / +19.31%, perp funding received -1.37%, basket -2.42% / -9.93%, basket funding paid +0.60%
+  per year (mean net, n): 2021 -2.6% n=63  2022 -16.6% n=38  2023 -5.0% n=58  2024 -8.2% n=95  2025 -11.6% n=178  2026 +9.8% n=134
+  sensitivity, literal 41-leg basket: KILL
+    N >= 150              : PASS   566
+    mean >= +5%           : FAIL   -4.52%
+    median > 0            : PASS   +11.58%
+    95% CI ex-zero        : FAIL   [-12.50%, +4.08%] (60 month clusters)
+    recent-24mo mean > 0  : FAIL   -2.93% (n=359)
+    top-5 < 50% of PnL    : FAIL   total PnL <= 0
+  sensitivity, CLOSE-LIQ (liquidated only on a 1h close, a generous mark-price proxy): KILL
+    N >= 150              : PASS   566
+    mean >= +5%           : FAIL   -2.96%
+    median > 0            : PASS   +11.78%
+    95% CI ex-zero        : FAIL   [-11.11%, +6.08%] (60 month clusters)
+    recent-24mo mean > 0  : FAIL   -1.65% (n=359)
+    top-5 < 50% of PnL    : FAIL   total PnL <= 0
+  sensitivity, NO-LIQ (never liquidated, floored at -100%): PASS  <-- DIFFERS from the verdict
+    N >= 150              : PASS   566
+    mean >= +5%           : PASS   +9.06%
+    median > 0            : PASS   +16.64%
+    95% CI ex-zero        : PASS   [+2.34%, +16.77%] (60 month clusters)
+    recent-24mo mean > 0  : PASS   +13.65% (n=359)
+    top-5 < 50% of PnL    : PASS   11%
+  UNHEDGED short (never blended; thresholds shown for scale only):
+    N >= 150              : PASS   566
+    mean >= +5%           : FAIL   -1.49%
+    median > 0            : PASS   +17.49%
+    95% CI ex-zero        : FAIL   [-10.10%, +6.14%] (60 month clusters)
+    recent-24mo mean > 0  : FAIL   -3.45% (n=359)
+    top-5 < 50% of PnL    : FAIL   total PnL <= 0
+  worst 5 hedged: XCNUSDT -136% (liq), KNCUSDT -133% (liq), NEARUSDT -133% (liq), WAVESUSDT -131% (liq), POWERUSDT -131% (liq)
+  best 5 hedged:  ORDERUSDT +128% (full), USTCUSDT +110% (full), FLNCUSDT +108% (full), GLWUSDT +106% (full), JTOUSDT +104% (full)
+
+==============================================================================
+F11 VERDICT: KILL  (binance KILL, bybit KILL)

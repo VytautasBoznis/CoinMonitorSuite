@@ -76,7 +76,24 @@
       "Bash(.venv/Scripts/python -m pytest -q -x)",
       "Bash(.venv/Scripts/python -m ruff check src tests probes/f8_repeg_deadband.py)",
       "Bash(.venv/Scripts/python -m ruff check src tests probes/f8_repeg_deadband.py --output-format concise)",
-      "Bash(.venv/Scripts/python -m ruff check probes/f8_repeg_deadband.py --output-format concise)"
+      "Bash(.venv/Scripts/python -m ruff check probes/f8_repeg_deadband.py --output-format concise)",
+      "Bash(git log *)",
+      "Bash(python -c ' *)",
+      "Bash(PYTHONIOENCODING=utf-8 .venv/Scripts/python.exe -c ' *)",
+      "Bash(COINMON_DB_DSN=postgresql://coinmon:coinmon@localhost:5433/coinmon PYTHONPATH='src;.' PYTHONIOENCODING=utf-8 .venv/Scripts/python -c ' *)",
+      "Bash(PYTHONPATH='src;.' PYTHONIOENCODING=utf-8 .venv/Scripts/python -c ' *)",
+      "Bash(PYTHONPATH=\"src;.\" PYTHONIOENCODING=utf-8 .venv/Scripts/python -u probes/f11_post_listing_drift_short.py)",
+      "Bash(tee runs/f11_post_listing_drift_short.log)",
+      "Bash(echo \"exit $?\")",
+      "Bash(tasklist //FI \"IMAGENAME eq python.exe\" //V //FO CSV)",
+      "Bash(PYTHONPATH='src;.' .venv/Scripts/python -c ' *)",
+      "Bash(tasklist //FI \"PID eq 20788\" //V //FO CSV)",
+      "Bash(rm \"C:/Users/Vytautas/.claude/projects/c--Dev-CoinMonitorSuite/memory/f11-post-listing-drift-spec.md\")",
+      "Bash(.venv/Scripts/python -m ruff check probes/f11_post_listing_drift_short.py --output-format concise)",
+      "Bash(cp runs/f11_post_listing_drift_short.log /tmp/f11_prev.log)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\Vytautas\\.claude\\projects\\c--Dev-CoinMonitorSuite\\memory"
     ]
   }
 }

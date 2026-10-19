@@ -153,16 +153,17 @@ def main() -> None:
     lo, hi = np.percentile(boots, [2.5, 97.5])
     t1 = lo > 0
     print(f"  T1 pick - BASE {diff.sum() / k / ho_years * 100:+.2f}%/yr, 95% CI"
-          f" [{lo * 100:+.2f}%, {hi * 100:+.2f}%] over {len(diff)} days : {'PASS' if t1 else 'FAIL'}")
+          f" [{lo * 100:+.2f}%, {hi * 100:+.2f}%] over {len(diff)} days :"
+          f" {'PASS' if t1 else 'FAIL'}")
 
     axes = (DEPTHS, TARGETS, HOLDS)
-    idx = [ax.index(v) for ax, v in zip(axes, pick)]
+    idx = [ax.index(v) for ax, v in zip(axes, pick, strict=True)]
     nbrs = []
     for d, step in itertools.product(range(3), (-1, 1)):
         j = list(idx)
         j[d] += step
         if 0 <= j[d] < len(axes[d]):
-            c = tuple(ax[x] for ax, x in zip(axes, j))
+            c = tuple(ax[x] for ax, x in zip(axes, j, strict=True))
             if c != BASE:
                 nbrs.append(c)
     t2 = all(res[c]["ho_acct"] > base["ho_acct"] for c in nbrs)

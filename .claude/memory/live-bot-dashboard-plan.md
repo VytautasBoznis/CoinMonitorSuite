@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: f655be08-d28b-48b8-91b6-b4b28bbce97c
-  modified: 2026-10-15T16:15:12.349Z
+  modified: 2026-10-19T20:03:06.246Z
 ---
 
 Owner, in a 2026-10-09 conversation with Fable (pasted into Claude Code): a bot running headless on the
@@ -213,6 +213,9 @@ Claude sets up and verifies read-only.
       the flatten. It now waits for a slot before each close, reads a fresh mid, and survives a
       rejected close.
     - 5 new tests fail on the old code.
+  - **Deployed (checked 2026-10-19 via public `userRateLimit`):** 3,060 of 10,023 used, ~300/day since
+    10-14, so the old churn is gone. The buffer runs out around mid-November. Live so far: ONE round trip
+    (ADA 10-14, +$0.01).
   - **Still unknown (watch after exhaustion):**
     - Does a throttled or rejected request still count in `nRequestsUsed`? If it does, the ~10k
       cancel headroom erodes too.

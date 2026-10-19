@@ -1,0 +1,5722 @@
+[
+ {
+  "protocol": "apecoin",
+  "coingecko_id": "apecoin",
+  "perp": "APE/USDT:USDT",
+  "day": "2022-09-15",
+  "share": 0.07956240676280457,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "apecoin",
+  "coingecko_id": "apecoin",
+  "perp": "APE/USDT:USDT",
+  "day": "2023-03-17",
+  "share": 0.06522625356706074,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "apecoin",
+  "coingecko_id": "apecoin",
+  "perp": "APE/USDT:USDT",
+  "day": "2023-04-16",
+  "share": 0.019867851446798812,
+  "kind": "step"
+ },
+ {
+  "protocol": "apecoin",
+  "coingecko_id": "apecoin",
+  "perp": "APE/USDT:USDT",
+  "day": "2023-05-17",
+  "share": 0.01914905297831457,
+  "kind": "step"
+ },
+ {
+  "protocol": "apecoin",
+  "coingecko_id": "apecoin",
+  "perp": "APE/USDT:USDT",
+  "day": "2023-06-16",
+  "share": 0.0184804492953269,
+  "kind": "step"
+ },
+ {
+  "protocol": "apecoin",
+  "coingecko_id": "apecoin",
+  "perp": "APE/USDT:USDT",
+  "day": "2023-07-16",
+  "share": 0.01785696001638253,
+  "kind": "step"
+ },
+ {
+  "protocol": "apecoin",
+  "coingecko_id": "apecoin",
+  "perp": "APE/USDT:USDT",
+  "day": "2023-08-16",
+  "share": 0.01727416798732171,
+  "kind": "step"
+ },
+ {
+  "protocol": "apecoin",
+  "coingecko_id": "apecoin",
+  "perp": "APE/USDT:USDT",
+  "day": "2023-09-15",
+  "share": 0.06737326746918612,
+  "kind": "cliff+step"
+ },
+ {
+  "protocol": "apecoin",
+  "coingecko_id": "apecoin",
+  "perp": "APE/USDT:USDT",
+  "day": "2023-10-16",
+  "share": 0.01545688203491979,
+  "kind": "step"
+ },
+ {
+  "protocol": "apecoin",
+  "coingecko_id": "apecoin",
+  "perp": "APE/USDT:USDT",
+  "day": "2023-11-15",
+  "share": 0.015018299246501615,
+  "kind": "step"
+ },
+ {
+  "protocol": "apecoin",
+  "coingecko_id": "apecoin",
+  "perp": "APE/USDT:USDT",
+  "day": "2023-12-16",
+  "share": 0.014603918941550826,
+  "kind": "step"
+ },
+ {
+  "protocol": "apecoin",
+  "coingecko_id": "apecoin",
+  "perp": "APE/USDT:USDT",
+  "day": "2024-01-15",
+  "share": 0.01421179154952532,
+  "kind": "step"
+ },
+ {
+  "protocol": "apecoin",
+  "coingecko_id": "apecoin",
+  "perp": "APE/USDT:USDT",
+  "day": "2024-02-15",
+  "share": 0.013840171414967064,
+  "kind": "step"
+ },
+ {
+  "protocol": "apecoin",
+  "coingecko_id": "apecoin",
+  "perp": "APE/USDT:USDT",
+  "day": "2024-03-16",
+  "share": 0.01348749081628707,
+  "kind": "step"
+ },
+ {
+  "protocol": "apecoin",
+  "coingecko_id": "apecoin",
+  "perp": "APE/USDT:USDT",
+  "day": "2024-04-15",
+  "share": 0.013152337858220208,
+  "kind": "step"
+ },
+ {
+  "protocol": "apecoin",
+  "coingecko_id": "apecoin",
+  "perp": "APE/USDT:USDT",
+  "day": "2024-05-16",
+  "share": 0.012833437580484932,
+  "kind": "step"
+ },
+ {
+  "protocol": "apecoin",
+  "coingecko_id": "apecoin",
+  "perp": "APE/USDT:USDT",
+  "day": "2024-06-15",
+  "share": 0.012529635749694661,
+  "kind": "step"
+ },
+ {
+  "protocol": "apecoin",
+  "coingecko_id": "apecoin",
+  "perp": "APE/USDT:USDT",
+  "day": "2024-07-16",
+  "share": 0.012239884900164928,
+  "kind": "step"
+ },
+ {
+  "protocol": "apecoin",
+  "coingecko_id": "apecoin",
+  "perp": "APE/USDT:USDT",
+  "day": "2024-08-15",
+  "share": 0.011963232267800794,
+  "kind": "step"
+ },
+ {
+  "protocol": "apecoin",
+  "coingecko_id": "apecoin",
+  "perp": "APE/USDT:USDT",
+  "day": "2024-09-15",
+  "share": 0.011698809324165688,
+  "kind": "step"
+ },
+ {
+  "protocol": "apecoin",
+  "coingecko_id": "apecoin",
+  "perp": "APE/USDT:USDT",
+  "day": "2024-10-15",
+  "share": 0.011445822668504298,
+  "kind": "step"
+ },
+ {
+  "protocol": "apecoin",
+  "coingecko_id": "apecoin",
+  "perp": "APE/USDT:USDT",
+  "day": "2024-11-14",
+  "share": 0.011203546076510454,
+  "kind": "step"
+ },
+ {
+  "protocol": "apecoin",
+  "coingecko_id": "apecoin",
+  "perp": "APE/USDT:USDT",
+  "day": "2024-12-15",
+  "share": 0.010971313537996978,
+  "kind": "step"
+ },
+ {
+  "protocol": "apecoin",
+  "coingecko_id": "apecoin",
+  "perp": "APE/USDT:USDT",
+  "day": "2025-01-14",
+  "share": 0.01074851314289236,
+  "kind": "step"
+ },
+ {
+  "protocol": "apecoin",
+  "coingecko_id": "apecoin",
+  "perp": "APE/USDT:USDT",
+  "day": "2025-02-14",
+  "share": 0.010534581697372395,
+  "kind": "step"
+ },
+ {
+  "protocol": "apecoin",
+  "coingecko_id": "apecoin",
+  "perp": "APE/USDT:USDT",
+  "day": "2025-03-16",
+  "share": 0.01032899997038704,
+  "kind": "step"
+ },
+ {
+  "protocol": "apecoin",
+  "coingecko_id": "apecoin",
+  "perp": "APE/USDT:USDT",
+  "day": "2025-04-16",
+  "share": 0.01013128848611595,
+  "kind": "step"
+ },
+ {
+  "protocol": "api3",
+  "coingecko_id": "api3",
+  "perp": "API3/USDT:USDT",
+  "day": "2021-06-01",
+  "share": 0.13676151376925594,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2023-11-12",
+  "share": 0.10736462085126121,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2023-12-12",
+  "share": 0.0948957136234999,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2024-01-11",
+  "share": 0.08502163356884818,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2024-02-11",
+  "share": 0.07700872844836075,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2024-03-12",
+  "share": 0.07037609885510165,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2024-04-12",
+  "share": 0.06479538368196679,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2024-05-12",
+  "share": 0.02001157449662191,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2024-06-12",
+  "share": 0.01936387114305327,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2024-07-12",
+  "share": 0.018756780983930844,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2024-08-12",
+  "share": 0.01818660026103702,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2024-09-11",
+  "share": 0.01765006228672327,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2024-10-11",
+  "share": 0.01714427481953735,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2024-11-11",
+  "share": 0.01666666790742649,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2024-12-11",
+  "share": 0.016214950212593313,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2025-01-11",
+  "share": 0.015787072251315204,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2025-02-10",
+  "share": 0.015381195304267946,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2025-03-13",
+  "share": 0.014995665002433543,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2025-04-12",
+  "share": 0.014628988788295699,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2025-05-12",
+  "share": 0.014279816604841594,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2025-06-12",
+  "share": 0.013946924285641591,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2025-07-12",
+  "share": 0.013629199215273877,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2025-08-12",
+  "share": 0.013325627906112728,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2025-09-11",
+  "share": 0.013035285199200383,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2025-10-12",
+  "share": 0.012757324846782334,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2025-11-11",
+  "share": 0.012490971274576787,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2025-12-12",
+  "share": 0.012235512354887113,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2026-01-11",
+  "share": 0.011990293048744825,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2026-02-10",
+  "share": 0.011754709797561182,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2026-03-13",
+  "share": 0.011528205563190197,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2026-04-12",
+  "share": 0.011310265430595752,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2026-05-13",
+  "share": 0.011100412700052234,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2026-06-12",
+  "share": 0.010898205406456597,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2026-07-13",
+  "share": 0.010703233212263798,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2026-08-12",
+  "share": 0.010515114628078312,
+  "kind": "step"
+ },
+ {
+  "protocol": "aptos",
+  "coingecko_id": "aptos",
+  "perp": "APT/USDT:USDT",
+  "day": "2026-09-11",
+  "share": 0.010333494521286145,
+  "kind": "step"
+ },
+ {
+  "protocol": "arbitrum",
+  "coingecko_id": "arbitrum",
+  "perp": "ARB/USDT:USDT",
+  "day": "2024-03-16",
+  "share": 0.8337346085926672,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "arbitrum",
+  "coingecko_id": "arbitrum",
+  "perp": "ARB/USDT:USDT",
+  "day": "2024-04-15",
+  "share": 0.03765159734943003,
+  "kind": "step"
+ },
+ {
+  "protocol": "arbitrum",
+  "coingecko_id": "arbitrum",
+  "perp": "ARB/USDT:USDT",
+  "day": "2024-05-15",
+  "share": 0.03606784461482334,
+  "kind": "step"
+ },
+ {
+  "protocol": "arbitrum",
+  "coingecko_id": "arbitrum",
+  "perp": "ARB/USDT:USDT",
+  "day": "2024-06-15",
+  "share": 0.034605312950076184,
+  "kind": "step"
+ },
+ {
+  "protocol": "arbitrum",
+  "coingecko_id": "arbitrum",
+  "perp": "ARB/USDT:USDT",
+  "day": "2024-07-15",
+  "share": 0.033262898394727895,
+  "kind": "step"
+ },
+ {
+  "protocol": "arbitrum",
+  "coingecko_id": "arbitrum",
+  "perp": "ARB/USDT:USDT",
+  "day": "2024-08-15",
+  "share": 0.03201506450360206,
+  "kind": "step"
+ },
+ {
+  "protocol": "arbitrum",
+  "coingecko_id": "arbitrum",
+  "perp": "ARB/USDT:USDT",
+  "day": "2024-09-14",
+  "share": 0.030862745508408746,
+  "kind": "step"
+ },
+ {
+  "protocol": "arbitrum",
+  "coingecko_id": "arbitrum",
+  "perp": "ARB/USDT:USDT",
+  "day": "2024-10-15",
+  "share": 0.029785578834327694,
+  "kind": "step"
+ },
+ {
+  "protocol": "arbitrum",
+  "coingecko_id": "arbitrum",
+  "perp": "ARB/USDT:USDT",
+  "day": "2024-11-14",
+  "share": 0.02878565717606216,
+  "kind": "step"
+ },
+ {
+  "protocol": "arbitrum",
+  "coingecko_id": "arbitrum",
+  "perp": "ARB/USDT:USDT",
+  "day": "2024-12-14",
+  "share": 0.027850690987525573,
+  "kind": "step"
+ },
+ {
+  "protocol": "arbitrum",
+  "coingecko_id": "arbitrum",
+  "perp": "ARB/USDT:USDT",
+  "day": "2025-01-14",
+  "share": 0.02697051891676254,
+  "kind": "step"
+ },
+ {
+  "protocol": "arbitrum",
+  "coingecko_id": "arbitrum",
+  "perp": "ARB/USDT:USDT",
+  "day": "2025-02-13",
+  "share": 0.026148063040510757,
+  "kind": "step"
+ },
+ {
+  "protocol": "arbitrum",
+  "coingecko_id": "arbitrum",
+  "perp": "ARB/USDT:USDT",
+  "day": "2025-03-16",
+  "share": 0.025370716687360094,
+  "kind": "step"
+ },
+ {
+  "protocol": "arbitrum",
+  "coingecko_id": "arbitrum",
+  "perp": "ARB/USDT:USDT",
+  "day": "2025-04-15",
+  "share": 0.02464161894224585,
+  "kind": "step"
+ },
+ {
+  "protocol": "arbitrum",
+  "coingecko_id": "arbitrum",
+  "perp": "ARB/USDT:USDT",
+  "day": "2025-05-16",
+  "share": 0.02395007710440516,
+  "kind": "step"
+ },
+ {
+  "protocol": "arbitrum",
+  "coingecko_id": "arbitrum",
+  "perp": "ARB/USDT:USDT",
+  "day": "2025-06-15",
+  "share": 0.023299298095920247,
+  "kind": "step"
+ },
+ {
+  "protocol": "arbitrum",
+  "coingecko_id": "arbitrum",
+  "perp": "ARB/USDT:USDT",
+  "day": "2025-07-16",
+  "share": 0.022680099309849083,
+  "kind": "step"
+ },
+ {
+  "protocol": "arbitrum",
+  "coingecko_id": "arbitrum",
+  "perp": "ARB/USDT:USDT",
+  "day": "2025-08-15",
+  "share": 0.02209566485964465,
+  "kind": "step"
+ },
+ {
+  "protocol": "arbitrum",
+  "coingecko_id": "arbitrum",
+  "perp": "ARB/USDT:USDT",
+  "day": "2025-09-14",
+  "share": 0.02154059387144712,
+  "kind": "step"
+ },
+ {
+  "protocol": "arbitrum",
+  "coingecko_id": "arbitrum",
+  "perp": "ARB/USDT:USDT",
+  "day": "2025-10-15",
+  "share": 0.021010281390943908,
+  "kind": "step"
+ },
+ {
+  "protocol": "arbitrum",
+  "coingecko_id": "arbitrum",
+  "perp": "ARB/USDT:USDT",
+  "day": "2025-11-14",
+  "share": 0.020507783351221227,
+  "kind": "step"
+ },
+ {
+  "protocol": "arbitrum",
+  "coingecko_id": "arbitrum",
+  "perp": "ARB/USDT:USDT",
+  "day": "2025-12-15",
+  "share": 0.020026537611479163,
+  "kind": "step"
+ },
+ {
+  "protocol": "arbitrum",
+  "coingecko_id": "arbitrum",
+  "perp": "ARB/USDT:USDT",
+  "day": "2026-01-14",
+  "share": 0.01956948206426657,
+  "kind": "step"
+ },
+ {
+  "protocol": "arbitrum",
+  "coingecko_id": "arbitrum",
+  "perp": "ARB/USDT:USDT",
+  "day": "2026-02-14",
+  "share": 0.01913079517020854,
+  "kind": "step"
+ },
+ {
+  "protocol": "arbitrum",
+  "coingecko_id": "arbitrum",
+  "perp": "ARB/USDT:USDT",
+  "day": "2026-03-16",
+  "share": 0.01871328520988825,
+  "kind": "step"
+ },
+ {
+  "protocol": "arbitrum",
+  "coingecko_id": "arbitrum",
+  "perp": "ARB/USDT:USDT",
+  "day": "2026-04-15",
+  "share": 0.01831360948796384,
+  "kind": "step"
+ },
+ {
+  "protocol": "arbitrum",
+  "coingecko_id": "arbitrum",
+  "perp": "ARB/USDT:USDT",
+  "day": "2026-05-16",
+  "share": 0.017928867908724992,
+  "kind": "step"
+ },
+ {
+  "protocol": "arbitrum",
+  "coingecko_id": "arbitrum",
+  "perp": "ARB/USDT:USDT",
+  "day": "2026-06-15",
+  "share": 0.017561668126098304,
+  "kind": "step"
+ },
+ {
+  "protocol": "arbitrum",
+  "coingecko_id": "arbitrum",
+  "perp": "ARB/USDT:USDT",
+  "day": "2026-07-16",
+  "share": 0.017207566813382955,
+  "kind": "step"
+ },
+ {
+  "protocol": "arbitrum",
+  "coingecko_id": "arbitrum",
+  "perp": "ARB/USDT:USDT",
+  "day": "2026-08-15",
+  "share": 0.016869039586205524,
+  "kind": "step"
+ },
+ {
+  "protocol": "arbitrum",
+  "coingecko_id": "arbitrum",
+  "perp": "ARB/USDT:USDT",
+  "day": "2026-09-15",
+  "share": 0.016542058807103882,
+  "kind": "step"
+ },
+ {
+  "protocol": "avax",
+  "coingecko_id": "avalanche-2",
+  "perp": "AVAX/USDT:USDT",
+  "day": "2021-01-23",
+  "share": 1.7071616666630487,
+  "kind": "step"
+ },
+ {
+  "protocol": "avax",
+  "coingecko_id": "avalanche-2",
+  "perp": "AVAX/USDT:USDT",
+  "day": "2021-04-25",
+  "share": 0.2869020525240084,
+  "kind": "step"
+ },
+ {
+  "protocol": "avax",
+  "coingecko_id": "avalanche-2",
+  "perp": "AVAX/USDT:USDT",
+  "day": "2021-07-25",
+  "share": 0.15669513398716708,
+  "kind": "step"
+ },
+ {
+  "protocol": "avax",
+  "coingecko_id": "avalanche-2",
+  "perp": "AVAX/USDT:USDT",
+  "day": "2021-10-24",
+  "share": 0.10778036120178375,
+  "kind": "step"
+ },
+ {
+  "protocol": "avax",
+  "coingecko_id": "avalanche-2",
+  "perp": "AVAX/USDT:USDT",
+  "day": "2022-01-23",
+  "share": 0.031727634733294104,
+  "kind": "step"
+ },
+ {
+  "protocol": "avax",
+  "coingecko_id": "avalanche-2",
+  "perp": "AVAX/USDT:USDT",
+  "day": "2022-04-25",
+  "share": 0.028383969556312068,
+  "kind": "step"
+ },
+ {
+  "protocol": "avax",
+  "coingecko_id": "avalanche-2",
+  "perp": "AVAX/USDT:USDT",
+  "day": "2022-07-25",
+  "share": 0.025683730500341055,
+  "kind": "step"
+ },
+ {
+  "protocol": "avax",
+  "coingecko_id": "avalanche-2",
+  "perp": "AVAX/USDT:USDT",
+  "day": "2022-10-24",
+  "share": 0.024296806427763135,
+  "kind": "step"
+ },
+ {
+  "protocol": "avax",
+  "coingecko_id": "avalanche-2",
+  "perp": "AVAX/USDT:USDT",
+  "day": "2023-01-24",
+  "share": 0.023047273733247855,
+  "kind": "step"
+ },
+ {
+  "protocol": "avax",
+  "coingecko_id": "avalanche-2",
+  "perp": "AVAX/USDT:USDT",
+  "day": "2023-04-25",
+  "share": 0.02192424813181948,
+  "kind": "step"
+ },
+ {
+  "protocol": "avax",
+  "coingecko_id": "avalanche-2",
+  "perp": "AVAX/USDT:USDT",
+  "day": "2023-07-25",
+  "share": 0.02090558089881678,
+  "kind": "step"
+ },
+ {
+  "protocol": "avax",
+  "coingecko_id": "avalanche-2",
+  "perp": "AVAX/USDT:USDT",
+  "day": "2023-10-25",
+  "share": 0.0199738245905629,
+  "kind": "step"
+ },
+ {
+  "protocol": "avax",
+  "coingecko_id": "avalanche-2",
+  "perp": "AVAX/USDT:USDT",
+  "day": "2024-01-24",
+  "share": 0.0191248313473206,
+  "kind": "step"
+ },
+ {
+  "protocol": "avax",
+  "coingecko_id": "avalanche-2",
+  "perp": "AVAX/USDT:USDT",
+  "day": "2024-04-24",
+  "share": 0.018345068842475377,
+  "kind": "step"
+ },
+ {
+  "protocol": "avax",
+  "coingecko_id": "avalanche-2",
+  "perp": "AVAX/USDT:USDT",
+  "day": "2024-07-25",
+  "share": 0.017623639476789972,
+  "kind": "step"
+ },
+ {
+  "protocol": "avax",
+  "coingecko_id": "avalanche-2",
+  "perp": "AVAX/USDT:USDT",
+  "day": "2024-10-24",
+  "share": 0.016959360570410715,
+  "kind": "step"
+ },
+ {
+  "protocol": "axelar",
+  "coingecko_id": "axelar",
+  "perp": "AXL/USDT:USDT",
+  "day": "2023-01-26",
+  "share": 0.4852648221343873,
+  "kind": "step"
+ },
+ {
+  "protocol": "axelar",
+  "coingecko_id": "axelar",
+  "perp": "AXL/USDT:USDT",
+  "day": "2023-02-26",
+  "share": 0.2668345509289177,
+  "kind": "step"
+ },
+ {
+  "protocol": "axelar",
+  "coingecko_id": "axelar",
+  "perp": "AXL/USDT:USDT",
+  "day": "2023-03-28",
+  "share": 0.1840078495947307,
+  "kind": "step"
+ },
+ {
+  "protocol": "axelar",
+  "coingecko_id": "axelar",
+  "perp": "AXL/USDT:USDT",
+  "day": "2023-04-28",
+  "share": 0.14042062595217292,
+  "kind": "step"
+ },
+ {
+  "protocol": "axelar",
+  "coingecko_id": "axelar",
+  "perp": "AXL/USDT:USDT",
+  "day": "2023-05-28",
+  "share": 0.11352836883804772,
+  "kind": "step"
+ },
+ {
+  "protocol": "axelar",
+  "coingecko_id": "axelar",
+  "perp": "AXL/USDT:USDT",
+  "day": "2023-06-27",
+  "share": 0.09528091515374149,
+  "kind": "step"
+ },
+ {
+  "protocol": "axelar",
+  "coingecko_id": "axelar",
+  "perp": "AXL/USDT:USDT",
+  "day": "2023-07-28",
+  "share": 0.08208703745306332,
+  "kind": "step"
+ },
+ {
+  "protocol": "axelar",
+  "coingecko_id": "axelar",
+  "perp": "AXL/USDT:USDT",
+  "day": "2023-08-27",
+  "share": 0.07366154998128042,
+  "kind": "step"
+ },
+ {
+  "protocol": "axelar",
+  "coingecko_id": "axelar",
+  "perp": "AXL/USDT:USDT",
+  "day": "2023-09-27",
+  "share": 0.06680465954501527,
+  "kind": "step"
+ },
+ {
+  "protocol": "axelar",
+  "coingecko_id": "axelar",
+  "perp": "AXL/USDT:USDT",
+  "day": "2023-10-27",
+  "share": 0.06111562447731238,
+  "kind": "step"
+ },
+ {
+  "protocol": "axelar",
+  "coingecko_id": "axelar",
+  "perp": "AXL/USDT:USDT",
+  "day": "2023-11-27",
+  "share": 0.05631949796322801,
+  "kind": "step"
+ },
+ {
+  "protocol": "axelar",
+  "coingecko_id": "axelar",
+  "perp": "AXL/USDT:USDT",
+  "day": "2023-12-27",
+  "share": 0.05222136017476878,
+  "kind": "step"
+ },
+ {
+  "protocol": "axelar",
+  "coingecko_id": "axelar",
+  "perp": "AXL/USDT:USDT",
+  "day": "2024-01-26",
+  "share": 0.04867917705498354,
+  "kind": "step"
+ },
+ {
+  "protocol": "axelar",
+  "coingecko_id": "axelar",
+  "perp": "AXL/USDT:USDT",
+  "day": "2024-02-26",
+  "share": 0.04558700340420982,
+  "kind": "step"
+ },
+ {
+  "protocol": "axelar",
+  "coingecko_id": "axelar",
+  "perp": "AXL/USDT:USDT",
+  "day": "2024-03-27",
+  "share": 0.04286420539290443,
+  "kind": "step"
+ },
+ {
+  "protocol": "axelar",
+  "coingecko_id": "axelar",
+  "perp": "AXL/USDT:USDT",
+  "day": "2024-04-27",
+  "share": 0.04044832766664031,
+  "kind": "step"
+ },
+ {
+  "protocol": "axelar",
+  "coingecko_id": "axelar",
+  "perp": "AXL/USDT:USDT",
+  "day": "2024-05-27",
+  "share": 0.03829024386592614,
+  "kind": "step"
+ },
+ {
+  "protocol": "axelar",
+  "coingecko_id": "axelar",
+  "perp": "AXL/USDT:USDT",
+  "day": "2024-06-27",
+  "share": 0.036350780950215315,
+  "kind": "step"
+ },
+ {
+  "protocol": "axelar",
+  "coingecko_id": "axelar",
+  "perp": "AXL/USDT:USDT",
+  "day": "2024-07-27",
+  "share": 0.0345983199642891,
+  "kind": "step"
+ },
+ {
+  "protocol": "axelar",
+  "coingecko_id": "axelar",
+  "perp": "AXL/USDT:USDT",
+  "day": "2024-08-27",
+  "share": 0.03300705888425753,
+  "kind": "step"
+ },
+ {
+  "protocol": "axelar",
+  "coingecko_id": "axelar",
+  "perp": "AXL/USDT:USDT",
+  "day": "2024-09-26",
+  "share": 0.03155573376102647,
+  "kind": "step"
+ },
+ {
+  "protocol": "axelar",
+  "coingecko_id": "axelar",
+  "perp": "AXL/USDT:USDT",
+  "day": "2024-10-26",
+  "share": 0.03022666304257909,
+  "kind": "step"
+ },
+ {
+  "protocol": "axelar",
+  "coingecko_id": "axelar",
+  "perp": "AXL/USDT:USDT",
+  "day": "2024-11-26",
+  "share": 0.029005023644013018,
+  "kind": "step"
+ },
+ {
+  "protocol": "babylon",
+  "coingecko_id": "babylon",
+  "perp": "BABY/USDT:USDT",
+  "day": "2026-04-10",
+  "share": 0.2552083333333333,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "berachain",
+  "coingecko_id": "berachain-bera",
+  "perp": "BERA/USDT:USDT",
+  "day": "2026-02-06",
+  "share": 0.40579710144927533,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "blur",
+  "coingecko_id": "blur",
+  "perp": "BLUR/USDT:USDT",
+  "day": "2023-06-15",
+  "share": 0.8825571884985773,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "bouncebit",
+  "coingecko_id": "bouncebit",
+  "perp": "BB/USDT:USDT",
+  "day": "2025-05-12",
+  "share": 0.06119672784891314,
+  "kind": "step"
+ },
+ {
+  "protocol": "bouncebit",
+  "coingecko_id": "bouncebit",
+  "perp": "BB/USDT:USDT",
+  "day": "2025-06-12",
+  "share": 0.05592046245494768,
+  "kind": "step"
+ },
+ {
+  "protocol": "bouncebit",
+  "coingecko_id": "bouncebit",
+  "perp": "BB/USDT:USDT",
+  "day": "2025-07-12",
+  "share": 0.0514996288025399,
+  "kind": "step"
+ },
+ {
+  "protocol": "bouncebit",
+  "coingecko_id": "bouncebit",
+  "perp": "BB/USDT:USDT",
+  "day": "2025-08-11",
+  "share": 0.04772656944213573,
+  "kind": "step"
+ },
+ {
+  "protocol": "bouncebit",
+  "coingecko_id": "bouncebit",
+  "perp": "BB/USDT:USDT",
+  "day": "2025-09-11",
+  "share": 0.04445533421131521,
+  "kind": "step"
+ },
+ {
+  "protocol": "bouncebit",
+  "coingecko_id": "bouncebit",
+  "perp": "BB/USDT:USDT",
+  "day": "2025-10-11",
+  "share": 0.04161540615869754,
+  "kind": "step"
+ },
+ {
+  "protocol": "bouncebit",
+  "coingecko_id": "bouncebit",
+  "perp": "BB/USDT:USDT",
+  "day": "2025-11-11",
+  "share": 0.039106248393653606,
+  "kind": "step"
+ },
+ {
+  "protocol": "bouncebit",
+  "coingecko_id": "bouncebit",
+  "perp": "BB/USDT:USDT",
+  "day": "2025-12-11",
+  "share": 0.036891608753655755,
+  "kind": "step"
+ },
+ {
+  "protocol": "bouncebit",
+  "coingecko_id": "bouncebit",
+  "perp": "BB/USDT:USDT",
+  "day": "2026-01-11",
+  "share": 0.03490616577964586,
+  "kind": "step"
+ },
+ {
+  "protocol": "bouncebit",
+  "coingecko_id": "bouncebit",
+  "perp": "BB/USDT:USDT",
+  "day": "2026-02-10",
+  "share": 0.03313089488081953,
+  "kind": "step"
+ },
+ {
+  "protocol": "bouncebit",
+  "coingecko_id": "bouncebit",
+  "perp": "BB/USDT:USDT",
+  "day": "2026-03-13",
+  "share": 0.03152077670138786,
+  "kind": "step"
+ },
+ {
+  "protocol": "bouncebit",
+  "coingecko_id": "bouncebit",
+  "perp": "BB/USDT:USDT",
+  "day": "2026-04-12",
+  "share": 0.030065982276869546,
+  "kind": "step"
+ },
+ {
+  "protocol": "bouncebit",
+  "coingecko_id": "bouncebit",
+  "perp": "BB/USDT:USDT",
+  "day": "2026-05-12",
+  "share": 0.028739551167699353,
+  "kind": "step"
+ },
+ {
+  "protocol": "bouncebit",
+  "coingecko_id": "bouncebit",
+  "perp": "BB/USDT:USDT",
+  "day": "2026-06-12",
+  "share": 0.027520118144143978,
+  "kind": "step"
+ },
+ {
+  "protocol": "bouncebit",
+  "coingecko_id": "bouncebit",
+  "perp": "BB/USDT:USDT",
+  "day": "2026-07-12",
+  "share": 0.02640464295794932,
+  "kind": "step"
+ },
+ {
+  "protocol": "bouncebit",
+  "coingecko_id": "bouncebit",
+  "perp": "BB/USDT:USDT",
+  "day": "2026-08-12",
+  "share": 0.025371742954601432,
+  "kind": "step"
+ },
+ {
+  "protocol": "bouncebit",
+  "coingecko_id": "bouncebit",
+  "perp": "BB/USDT:USDT",
+  "day": "2026-09-11",
+  "share": 0.024420620746358562,
+  "kind": "step"
+ },
+ {
+  "protocol": "celestia",
+  "coingecko_id": "celestia",
+  "perp": "TIA/USDT:USDT",
+  "day": "2024-10-30",
+  "share": 0.6575280898876404,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2020-05-01",
+  "share": 0.04003292450227005,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2020-05-31",
+  "share": 0.06639198402684868,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2020-07-01",
+  "share": 0.061164411252156006,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2020-07-31",
+  "share": 0.056708831061856695,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2020-08-31",
+  "share": 0.05285061635254422,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2020-09-30",
+  "share": 0.04949070031177022,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2020-10-31",
+  "share": 0.0465264866864253,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2020-11-30",
+  "share": 0.043902598896680536,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2020-12-30",
+  "share": 0.04155886307755848,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2021-01-30",
+  "share": 0.03944839569456157,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2021-03-01",
+  "share": 0.03754580430307851,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2021-04-01",
+  "share": 0.03581475652085917,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2021-05-01",
+  "share": 0.03423952461857058,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2021-06-01",
+  "share": 0.03265299767639525,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2021-07-01",
+  "share": 0.03120967131044311,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2021-07-31",
+  "share": 0.02988853940721753,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2021-08-31",
+  "share": 0.028672448230103526,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2021-09-30",
+  "share": 0.02755353998627311,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2021-10-31",
+  "share": 0.026516741794517254,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2021-11-30",
+  "share": 0.025556940535914525,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2021-12-31",
+  "share": 0.024662517577819683,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2022-01-30",
+  "share": 0.023830147552880456,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2022-03-02",
+  "share": 0.023050664202102895,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2022-04-01",
+  "share": 0.02232193272039054,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2022-05-01",
+  "share": 0.021637865920615423,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2022-06-01",
+  "share": 0.02099326476992454,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2022-07-01",
+  "share": 0.02038710401546004,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2022-08-01",
+  "share": 0.01981388338914561,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2022-08-31",
+  "share": 0.01927303928195655,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2022-10-01",
+  "share": 0.018759966549844867,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2022-10-31",
+  "share": 0.018274423177774297,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2022-11-30",
+  "share": 0.017813379272552696,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2022-12-31",
+  "share": 0.01737419411742607,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2023-01-30",
+  "share": 0.016956936422807076,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2023-03-02",
+  "share": 0.01655849460692639,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2023-04-01",
+  "share": 0.016179068971378115,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2023-05-02",
+  "share": 0.015815952829510746,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2023-06-01",
+  "share": 0.015469437715430474,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2023-07-02",
+  "share": 0.015137149232740349,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2023-08-01",
+  "share": 0.014819441187157497,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2023-08-31",
+  "share": 0.014514795494776661,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2023-10-01",
+  "share": 0.014221865293551891,
+  "kind": "step"
+ },
+ {
+  "protocol": "celo",
+  "coingecko_id": "celo",
+  "perp": "CELO/USDT:USDT",
+  "day": "2023-10-31",
+  "share": 0.013941060405988515,
+  "kind": "step"
+ },
+ {
+  "protocol": "cyberConnect",
+  "coingecko_id": "cyberconnect",
+  "perp": "CYBER/USDT:USDT",
+  "day": "2023-09-14",
+  "share": 0.03421249066932073,
+  "kind": "step"
+ },
+ {
+  "protocol": "cyberConnect",
+  "coingecko_id": "cyberconnect",
+  "perp": "CYBER/USDT:USDT",
+  "day": "2023-10-14",
+  "share": 0.029572701349769775,
+  "kind": "step"
+ },
+ {
+  "protocol": "cyberConnect",
+  "coingecko_id": "cyberconnect",
+  "perp": "CYBER/USDT:USDT",
+  "day": "2023-11-14",
+  "share": 0.02604109126376627,
+  "kind": "step"
+ },
+ {
+  "protocol": "cyberConnect",
+  "coingecko_id": "cyberconnect",
+  "perp": "CYBER/USDT:USDT",
+  "day": "2023-12-14",
+  "share": 0.021788477460810453,
+  "kind": "step"
+ },
+ {
+  "protocol": "cyberConnect",
+  "coingecko_id": "cyberconnect",
+  "perp": "CYBER/USDT:USDT",
+  "day": "2024-01-14",
+  "share": 0.019809159755470932,
+  "kind": "step"
+ },
+ {
+  "protocol": "cyberConnect",
+  "coingecko_id": "cyberconnect",
+  "perp": "CYBER/USDT:USDT",
+  "day": "2024-02-13",
+  "share": 0.018159506501653613,
+  "kind": "step"
+ },
+ {
+  "protocol": "cyberConnect",
+  "coingecko_id": "cyberconnect",
+  "perp": "CYBER/USDT:USDT",
+  "day": "2024-03-15",
+  "share": 0.015984004370898648,
+  "kind": "step"
+ },
+ {
+  "protocol": "cyberConnect",
+  "coingecko_id": "cyberconnect",
+  "perp": "CYBER/USDT:USDT",
+  "day": "2024-04-14",
+  "share": 0.015201082685598312,
+  "kind": "step"
+ },
+ {
+  "protocol": "cyberConnect",
+  "coingecko_id": "cyberconnect",
+  "perp": "CYBER/USDT:USDT",
+  "day": "2024-05-14",
+  "share": 0.014491277129427303,
+  "kind": "step"
+ },
+ {
+  "protocol": "cyberConnect",
+  "coingecko_id": "cyberconnect",
+  "perp": "CYBER/USDT:USDT",
+  "day": "2024-06-14",
+  "share": 0.013308780649516891,
+  "kind": "step"
+ },
+ {
+  "protocol": "cyberConnect",
+  "coingecko_id": "cyberconnect",
+  "perp": "CYBER/USDT:USDT",
+  "day": "2024-07-14",
+  "share": 0.012761514366371478,
+  "kind": "step"
+ },
+ {
+  "protocol": "cyberConnect",
+  "coingecko_id": "cyberconnect",
+  "perp": "CYBER/USDT:USDT",
+  "day": "2024-08-14",
+  "share": 0.012257478361836304,
+  "kind": "step"
+ },
+ {
+  "protocol": "cyberConnect",
+  "coingecko_id": "cyberconnect",
+  "perp": "CYBER/USDT:USDT",
+  "day": "2024-09-13",
+  "share": 0.01140066496969496,
+  "kind": "step"
+ },
+ {
+  "protocol": "cyberConnect",
+  "coingecko_id": "cyberconnect",
+  "perp": "CYBER/USDT:USDT",
+  "day": "2024-10-14",
+  "share": 0.01099669366077266,
+  "kind": "step"
+ },
+ {
+  "protocol": "cyberConnect",
+  "coingecko_id": "cyberconnect",
+  "perp": "CYBER/USDT:USDT",
+  "day": "2024-11-13",
+  "share": 0.09146392485154008,
+  "kind": "step"
+ },
+ {
+  "protocol": "cyberConnect",
+  "coingecko_id": "cyberconnect",
+  "perp": "CYBER/USDT:USDT",
+  "day": "2025-02-12",
+  "share": 0.07531593204923467,
+  "kind": "step"
+ },
+ {
+  "protocol": "cyberConnect",
+  "coingecko_id": "cyberconnect",
+  "perp": "CYBER/USDT:USDT",
+  "day": "2025-05-15",
+  "share": 0.06192206796175734,
+  "kind": "step"
+ },
+ {
+  "protocol": "cyberConnect",
+  "coingecko_id": "cyberconnect",
+  "perp": "CYBER/USDT:USDT",
+  "day": "2025-08-14",
+  "share": 0.05257275369868375,
+  "kind": "step"
+ },
+ {
+  "protocol": "cyberConnect",
+  "coingecko_id": "cyberconnect",
+  "perp": "CYBER/USDT:USDT",
+  "day": "2025-11-13",
+  "share": 0.04567630829997345,
+  "kind": "step"
+ },
+ {
+  "protocol": "cyberConnect",
+  "coingecko_id": "cyberconnect",
+  "perp": "CYBER/USDT:USDT",
+  "day": "2026-02-13",
+  "share": 0.040379378612228095,
+  "kind": "step"
+ },
+ {
+  "protocol": "cyberConnect",
+  "coingecko_id": "cyberconnect",
+  "perp": "CYBER/USDT:USDT",
+  "day": "2026-05-15",
+  "share": 0.03618331931155441,
+  "kind": "step"
+ },
+ {
+  "protocol": "cyberConnect",
+  "coingecko_id": "cyberconnect",
+  "perp": "CYBER/USDT:USDT",
+  "day": "2026-08-14",
+  "share": 0.03277724276726658,
+  "kind": "step"
+ },
+ {
+  "protocol": "dodo",
+  "coingecko_id": "dodo",
+  "perp": "DODO/USDT:USDT",
+  "day": "2021-02-13",
+  "share": 0.1111111111111111,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "eigenlayer",
+  "coingecko_id": "eigenlayer",
+  "perp": "EIGEN/USDT:USDT",
+  "day": "2025-10-01",
+  "share": 0.15076447543763366,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "eigenlayer",
+  "coingecko_id": "eigenlayer",
+  "perp": "EIGEN/USDT:USDT",
+  "day": "2025-11-01",
+  "share": 0.12557822742820104,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "eigenlayer",
+  "coingecko_id": "eigenlayer",
+  "perp": "EIGEN/USDT:USDT",
+  "day": "2025-12-01",
+  "share": 0.10750668847169713,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "eigenlayer",
+  "coingecko_id": "eigenlayer",
+  "perp": "EIGEN/USDT:USDT",
+  "day": "2026-01-01",
+  "share": 0.09386802575246378,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "eigenlayer",
+  "coingecko_id": "eigenlayer",
+  "perp": "EIGEN/USDT:USDT",
+  "day": "2026-02-01",
+  "share": 0.08264409672205039,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "eigenlayer",
+  "coingecko_id": "eigenlayer",
+  "perp": "EIGEN/USDT:USDT",
+  "day": "2026-03-01",
+  "share": 0.0738455128663386,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "eigenlayer",
+  "coingecko_id": "eigenlayer",
+  "perp": "EIGEN/USDT:USDT",
+  "day": "2026-04-01",
+  "share": 0.06660339747297182,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "eigenlayer",
+  "coingecko_id": "eigenlayer",
+  "perp": "EIGEN/USDT:USDT",
+  "day": "2026-05-01",
+  "share": 0.06060783243108302,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "eigenlayer",
+  "coingecko_id": "eigenlayer",
+  "perp": "EIGEN/USDT:USDT",
+  "day": "2026-06-01",
+  "share": 0.05583489317799959,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "eigenlayer",
+  "coingecko_id": "eigenlayer",
+  "perp": "EIGEN/USDT:USDT",
+  "day": "2026-07-01",
+  "share": 0.05154135106659505,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "eigenlayer",
+  "coingecko_id": "eigenlayer",
+  "perp": "EIGEN/USDT:USDT",
+  "day": "2026-08-01",
+  "share": 0.04784185140883984,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "eigenlayer",
+  "coingecko_id": "eigenlayer",
+  "perp": "EIGEN/USDT:USDT",
+  "day": "2026-09-01",
+  "share": 0.044479776152362586,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2021-12-08",
+  "share": 0.03072424891719803,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2022-01-07",
+  "share": 0.029329673112738427,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2022-02-07",
+  "share": 0.028041839936779788,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2022-03-09",
+  "share": 0.026875521773520268,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2022-04-09",
+  "share": 0.025790202448695825,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2022-05-09",
+  "share": 0.024800359363396546,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2022-06-09",
+  "share": 0.023873281989405918,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2022-07-09",
+  "share": 0.023022688991877104,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2022-08-08",
+  "share": 0.022230623102079378,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2022-09-08",
+  "share": 0.02148281743248155,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2022-10-08",
+  "share": 0.02079157212636937,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2022-11-08",
+  "share": 0.020136020566132385,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2022-12-08",
+  "share": 0.019527501820345485,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2023-01-08",
+  "share": 0.018948127987474223,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2023-02-07",
+  "share": 0.01840832629518951,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2023-03-09",
+  "share": 0.01789842884330198,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2023-04-09",
+  "share": 0.017410483014941316,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2023-05-09",
+  "share": 0.016953680544691766,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2023-06-09",
+  "share": 0.016515255679386994,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2023-07-09",
+  "share": 0.01610366673177947,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2023-08-09",
+  "share": 0.015707589216039083,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2023-09-08",
+  "share": 0.015334818486825049,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2023-10-09",
+  "share": 0.01497523627204339,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2023-11-08",
+  "share": 0.014636040130631684,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2023-12-08",
+  "share": 0.014311869557160387,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2024-01-08",
+  "share": 0.013998170277485398,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2024-02-07",
+  "share": 0.013701353549342087,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2024-03-09",
+  "share": 0.013413577934810888,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2024-04-08",
+  "share": 0.01314079333366967,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2024-05-09",
+  "share": 0.012875855751929175,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2024-06-08",
+  "share": 0.012624298418148697,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2024-07-08",
+  "share": 0.012382382144913134,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2024-08-08",
+  "share": 0.01214686938348073,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2024-09-07",
+  "share": 0.011922742397628177,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2024-10-08",
+  "share": 0.01170423552890865,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2024-11-07",
+  "share": 0.01149600536598374,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2024-12-08",
+  "share": 0.011292726767282437,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2025-01-07",
+  "share": 0.011098760183808693,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2025-02-07",
+  "share": 0.010909171626471318,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2025-03-09",
+  "share": 0.010728051688828167,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2025-04-08",
+  "share": 0.010552847633850896,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2025-05-09",
+  "share": 0.010381306777880942,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2025-06-08",
+  "share": 0.010217158703344286,
+  "kind": "step"
+ },
+ {
+  "protocol": "ens",
+  "coingecko_id": "ethereum-name-service",
+  "perp": "ENS/USDT:USDT",
+  "day": "2025-07-09",
+  "share": 0.010056274596767549,
+  "kind": "step"
+ },
+ {
+  "protocol": "flow",
+  "coingecko_id": "flow",
+  "perp": "FLOW/USDT:USDT",
+  "day": "2022-10-14",
+  "share": 0.24669659944234223,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "gmt",
+  "coingecko_id": "stepn",
+  "perp": "GMT/USDT:USDT",
+  "day": "2023-04-08",
+  "share": 0.06326252455795678,
+  "kind": "step"
+ },
+ {
+  "protocol": "gmt",
+  "coingecko_id": "stepn",
+  "perp": "GMT/USDT:USDT",
+  "day": "2023-05-09",
+  "share": 0.056877683339202775,
+  "kind": "step"
+ },
+ {
+  "protocol": "gmt",
+  "coingecko_id": "stepn",
+  "perp": "GMT/USDT:USDT",
+  "day": "2023-06-08",
+  "share": 0.05166348789962717,
+  "kind": "step"
+ },
+ {
+  "protocol": "gmt",
+  "coingecko_id": "stepn",
+  "perp": "GMT/USDT:USDT",
+  "day": "2023-07-08",
+  "share": 0.04732502160907462,
+  "kind": "step"
+ },
+ {
+  "protocol": "gmt",
+  "coingecko_id": "stepn",
+  "perp": "GMT/USDT:USDT",
+  "day": "2023-08-08",
+  "share": 0.043658756495300335,
+  "kind": "step"
+ },
+ {
+  "protocol": "gmt",
+  "coingecko_id": "stepn",
+  "perp": "GMT/USDT:USDT",
+  "day": "2023-09-07",
+  "share": 0.04051969909673969,
+  "kind": "step"
+ },
+ {
+  "protocol": "gmt",
+  "coingecko_id": "stepn",
+  "perp": "GMT/USDT:USDT",
+  "day": "2023-10-08",
+  "share": 0.037801758862916986,
+  "kind": "step"
+ },
+ {
+  "protocol": "gmt",
+  "coingecko_id": "stepn",
+  "perp": "GMT/USDT:USDT",
+  "day": "2023-11-07",
+  "share": 0.03542552086950363,
+  "kind": "step"
+ },
+ {
+  "protocol": "gmt",
+  "coingecko_id": "stepn",
+  "perp": "GMT/USDT:USDT",
+  "day": "2023-12-08",
+  "share": 0.033330357466320945,
+  "kind": "step"
+ },
+ {
+  "protocol": "gmt",
+  "coingecko_id": "stepn",
+  "perp": "GMT/USDT:USDT",
+  "day": "2024-01-07",
+  "share": 0.02868147782571224,
+  "kind": "step"
+ },
+ {
+  "protocol": "gmt",
+  "coingecko_id": "stepn",
+  "perp": "GMT/USDT:USDT",
+  "day": "2024-02-07",
+  "share": 0.02723651225083321,
+  "kind": "step"
+ },
+ {
+  "protocol": "gmt",
+  "coingecko_id": "stepn",
+  "perp": "GMT/USDT:USDT",
+  "day": "2024-03-08",
+  "share": 0.025930157496011654,
+  "kind": "step"
+ },
+ {
+  "protocol": "gmt",
+  "coingecko_id": "stepn",
+  "perp": "GMT/USDT:USDT",
+  "day": "2024-04-07",
+  "share": 0.024743381671022677,
+  "kind": "step"
+ },
+ {
+  "protocol": "gmt",
+  "coingecko_id": "stepn",
+  "perp": "GMT/USDT:USDT",
+  "day": "2024-05-08",
+  "share": 0.023660484617434998,
+  "kind": "step"
+ },
+ {
+  "protocol": "gmt",
+  "coingecko_id": "stepn",
+  "perp": "GMT/USDT:USDT",
+  "day": "2024-06-07",
+  "share": 0.022668399410275,
+  "kind": "step"
+ },
+ {
+  "protocol": "gmt",
+  "coingecko_id": "stepn",
+  "perp": "GMT/USDT:USDT",
+  "day": "2024-07-08",
+  "share": 0.021756162516314688,
+  "kind": "step"
+ },
+ {
+  "protocol": "gmt",
+  "coingecko_id": "stepn",
+  "perp": "GMT/USDT:USDT",
+  "day": "2024-08-07",
+  "share": 0.020914506936612877,
+  "kind": "step"
+ },
+ {
+  "protocol": "gmt",
+  "coingecko_id": "stepn",
+  "perp": "GMT/USDT:USDT",
+  "day": "2024-09-07",
+  "share": 0.027404702739441133,
+  "kind": "step"
+ },
+ {
+  "protocol": "gmt",
+  "coingecko_id": "stepn",
+  "perp": "GMT/USDT:USDT",
+  "day": "2024-10-07",
+  "share": 0.015162033520892466,
+  "kind": "step"
+ },
+ {
+  "protocol": "gmt",
+  "coingecko_id": "stepn",
+  "perp": "GMT/USDT:USDT",
+  "day": "2024-11-06",
+  "share": 0.014698411441299979,
+  "kind": "step"
+ },
+ {
+  "protocol": "gmt",
+  "coingecko_id": "stepn",
+  "perp": "GMT/USDT:USDT",
+  "day": "2024-12-07",
+  "share": 0.014262301222736732,
+  "kind": "step"
+ },
+ {
+  "protocol": "gmt",
+  "coingecko_id": "stepn",
+  "perp": "GMT/USDT:USDT",
+  "day": "2025-01-06",
+  "share": 0.013851324553420658,
+  "kind": "step"
+ },
+ {
+  "protocol": "gmt",
+  "coingecko_id": "stepn",
+  "perp": "GMT/USDT:USDT",
+  "day": "2025-02-06",
+  "share": 0.013463369573459163,
+  "kind": "step"
+ },
+ {
+  "protocol": "gmt",
+  "coingecko_id": "stepn",
+  "perp": "GMT/USDT:USDT",
+  "day": "2025-03-08",
+  "share": 0.01309655457689698,
+  "kind": "step"
+ },
+ {
+  "protocol": "gmt",
+  "coingecko_id": "stepn",
+  "perp": "GMT/USDT:USDT",
+  "day": "2025-04-08",
+  "share": 0.01094982858961582,
+  "kind": "step"
+ },
+ {
+  "protocol": "gmt",
+  "coingecko_id": "stepn",
+  "perp": "GMT/USDT:USDT",
+  "day": "2025-05-08",
+  "share": 0.010685643003177732,
+  "kind": "step"
+ },
+ {
+  "protocol": "gmt",
+  "coingecko_id": "stepn",
+  "perp": "GMT/USDT:USDT",
+  "day": "2025-06-08",
+  "share": 0.010433905060016336,
+  "kind": "step"
+ },
+ {
+  "protocol": "gmt",
+  "coingecko_id": "stepn",
+  "perp": "GMT/USDT:USDT",
+  "day": "2025-07-08",
+  "share": 0.010193755264390083,
+  "kind": "step"
+ },
+ {
+  "protocol": "grass",
+  "coingecko_id": "grass",
+  "perp": "GRASS/USDT:USDT",
+  "day": "2025-10-28",
+  "share": 0.874705624282325,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "humidifi",
+  "coingecko_id": "humidifi",
+  "perp": "WET/USDT:USDT",
+  "day": "2026-06-03",
+  "share": 0.6195652173913043,
+  "kind": "step"
+ },
+ {
+  "protocol": "icp",
+  "coingecko_id": "internet-computer",
+  "perp": "ICP/USDT:USDT",
+  "day": "2021-07-09",
+  "share": 0.02172212783594541,
+  "kind": "step"
+ },
+ {
+  "protocol": "icp",
+  "coingecko_id": "internet-computer",
+  "perp": "ICP/USDT:USDT",
+  "day": "2021-08-09",
+  "share": 0.021210844440358242,
+  "kind": "step"
+ },
+ {
+  "protocol": "icp",
+  "coingecko_id": "internet-computer",
+  "perp": "ICP/USDT:USDT",
+  "day": "2021-09-08",
+  "share": 0.020723076168733014,
+  "kind": "step"
+ },
+ {
+  "protocol": "icp",
+  "coingecko_id": "internet-computer",
+  "perp": "ICP/USDT:USDT",
+  "day": "2021-10-09",
+  "share": 0.020257237214890658,
+  "kind": "step"
+ },
+ {
+  "protocol": "icp",
+  "coingecko_id": "internet-computer",
+  "perp": "ICP/USDT:USDT",
+  "day": "2021-11-08",
+  "share": 0.019811881228643535,
+  "kind": "step"
+ },
+ {
+  "protocol": "icp",
+  "coingecko_id": "internet-computer",
+  "perp": "ICP/USDT:USDT",
+  "day": "2021-12-09",
+  "share": 0.019385686315848336,
+  "kind": "step"
+ },
+ {
+  "protocol": "icp",
+  "coingecko_id": "internet-computer",
+  "perp": "ICP/USDT:USDT",
+  "day": "2022-01-08",
+  "share": 0.01897744193376792,
+  "kind": "step"
+ },
+ {
+  "protocol": "icp",
+  "coingecko_id": "internet-computer",
+  "perp": "ICP/USDT:USDT",
+  "day": "2022-02-07",
+  "share": 0.01858603740811053,
+  "kind": "step"
+ },
+ {
+  "protocol": "icp",
+  "coingecko_id": "internet-computer",
+  "perp": "ICP/USDT:USDT",
+  "day": "2022-03-10",
+  "share": 0.01821045184235104,
+  "kind": "step"
+ },
+ {
+  "protocol": "icp",
+  "coingecko_id": "internet-computer",
+  "perp": "ICP/USDT:USDT",
+  "day": "2022-04-09",
+  "share": 0.017849745226289182,
+  "kind": "step"
+ },
+ {
+  "protocol": "icp",
+  "coingecko_id": "internet-computer",
+  "perp": "ICP/USDT:USDT",
+  "day": "2022-05-10",
+  "share": 0.01750305058079579,
+  "kind": "step"
+ },
+ {
+  "protocol": "icp",
+  "coingecko_id": "internet-computer",
+  "perp": "ICP/USDT:USDT",
+  "day": "2022-06-09",
+  "share": 0.017169567000550407,
+  "kind": "step"
+ },
+ {
+  "protocol": "immutable",
+  "coingecko_id": "immutable-x",
+  "perp": "IMX/USDT:USDT",
+  "day": "2022-12-06",
+  "share": 0.05865885107694488,
+  "kind": "step"
+ },
+ {
+  "protocol": "immutable",
+  "coingecko_id": "immutable-x",
+  "perp": "IMX/USDT:USDT",
+  "day": "2023-01-06",
+  "share": 0.05305847200488793,
+  "kind": "step"
+ },
+ {
+  "protocol": "immutable",
+  "coingecko_id": "immutable-x",
+  "perp": "IMX/USDT:USDT",
+  "day": "2023-02-05",
+  "share": 0.04849669337594599,
+  "kind": "step"
+ },
+ {
+  "protocol": "immutable",
+  "coingecko_id": "immutable-x",
+  "perp": "IMX/USDT:USDT",
+  "day": "2023-03-07",
+  "share": 0.04465874298572892,
+  "kind": "step"
+ },
+ {
+  "protocol": "immutable",
+  "coingecko_id": "immutable-x",
+  "perp": "IMX/USDT:USDT",
+  "day": "2023-04-07",
+  "share": 0.04134102001491501,
+  "kind": "step"
+ },
+ {
+  "protocol": "immutable",
+  "coingecko_id": "immutable-x",
+  "perp": "IMX/USDT:USDT",
+  "day": "2023-05-07",
+  "share": 0.03852143512871623,
+  "kind": "step"
+ },
+ {
+  "protocol": "immutable",
+  "coingecko_id": "immutable-x",
+  "perp": "IMX/USDT:USDT",
+  "day": "2023-06-07",
+  "share": 0.036029551537479894,
+  "kind": "step"
+ },
+ {
+  "protocol": "immutable",
+  "coingecko_id": "immutable-x",
+  "perp": "IMX/USDT:USDT",
+  "day": "2023-07-07",
+  "share": 0.033870779430842,
+  "kind": "step"
+ },
+ {
+  "protocol": "immutable",
+  "coingecko_id": "immutable-x",
+  "perp": "IMX/USDT:USDT",
+  "day": "2023-08-07",
+  "share": 0.031930721126594966,
+  "kind": "step"
+ },
+ {
+  "protocol": "immutable",
+  "coingecko_id": "immutable-x",
+  "perp": "IMX/USDT:USDT",
+  "day": "2023-09-06",
+  "share": 0.03022495757653831,
+  "kind": "step"
+ },
+ {
+  "protocol": "immutable",
+  "coingecko_id": "immutable-x",
+  "perp": "IMX/USDT:USDT",
+  "day": "2023-10-07",
+  "share": 0.028671797071631904,
+  "kind": "step"
+ },
+ {
+  "protocol": "immutable",
+  "coingecko_id": "immutable-x",
+  "perp": "IMX/USDT:USDT",
+  "day": "2023-11-06",
+  "share": 0.027290058548228482,
+  "kind": "step"
+ },
+ {
+  "protocol": "immutable",
+  "coingecko_id": "immutable-x",
+  "perp": "IMX/USDT:USDT",
+  "day": "2023-12-06",
+  "share": 0.026035884995005556,
+  "kind": "step"
+ },
+ {
+  "protocol": "immutable",
+  "coingecko_id": "immutable-x",
+  "perp": "IMX/USDT:USDT",
+  "day": "2024-01-06",
+  "share": 0.024876612577850975,
+  "kind": "step"
+ },
+ {
+  "protocol": "immutable",
+  "coingecko_id": "immutable-x",
+  "perp": "IMX/USDT:USDT",
+  "day": "2024-02-05",
+  "share": 0.02383107781990646,
+  "kind": "step"
+ },
+ {
+  "protocol": "immutable",
+  "coingecko_id": "immutable-x",
+  "perp": "IMX/USDT:USDT",
+  "day": "2024-03-07",
+  "share": 0.022856984711061595,
+  "kind": "step"
+ },
+ {
+  "protocol": "immutable",
+  "coingecko_id": "immutable-x",
+  "perp": "IMX/USDT:USDT",
+  "day": "2024-04-06",
+  "share": 0.021972040238501068,
+  "kind": "step"
+ },
+ {
+  "protocol": "immutable",
+  "coingecko_id": "immutable-x",
+  "perp": "IMX/USDT:USDT",
+  "day": "2024-05-07",
+  "share": 0.02114205237575961,
+  "kind": "step"
+ },
+ {
+  "protocol": "immutable",
+  "coingecko_id": "immutable-x",
+  "perp": "IMX/USDT:USDT",
+  "day": "2024-06-06",
+  "share": 0.02038334740957381,
+  "kind": "step"
+ },
+ {
+  "protocol": "immutable",
+  "coingecko_id": "immutable-x",
+  "perp": "IMX/USDT:USDT",
+  "day": "2024-07-06",
+  "share": 0.0196775000684293,
+  "kind": "step"
+ },
+ {
+  "protocol": "initia",
+  "coingecko_id": "initia",
+  "perp": "INIT/USDT:USDT",
+  "day": "2026-04-24",
+  "share": 0.41195953423554965,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "initia",
+  "coingecko_id": "initia",
+  "perp": "INIT/USDT:USDT",
+  "day": "2026-05-24",
+  "share": 0.023427233505546055,
+  "kind": "step"
+ },
+ {
+  "protocol": "initia",
+  "coingecko_id": "initia",
+  "perp": "INIT/USDT:USDT",
+  "day": "2026-06-24",
+  "share": 0.022681189504747595,
+  "kind": "step"
+ },
+ {
+  "protocol": "initia",
+  "coingecko_id": "initia",
+  "perp": "INIT/USDT:USDT",
+  "day": "2026-07-24",
+  "share": 0.02198749400485122,
+  "kind": "step"
+ },
+ {
+  "protocol": "initia",
+  "coingecko_id": "initia",
+  "perp": "INIT/USDT:USDT",
+  "day": "2026-08-23",
+  "share": 0.021155919770072334,
+  "kind": "step"
+ },
+ {
+  "protocol": "initia",
+  "coingecko_id": "initia",
+  "perp": "INIT/USDT:USDT",
+  "day": "2026-09-23",
+  "share": 0.020545639699094873,
+  "kind": "step"
+ },
+ {
+  "protocol": "injective",
+  "coingecko_id": "injective-protocol",
+  "perp": "INJ/USDT:USDT",
+  "day": "2021-10-01",
+  "share": 0.19573370839193624,
+  "kind": "step"
+ },
+ {
+  "protocol": "injective",
+  "coingecko_id": "injective-protocol",
+  "perp": "INJ/USDT:USDT",
+  "day": "2021-10-31",
+  "share": 0.0582238776710449,
+  "kind": "step"
+ },
+ {
+  "protocol": "injective",
+  "coingecko_id": "injective-protocol",
+  "perp": "INJ/USDT:USDT",
+  "day": "2021-12-31",
+  "share": 0.11026119402985075,
+  "kind": "step"
+ },
+ {
+  "protocol": "injective",
+  "coingecko_id": "injective-protocol",
+  "perp": "INJ/USDT:USDT",
+  "day": "2022-04-01",
+  "share": 0.1185389190954132,
+  "kind": "step"
+ },
+ {
+  "protocol": "injective",
+  "coingecko_id": "injective-protocol",
+  "perp": "INJ/USDT:USDT",
+  "day": "2022-05-02",
+  "share": 0.03769466055767791,
+  "kind": "step"
+ },
+ {
+  "protocol": "injective",
+  "coingecko_id": "injective-protocol",
+  "perp": "INJ/USDT:USDT",
+  "day": "2022-07-02",
+  "share": 0.07494725677591911,
+  "kind": "step"
+ },
+ {
+  "protocol": "injective",
+  "coingecko_id": "injective-protocol",
+  "perp": "INJ/USDT:USDT",
+  "day": "2022-10-01",
+  "share": 0.08501150455091527,
+  "kind": "step"
+ },
+ {
+  "protocol": "injective",
+  "coingecko_id": "injective-protocol",
+  "perp": "INJ/USDT:USDT",
+  "day": "2022-10-31",
+  "share": 0.027868483278910033,
+  "kind": "step"
+ },
+ {
+  "protocol": "injective",
+  "coingecko_id": "injective-protocol",
+  "perp": "INJ/USDT:USDT",
+  "day": "2022-12-31",
+  "share": 0.05676638549798292,
+  "kind": "step"
+ },
+ {
+  "protocol": "injective",
+  "coingecko_id": "injective-protocol",
+  "perp": "INJ/USDT:USDT",
+  "day": "2023-07-02",
+  "share": 0.049632395043631615,
+  "kind": "step"
+ },
+ {
+  "protocol": "injective",
+  "coingecko_id": "injective-protocol",
+  "perp": "INJ/USDT:USDT",
+  "day": "2024-01-01",
+  "share": 0.04563258086253369,
+  "kind": "step"
+ },
+ {
+  "protocol": "jito",
+  "coingecko_id": "jito-governance-token",
+  "perp": "JTO/USDT:USDT",
+  "day": "2024-12-06",
+  "share": 0.9578787265726935,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "jupiter",
+  "coingecko_id": "jupiter-exchange-solana",
+  "perp": "JUP/USDT:USDT",
+  "day": "2025-01-31",
+  "share": 0.22040649256128086,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "jupiter",
+  "coingecko_id": "jupiter-exchange-solana",
+  "perp": "JUP/USDT:USDT",
+  "day": "2025-02-01",
+  "share": 0.020693851398744904,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "jupiter",
+  "coingecko_id": "jupiter-exchange-solana",
+  "perp": "JUP/USDT:USDT",
+  "day": "2025-03-03",
+  "share": 0.020274298086920318,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "jupiter",
+  "coingecko_id": "jupiter-exchange-solana",
+  "perp": "JUP/USDT:USDT",
+  "day": "2025-04-02",
+  "share": 0.019159414288245916,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "jupiter",
+  "coingecko_id": "jupiter-exchange-solana",
+  "perp": "JUP/USDT:USDT",
+  "day": "2025-05-02",
+  "share": 0.018799232013792806,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "jupiter",
+  "coingecko_id": "jupiter-exchange-solana",
+  "perp": "JUP/USDT:USDT",
+  "day": "2025-06-01",
+  "share": 0.01845234215247062,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "jupiter",
+  "coingecko_id": "jupiter-exchange-solana",
+  "perp": "JUP/USDT:USDT",
+  "day": "2025-07-01",
+  "share": 0.01811802220757047,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "jupiter",
+  "coingecko_id": "jupiter-exchange-solana",
+  "perp": "JUP/USDT:USDT",
+  "day": "2025-07-31",
+  "share": 0.017795601111436396,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "jupiter",
+  "coingecko_id": "jupiter-exchange-solana",
+  "perp": "JUP/USDT:USDT",
+  "day": "2025-08-30",
+  "share": 0.017484454729420663,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "jupiter",
+  "coingecko_id": "jupiter-exchange-solana",
+  "perp": "JUP/USDT:USDT",
+  "day": "2025-09-29",
+  "share": 0.017184001827399216,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "jupiter",
+  "coingecko_id": "jupiter-exchange-solana",
+  "perp": "JUP/USDT:USDT",
+  "day": "2025-10-29",
+  "share": 0.016893700448028758,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "jupiter",
+  "coingecko_id": "jupiter-exchange-solana",
+  "perp": "JUP/USDT:USDT",
+  "day": "2025-11-28",
+  "share": 0.016613044648212134,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "jupiter",
+  "coingecko_id": "jupiter-exchange-solana",
+  "perp": "JUP/USDT:USDT",
+  "day": "2025-12-28",
+  "share": 0.016341561556453266,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "jupiter",
+  "coingecko_id": "jupiter-exchange-solana",
+  "perp": "JUP/USDT:USDT",
+  "day": "2026-01-27",
+  "share": 0.01607880871409741,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "jupiter",
+  "coingecko_id": "jupiter-exchange-solana",
+  "perp": "JUP/USDT:USDT",
+  "day": "2026-02-26",
+  "share": 0.015824371669010604,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "jupiter",
+  "coingecko_id": "jupiter-exchange-solana",
+  "perp": "JUP/USDT:USDT",
+  "day": "2026-03-28",
+  "share": 0.014720186460172318,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "jupiter",
+  "coingecko_id": "jupiter-exchange-solana",
+  "perp": "JUP/USDT:USDT",
+  "day": "2026-04-27",
+  "share": 0.014506645927212056,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "jupiter",
+  "coingecko_id": "jupiter-exchange-solana",
+  "perp": "JUP/USDT:USDT",
+  "day": "2026-05-27",
+  "share": 0.014299212317090002,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "jupiter",
+  "coingecko_id": "jupiter-exchange-solana",
+  "perp": "JUP/USDT:USDT",
+  "day": "2026-06-26",
+  "share": 0.014097627350438862,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "jupiter",
+  "coingecko_id": "jupiter-exchange-solana",
+  "perp": "JUP/USDT:USDT",
+  "day": "2026-07-26",
+  "share": 0.013901647109925823,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "jupiter",
+  "coingecko_id": "jupiter-exchange-solana",
+  "perp": "JUP/USDT:USDT",
+  "day": "2026-08-25",
+  "share": 0.013711041055660329,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "jupiter",
+  "coingecko_id": "jupiter-exchange-solana",
+  "perp": "JUP/USDT:USDT",
+  "day": "2026-09-24",
+  "share": 0.013525591120505009,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "kaito",
+  "coingecko_id": "kaito",
+  "perp": "KAITO/USDT:USDT",
+  "day": "2026-03-22",
+  "share": 0.027420948616600792,
+  "kind": "step"
+ },
+ {
+  "protocol": "kaito",
+  "coingecko_id": "kaito",
+  "perp": "KAITO/USDT:USDT",
+  "day": "2026-04-22",
+  "share": 0.026061406980566304,
+  "kind": "step"
+ },
+ {
+  "protocol": "kaito",
+  "coingecko_id": "kaito",
+  "perp": "KAITO/USDT:USDT",
+  "day": "2026-05-22",
+  "share": 0.02483031023507305,
+  "kind": "step"
+ },
+ {
+  "protocol": "kaito",
+  "coingecko_id": "kaito",
+  "perp": "KAITO/USDT:USDT",
+  "day": "2026-06-21",
+  "share": 0.023710276894533512,
+  "kind": "step"
+ },
+ {
+  "protocol": "kaito",
+  "coingecko_id": "kaito",
+  "perp": "KAITO/USDT:USDT",
+  "day": "2026-07-22",
+  "share": 0.022686926257270326,
+  "kind": "step"
+ },
+ {
+  "protocol": "kaito",
+  "coingecko_id": "kaito",
+  "perp": "KAITO/USDT:USDT",
+  "day": "2026-08-21",
+  "share": 0.02174825762028718,
+  "kind": "step"
+ },
+ {
+  "protocol": "kaito",
+  "coingecko_id": "kaito",
+  "perp": "KAITO/USDT:USDT",
+  "day": "2026-09-21",
+  "share": 0.020035997751429852,
+  "kind": "step"
+ },
+ {
+  "protocol": "liquity",
+  "coingecko_id": "liquity",
+  "perp": "LQTY/USDT:USDT",
+  "day": "2022-04-05",
+  "share": 20.80125,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "liquity",
+  "coingecko_id": "liquity",
+  "perp": "LQTY/USDT:USDT",
+  "day": "2022-05-05",
+  "share": 0.01490617221802724,
+  "kind": "step"
+ },
+ {
+  "protocol": "liquity",
+  "coingecko_id": "liquity",
+  "perp": "LQTY/USDT:USDT",
+  "day": "2022-06-05",
+  "share": 0.01468724166437035,
+  "kind": "step"
+ },
+ {
+  "protocol": "liquity",
+  "coingecko_id": "liquity",
+  "perp": "LQTY/USDT:USDT",
+  "day": "2022-07-05",
+  "share": 0.014474648996551069,
+  "kind": "step"
+ },
+ {
+  "protocol": "liquity",
+  "coingecko_id": "liquity",
+  "perp": "LQTY/USDT:USDT",
+  "day": "2022-08-04",
+  "share": 0.014268122925366743,
+  "kind": "step"
+ },
+ {
+  "protocol": "liquity",
+  "coingecko_id": "liquity",
+  "perp": "LQTY/USDT:USDT",
+  "day": "2022-09-04",
+  "share": 0.014067407426957692,
+  "kind": "step"
+ },
+ {
+  "protocol": "liquity",
+  "coingecko_id": "liquity",
+  "perp": "LQTY/USDT:USDT",
+  "day": "2022-10-04",
+  "share": 0.013872260683983135,
+  "kind": "step"
+ },
+ {
+  "protocol": "liquity",
+  "coingecko_id": "liquity",
+  "perp": "LQTY/USDT:USDT",
+  "day": "2022-11-04",
+  "share": 0.01368245411372096,
+  "kind": "step"
+ },
+ {
+  "protocol": "liquity",
+  "coingecko_id": "liquity",
+  "perp": "LQTY/USDT:USDT",
+  "day": "2022-12-04",
+  "share": 0.013497771474878443,
+  "kind": "step"
+ },
+ {
+  "protocol": "liquity",
+  "coingecko_id": "liquity",
+  "perp": "LQTY/USDT:USDT",
+  "day": "2023-01-04",
+  "share": 0.013318008045775967,
+  "kind": "step"
+ },
+ {
+  "protocol": "liquity",
+  "coingecko_id": "liquity",
+  "perp": "LQTY/USDT:USDT",
+  "day": "2023-02-03",
+  "share": 0.013142969867337376,
+  "kind": "step"
+ },
+ {
+  "protocol": "liquity",
+  "coingecko_id": "liquity",
+  "perp": "LQTY/USDT:USDT",
+  "day": "2023-03-06",
+  "share": 0.012972473045002068,
+  "kind": "step"
+ },
+ {
+  "protocol": "liquity",
+  "coingecko_id": "liquity",
+  "perp": "LQTY/USDT:USDT",
+  "day": "2023-04-05",
+  "share": 0.01280634310427679,
+  "kind": "step"
+ },
+ {
+  "protocol": "liquity",
+  "coingecko_id": "liquity",
+  "perp": "LQTY/USDT:USDT",
+  "day": "2023-05-05",
+  "share": 0.012644414395179465,
+  "kind": "step"
+ },
+ {
+  "protocol": "liquity",
+  "coingecko_id": "liquity",
+  "perp": "LQTY/USDT:USDT",
+  "day": "2023-06-05",
+  "share": 0.012486529541301597,
+  "kind": "step"
+ },
+ {
+  "protocol": "liquity",
+  "coingecko_id": "liquity",
+  "perp": "LQTY/USDT:USDT",
+  "day": "2023-07-05",
+  "share": 0.012332538929637428,
+  "kind": "step"
+ },
+ {
+  "protocol": "liquity",
+  "coingecko_id": "liquity",
+  "perp": "LQTY/USDT:USDT",
+  "day": "2023-08-05",
+  "share": 0.01218230023770342,
+  "kind": "step"
+ },
+ {
+  "protocol": "liquity",
+  "coingecko_id": "liquity",
+  "perp": "LQTY/USDT:USDT",
+  "day": "2023-09-04",
+  "share": 0.012035677994806367,
+  "kind": "step"
+ },
+ {
+  "protocol": "liquity",
+  "coingecko_id": "liquity",
+  "perp": "LQTY/USDT:USDT",
+  "day": "2023-10-05",
+  "share": 0.01189254317461734,
+  "kind": "step"
+ },
+ {
+  "protocol": "liquity",
+  "coingecko_id": "liquity",
+  "perp": "LQTY/USDT:USDT",
+  "day": "2023-11-04",
+  "share": 0.011752772816475932,
+  "kind": "step"
+ },
+ {
+  "protocol": "liquity",
+  "coingecko_id": "liquity",
+  "perp": "LQTY/USDT:USDT",
+  "day": "2023-12-04",
+  "share": 0.011616249673088658,
+  "kind": "step"
+ },
+ {
+  "protocol": "liquity",
+  "coingecko_id": "liquity",
+  "perp": "LQTY/USDT:USDT",
+  "day": "2024-01-04",
+  "share": 0.011482861882499947,
+  "kind": "step"
+ },
+ {
+  "protocol": "liquity",
+  "coingecko_id": "liquity",
+  "perp": "LQTY/USDT:USDT",
+  "day": "2024-02-03",
+  "share": 0.011352502662406816,
+  "kind": "step"
+ },
+ {
+  "protocol": "liquity",
+  "coingecko_id": "liquity",
+  "perp": "LQTY/USDT:USDT",
+  "day": "2024-03-05",
+  "share": 0.0112250700250616,
+  "kind": "step"
+ },
+ {
+  "protocol": "liquity",
+  "coingecko_id": "liquity",
+  "perp": "LQTY/USDT:USDT",
+  "day": "2024-04-04",
+  "share": 0.011100466511162945,
+  "kind": "step"
+ },
+ {
+  "protocol": "liquity",
+  "coingecko_id": "liquity",
+  "perp": "LQTY/USDT:USDT",
+  "day": "2024-05-05",
+  "share": 0.010978598941275826,
+  "kind": "step"
+ },
+ {
+  "protocol": "liquity",
+  "coingecko_id": "liquity",
+  "perp": "LQTY/USDT:USDT",
+  "day": "2024-06-04",
+  "share": 0.010859378183448107,
+  "kind": "step"
+ },
+ {
+  "protocol": "liquity",
+  "coingecko_id": "liquity",
+  "perp": "LQTY/USDT:USDT",
+  "day": "2024-07-04",
+  "share": 0.010742718935805704,
+  "kind": "step"
+ },
+ {
+  "protocol": "listadao",
+  "coingecko_id": "lista",
+  "perp": "LISTA/USDT:USDT",
+  "day": "2025-09-19",
+  "share": 0.06060945540369108,
+  "kind": "step"
+ },
+ {
+  "protocol": "listadao",
+  "coingecko_id": "lista",
+  "perp": "LISTA/USDT:USDT",
+  "day": "2025-12-19",
+  "share": 0.053501859470356815,
+  "kind": "step"
+ },
+ {
+  "protocol": "listadao",
+  "coingecko_id": "lista",
+  "perp": "LISTA/USDT:USDT",
+  "day": "2026-03-20",
+  "share": 0.047886293061466065,
+  "kind": "step"
+ },
+ {
+  "protocol": "listadao",
+  "coingecko_id": "lista",
+  "perp": "LISTA/USDT:USDT",
+  "day": "2026-06-20",
+  "share": 0.0433202955092506,
+  "kind": "step"
+ },
+ {
+  "protocol": "listadao",
+  "coingecko_id": "lista",
+  "perp": "LISTA/USDT:USDT",
+  "day": "2026-09-19",
+  "share": 0.03995133397015937,
+  "kind": "step"
+ },
+ {
+  "protocol": "manta",
+  "coingecko_id": "manta-network",
+  "perp": "MANTA/USDT:USDT",
+  "day": "2024-03-21",
+  "share": 0.15144983626640438,
+  "kind": "cliff+step"
+ },
+ {
+  "protocol": "manta",
+  "coingecko_id": "manta-network",
+  "perp": "MANTA/USDT:USDT",
+  "day": "2024-09-19",
+  "share": 0.05264013231994116,
+  "kind": "cliff+step"
+ },
+ {
+  "protocol": "maverick",
+  "coingecko_id": "maverick-protocol",
+  "perp": "MAV/USDT:USDT",
+  "day": "2024-07-30",
+  "share": 0.06513362669939911,
+  "kind": "step"
+ },
+ {
+  "protocol": "maverick",
+  "coingecko_id": "maverick-protocol",
+  "perp": "MAV/USDT:USDT",
+  "day": "2024-08-30",
+  "share": 0.05989769410416638,
+  "kind": "step"
+ },
+ {
+  "protocol": "maverick",
+  "coingecko_id": "maverick-protocol",
+  "perp": "MAV/USDT:USDT",
+  "day": "2024-09-29",
+  "share": 0.05544093336723778,
+  "kind": "step"
+ },
+ {
+  "protocol": "maverick",
+  "coingecko_id": "maverick-protocol",
+  "perp": "MAV/USDT:USDT",
+  "day": "2024-10-29",
+  "share": 0.05160146373518369,
+  "kind": "step"
+ },
+ {
+  "protocol": "maverick",
+  "coingecko_id": "maverick-protocol",
+  "perp": "MAV/USDT:USDT",
+  "day": "2024-11-29",
+  "share": 0.048259343186793625,
+  "kind": "step"
+ },
+ {
+  "protocol": "maverick",
+  "coingecko_id": "maverick-protocol",
+  "perp": "MAV/USDT:USDT",
+  "day": "2024-12-29",
+  "share": 0.04532381314048372,
+  "kind": "step"
+ },
+ {
+  "protocol": "maverick",
+  "coingecko_id": "maverick-protocol",
+  "perp": "MAV/USDT:USDT",
+  "day": "2025-01-29",
+  "share": 0.04272493151650905,
+  "kind": "step"
+ },
+ {
+  "protocol": "maverick",
+  "coingecko_id": "maverick-protocol",
+  "perp": "MAV/USDT:USDT",
+  "day": "2025-02-28",
+  "share": 0.040407928268891564,
+  "kind": "step"
+ },
+ {
+  "protocol": "maverick",
+  "coingecko_id": "maverick-protocol",
+  "perp": "MAV/USDT:USDT",
+  "day": "2025-03-31",
+  "share": 0.038329303060653755,
+  "kind": "step"
+ },
+ {
+  "protocol": "maverick",
+  "coingecko_id": "maverick-protocol",
+  "perp": "MAV/USDT:USDT",
+  "day": "2025-04-30",
+  "share": 0.036454068450274046,
+  "kind": "step"
+ },
+ {
+  "protocol": "maverick",
+  "coingecko_id": "maverick-protocol",
+  "perp": "MAV/USDT:USDT",
+  "day": "2025-05-31",
+  "share": 0.03475376458391827,
+  "kind": "step"
+ },
+ {
+  "protocol": "maverick",
+  "coingecko_id": "maverick-protocol",
+  "perp": "MAV/USDT:USDT",
+  "day": "2025-06-30",
+  "share": 0.03320500472483655,
+  "kind": "step"
+ },
+ {
+  "protocol": "maverick",
+  "coingecko_id": "maverick-protocol",
+  "perp": "MAV/USDT:USDT",
+  "day": "2025-07-30",
+  "share": 0.03178839309169262,
+  "kind": "step"
+ },
+ {
+  "protocol": "maverick",
+  "coingecko_id": "maverick-protocol",
+  "perp": "MAV/USDT:USDT",
+  "day": "2025-08-30",
+  "share": 0.03048770836955186,
+  "kind": "step"
+ },
+ {
+  "protocol": "maverick",
+  "coingecko_id": "maverick-protocol",
+  "perp": "MAV/USDT:USDT",
+  "day": "2025-09-29",
+  "share": 0.0292892797910201,
+  "kind": "step"
+ },
+ {
+  "protocol": "maverick",
+  "coingecko_id": "maverick-protocol",
+  "perp": "MAV/USDT:USDT",
+  "day": "2025-10-30",
+  "share": 0.028181504804006607,
+  "kind": "step"
+ },
+ {
+  "protocol": "maverick",
+  "coingecko_id": "maverick-protocol",
+  "perp": "MAV/USDT:USDT",
+  "day": "2025-11-29",
+  "share": 0.02715447220672881,
+  "kind": "step"
+ },
+ {
+  "protocol": "maverick",
+  "coingecko_id": "maverick-protocol",
+  "perp": "MAV/USDT:USDT",
+  "day": "2025-12-30",
+  "share": 0.026199664790834104,
+  "kind": "step"
+ },
+ {
+  "protocol": "maverick",
+  "coingecko_id": "maverick-protocol",
+  "perp": "MAV/USDT:USDT",
+  "day": "2026-01-29",
+  "share": 0.0253097225876867,
+  "kind": "step"
+ },
+ {
+  "protocol": "maverick",
+  "coingecko_id": "maverick-protocol",
+  "perp": "MAV/USDT:USDT",
+  "day": "2026-02-28",
+  "share": 0.024478252781360624,
+  "kind": "step"
+ },
+ {
+  "protocol": "maverick",
+  "coingecko_id": "maverick-protocol",
+  "perp": "MAV/USDT:USDT",
+  "day": "2026-03-31",
+  "share": 0.023699675898081942,
+  "kind": "step"
+ },
+ {
+  "protocol": "maverick",
+  "coingecko_id": "maverick-protocol",
+  "perp": "MAV/USDT:USDT",
+  "day": "2026-04-30",
+  "share": 0.022969100444216604,
+  "kind": "step"
+ },
+ {
+  "protocol": "maverick",
+  "coingecko_id": "maverick-protocol",
+  "perp": "MAV/USDT:USDT",
+  "day": "2026-05-31",
+  "share": 0.0222822200376188,
+  "kind": "step"
+ },
+ {
+  "protocol": "maverick",
+  "coingecko_id": "maverick-protocol",
+  "perp": "MAV/USDT:USDT",
+  "day": "2026-06-30",
+  "share": 0.0216352284604839,
+  "kind": "step"
+ },
+ {
+  "protocol": "maverick",
+  "coingecko_id": "maverick-protocol",
+  "perp": "MAV/USDT:USDT",
+  "day": "2026-07-31",
+  "share": 0.021024749093879098,
+  "kind": "step"
+ },
+ {
+  "protocol": "maverick",
+  "coingecko_id": "maverick-protocol",
+  "perp": "MAV/USDT:USDT",
+  "day": "2026-08-30",
+  "share": 0.020447775971260504,
+  "kind": "step"
+ },
+ {
+  "protocol": "melania",
+  "coingecko_id": "melania-meme",
+  "perp": "MELANIA/USDT:USDT",
+  "day": "2025-02-18",
+  "share": 0.04285714285714286,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "melania",
+  "coingecko_id": "melania-meme",
+  "perp": "MELANIA/USDT:USDT",
+  "day": "2025-04-20",
+  "share": 0.030821917808219176,
+  "kind": "step"
+ },
+ {
+  "protocol": "melania",
+  "coingecko_id": "melania-meme",
+  "perp": "MELANIA/USDT:USDT",
+  "day": "2025-05-20",
+  "share": 0.029900332225913623,
+  "kind": "step"
+ },
+ {
+  "protocol": "melania",
+  "coingecko_id": "melania-meme",
+  "perp": "MELANIA/USDT:USDT",
+  "day": "2025-06-20",
+  "share": 0.02903225806451613,
+  "kind": "step"
+ },
+ {
+  "protocol": "melania",
+  "coingecko_id": "melania-meme",
+  "perp": "MELANIA/USDT:USDT",
+  "day": "2025-07-20",
+  "share": 0.02821316614420063,
+  "kind": "step"
+ },
+ {
+  "protocol": "melania",
+  "coingecko_id": "melania-meme",
+  "perp": "MELANIA/USDT:USDT",
+  "day": "2025-08-20",
+  "share": 0.027439024390243903,
+  "kind": "step"
+ },
+ {
+  "protocol": "melania",
+  "coingecko_id": "melania-meme",
+  "perp": "MELANIA/USDT:USDT",
+  "day": "2025-09-19",
+  "share": 0.026706231454005934,
+  "kind": "step"
+ },
+ {
+  "protocol": "melania",
+  "coingecko_id": "melania-meme",
+  "perp": "MELANIA/USDT:USDT",
+  "day": "2025-10-19",
+  "share": 0.02601156069364162,
+  "kind": "step"
+ },
+ {
+  "protocol": "melania",
+  "coingecko_id": "melania-meme",
+  "perp": "MELANIA/USDT:USDT",
+  "day": "2025-11-19",
+  "share": 0.02535211267605634,
+  "kind": "step"
+ },
+ {
+  "protocol": "melania",
+  "coingecko_id": "melania-meme",
+  "perp": "MELANIA/USDT:USDT",
+  "day": "2025-12-19",
+  "share": 0.024725274725274724,
+  "kind": "step"
+ },
+ {
+  "protocol": "melania",
+  "coingecko_id": "melania-meme",
+  "perp": "MELANIA/USDT:USDT",
+  "day": "2026-01-19",
+  "share": 0.024128686327077747,
+  "kind": "step"
+ },
+ {
+  "protocol": "melania",
+  "coingecko_id": "melania-meme",
+  "perp": "MELANIA/USDT:USDT",
+  "day": "2026-02-18",
+  "share": 0.02356020942408377,
+  "kind": "step"
+ },
+ {
+  "protocol": "melania",
+  "coingecko_id": "melania-meme",
+  "perp": "MELANIA/USDT:USDT",
+  "day": "2026-03-21",
+  "share": 0.023017902813299233,
+  "kind": "step"
+ },
+ {
+  "protocol": "memecoin",
+  "coingecko_id": "memecoin-2",
+  "perp": "MEME/USDT:USDT",
+  "day": "2024-04-30",
+  "share": 0.050530995885054504,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "metis",
+  "coingecko_id": "metis-token",
+  "perp": "METIS/USDT:USDT",
+  "day": "2021-06-12",
+  "share": 0.02071726211631386,
+  "kind": "step"
+ },
+ {
+  "protocol": "metis",
+  "coingecko_id": "metis-token",
+  "perp": "METIS/USDT:USDT",
+  "day": "2021-07-12",
+  "share": 0.01840074740293526,
+  "kind": "step"
+ },
+ {
+  "protocol": "metis",
+  "coingecko_id": "metis-token",
+  "perp": "METIS/USDT:USDT",
+  "day": "2021-08-12",
+  "share": 0.19606088299948965,
+  "kind": "step"
+ },
+ {
+  "protocol": "metis",
+  "coingecko_id": "metis-token",
+  "perp": "METIS/USDT:USDT",
+  "day": "2021-09-11",
+  "share": 0.012895263076230548,
+  "kind": "step"
+ },
+ {
+  "protocol": "metis",
+  "coingecko_id": "metis-token",
+  "perp": "METIS/USDT:USDT",
+  "day": "2021-10-12",
+  "share": 0.011934061310835062,
+  "kind": "step"
+ },
+ {
+  "protocol": "metis",
+  "coingecko_id": "metis-token",
+  "perp": "METIS/USDT:USDT",
+  "day": "2021-11-11",
+  "share": 0.1321861400664349,
+  "kind": "step"
+ },
+ {
+  "protocol": "metis",
+  "coingecko_id": "metis-token",
+  "perp": "METIS/USDT:USDT",
+  "day": "2022-02-10",
+  "share": 0.12146282851598184,
+  "kind": "step"
+ },
+ {
+  "protocol": "metis",
+  "coingecko_id": "metis-token",
+  "perp": "METIS/USDT:USDT",
+  "day": "2022-05-13",
+  "share": 0.09572199926927157,
+  "kind": "step"
+ },
+ {
+  "protocol": "metis",
+  "coingecko_id": "metis-token",
+  "perp": "METIS/USDT:USDT",
+  "day": "2022-08-12",
+  "share": 0.02816957391665883,
+  "kind": "step"
+ },
+ {
+  "protocol": "metis",
+  "coingecko_id": "metis-token",
+  "perp": "METIS/USDT:USDT",
+  "day": "2022-11-11",
+  "share": 0.026651964909655153,
+  "kind": "step"
+ },
+ {
+  "protocol": "metis",
+  "coingecko_id": "metis-token",
+  "perp": "METIS/USDT:USDT",
+  "day": "2023-02-11",
+  "share": 0.0252823398382678,
+  "kind": "step"
+ },
+ {
+  "protocol": "metis",
+  "coingecko_id": "metis-token",
+  "perp": "METIS/USDT:USDT",
+  "day": "2023-05-13",
+  "share": 0.024053094400759707,
+  "kind": "step"
+ },
+ {
+  "protocol": "metis",
+  "coingecko_id": "metis-token",
+  "perp": "METIS/USDT:USDT",
+  "day": "2023-08-12",
+  "share": 0.012506505979154805,
+  "kind": "step"
+ },
+ {
+  "protocol": "metis",
+  "coingecko_id": "metis-token",
+  "perp": "METIS/USDT:USDT",
+  "day": "2023-11-12",
+  "share": 0.012193814107302796,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2021-02-22",
+  "share": 1.0,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2021-03-24",
+  "share": 0.5,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2021-04-24",
+  "share": 0.33333333333333337,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2021-04-29",
+  "share": 0.44999999999999996,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2021-05-24",
+  "share": 0.17241379310344826,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2021-05-29",
+  "share": 0.2647058823529412,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2021-06-23",
+  "share": 0.11627906976744186,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2021-06-29",
+  "share": 0.1875,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2021-07-24",
+  "share": 0.08771929824561404,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2021-07-29",
+  "share": 0.14516129032258063,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2021-08-23",
+  "share": 0.07042253521126761,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2021-08-29",
+  "share": 0.11842105263157894,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2021-09-23",
+  "share": 0.03151425232376485,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2021-09-28",
+  "share": 0.054992603403187935,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2021-10-23",
+  "share": 0.028958919936075155,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2021-10-29",
+  "share": 0.05065902522928092,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2021-11-23",
+  "share": 0.02678690443744519,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2021-11-28",
+  "share": 0.04695855369699919,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2021-12-23",
+  "share": 0.021277110999923247,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2021-12-28",
+  "share": 0.03740955512997874,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2022-01-22",
+  "share": 0.019714587256318642,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2022-01-28",
+  "share": 0.03470582878693036,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2022-02-22",
+  "share": 0.01835795463608285,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2022-03-24",
+  "share": 0.017669517561321957,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2022-04-24",
+  "share": 0.016915410309874663,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2022-05-24",
+  "share": 0.016206704953599847,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2022-06-24",
+  "share": 0.015546355893488364,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2022-07-24",
+  "share": 0.014945689926619918,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2022-08-18",
+  "share": 0.010941523543389947,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2022-08-24",
+  "share": 0.014332924229592744,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2022-09-17",
+  "share": 0.010510018990226142,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2022-09-23",
+  "share": 0.013775202908964314,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2022-10-18",
+  "share": 0.010134916265765997,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2022-12-18",
+  "share": 0.08065711804800552,
+  "kind": "cliff+step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2023-01-17",
+  "share": 0.01202352173271055,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2023-02-17",
+  "share": 0.011780164146397694,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2023-03-19",
+  "share": 0.011549551668989867,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2023-04-18",
+  "share": 0.011327794924462922,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2023-05-19",
+  "share": 0.01111153243843837,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2023-06-18",
+  "share": 0.010906127508650892,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2023-07-19",
+  "share": 0.010705523170195462,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2023-08-18",
+  "share": 0.010514725887886883,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2023-09-18",
+  "share": 0.010328138677985014,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2023-10-18",
+  "share": 0.010150444397017086,
+  "kind": "step"
+ },
+ {
+  "protocol": "moonbeam",
+  "coingecko_id": "moonbeam",
+  "perp": "GLMR/USDT:USDT",
+  "day": "2023-11-18",
+  "share": 0.010041435679291043,
+  "kind": "step"
+ },
+ {
+  "protocol": "near",
+  "coingecko_id": "near",
+  "perp": "NEAR/USDT:USDT",
+  "day": "2021-04-22",
+  "share": 0.09107519817063307,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "omni",
+  "coingecko_id": "omni-network",
+  "perp": "OMNI/USDT:USDT",
+  "day": "2025-04-17",
+  "share": 0.6790906114003229,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "omni",
+  "coingecko_id": "omni-network",
+  "perp": "OMNI/USDT:USDT",
+  "day": "2025-10-16",
+  "share": 0.21525883063367646,
+  "kind": "step"
+ },
+ {
+  "protocol": "omni",
+  "coingecko_id": "omni-network",
+  "perp": "OMNI/USDT:USDT",
+  "day": "2026-04-17",
+  "share": 0.1595941457175881,
+  "kind": "step"
+ },
+ {
+  "protocol": "ondo",
+  "coingecko_id": "ondo-finance",
+  "perp": "ONDO/USDT:USDT",
+  "day": "2025-01-17",
+  "share": 0.7917057110909472,
+  "kind": "step"
+ },
+ {
+  "protocol": "ondo",
+  "coingecko_id": "ondo-finance",
+  "perp": "ONDO/USDT:USDT",
+  "day": "2026-01-17",
+  "share": 0.33860293707461325,
+  "kind": "step"
+ },
+ {
+  "protocol": "orderly",
+  "coingecko_id": "orderly-network",
+  "perp": "ORDER/USDT:USDT",
+  "day": "2025-08-26",
+  "share": 0.12730635376482233,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "pendle",
+  "coingecko_id": "pendle",
+  "perp": "PENDLE/USDT:USDT",
+  "day": "2021-07-27",
+  "share": 0.25,
+  "kind": "step"
+ },
+ {
+  "protocol": "pendle",
+  "coingecko_id": "pendle",
+  "perp": "PENDLE/USDT:USDT",
+  "day": "2021-10-26",
+  "share": 0.2,
+  "kind": "step"
+ },
+ {
+  "protocol": "pendle",
+  "coingecko_id": "pendle",
+  "perp": "PENDLE/USDT:USDT",
+  "day": "2022-01-25",
+  "share": 0.16666666666666666,
+  "kind": "step"
+ },
+ {
+  "protocol": "pendle",
+  "coingecko_id": "pendle",
+  "perp": "PENDLE/USDT:USDT",
+  "day": "2022-04-27",
+  "share": 0.5357142857142856,
+  "kind": "cliff+step"
+ },
+ {
+  "protocol": "pendle",
+  "coingecko_id": "pendle",
+  "perp": "PENDLE/USDT:USDT",
+  "day": "2022-07-27",
+  "share": 0.052884615384615384,
+  "kind": "step"
+ },
+ {
+  "protocol": "pendle",
+  "coingecko_id": "pendle",
+  "perp": "PENDLE/USDT:USDT",
+  "day": "2022-10-26",
+  "share": 0.0502283105022831,
+  "kind": "step"
+ },
+ {
+  "protocol": "pendle",
+  "coingecko_id": "pendle",
+  "perp": "PENDLE/USDT:USDT",
+  "day": "2023-01-26",
+  "share": 0.047826086956521734,
+  "kind": "step"
+ },
+ {
+  "protocol": "pendle",
+  "coingecko_id": "pendle",
+  "perp": "PENDLE/USDT:USDT",
+  "day": "2023-04-27",
+  "share": 0.04564315352697095,
+  "kind": "step"
+ },
+ {
+  "protocol": "perpetual-protocol",
+  "coingecko_id": "perpetual-protocol",
+  "perp": "PERP/USDT:USDT",
+  "day": "2021-03-16",
+  "share": 0.96,
+  "kind": "step"
+ },
+ {
+  "protocol": "perpetual-protocol",
+  "coingecko_id": "perpetual-protocol",
+  "perp": "PERP/USDT:USDT",
+  "day": "2021-06-15",
+  "share": 0.4897959183673469,
+  "kind": "step"
+ },
+ {
+  "protocol": "perpetual-protocol",
+  "coingecko_id": "perpetual-protocol",
+  "perp": "PERP/USDT:USDT",
+  "day": "2021-09-14",
+  "share": 0.3287671232876712,
+  "kind": "step"
+ },
+ {
+  "protocol": "perpetual-protocol",
+  "coingecko_id": "perpetual-protocol",
+  "perp": "PERP/USDT:USDT",
+  "day": "2021-12-15",
+  "share": 0.24742268041237114,
+  "kind": "step"
+ },
+ {
+  "protocol": "perpetual-protocol",
+  "coingecko_id": "perpetual-protocol",
+  "perp": "PERP/USDT:USDT",
+  "day": "2022-03-15",
+  "share": 0.018078512396694214,
+  "kind": "step"
+ },
+ {
+  "protocol": "perpetual-protocol",
+  "coingecko_id": "perpetual-protocol",
+  "perp": "PERP/USDT:USDT",
+  "day": "2022-06-15",
+  "share": 0.017757483510908167,
+  "kind": "step"
+ },
+ {
+  "protocol": "perpetual-protocol",
+  "coingecko_id": "perpetual-protocol",
+  "perp": "PERP/USDT:USDT",
+  "day": "2022-09-14",
+  "share": 0.01744765702891326,
+  "kind": "step"
+ },
+ {
+  "protocol": "perpetual-protocol",
+  "coingecko_id": "perpetual-protocol",
+  "perp": "PERP/USDT:USDT",
+  "day": "2022-12-14",
+  "share": 0.0171484566389025,
+  "kind": "step"
+ },
+ {
+  "protocol": "perpetual-protocol",
+  "coingecko_id": "perpetual-protocol",
+  "perp": "PERP/USDT:USDT",
+  "day": "2023-03-16",
+  "share": 0.016859344894026976,
+  "kind": "step"
+ },
+ {
+  "protocol": "perpetual-protocol",
+  "coingecko_id": "perpetual-protocol",
+  "perp": "PERP/USDT:USDT",
+  "day": "2023-06-15",
+  "share": 0.016579819990525817,
+  "kind": "step"
+ },
+ {
+  "protocol": "perpetual-protocol",
+  "coingecko_id": "perpetual-protocol",
+  "perp": "PERP/USDT:USDT",
+  "day": "2023-09-14",
+  "share": 0.016309412861136997,
+  "kind": "step"
+ },
+ {
+  "protocol": "perpetual-protocol",
+  "coingecko_id": "perpetual-protocol",
+  "perp": "PERP/USDT:USDT",
+  "day": "2023-12-15",
+  "share": 0.016047684548372305,
+  "kind": "step"
+ },
+ {
+  "protocol": "perpetual-protocol",
+  "coingecko_id": "perpetual-protocol",
+  "perp": "PERP/USDT:USDT",
+  "day": "2024-03-15",
+  "share": 0.0157942238267148,
+  "kind": "step"
+ },
+ {
+  "protocol": "perpetual-protocol",
+  "coingecko_id": "perpetual-protocol",
+  "perp": "PERP/USDT:USDT",
+  "day": "2024-06-14",
+  "share": 0.015548645046645935,
+  "kind": "step"
+ },
+ {
+  "protocol": "perpetual-protocol",
+  "coingecko_id": "perpetual-protocol",
+  "perp": "PERP/USDT:USDT",
+  "day": "2024-09-13",
+  "share": 0.01531058617672791,
+  "kind": "step"
+ },
+ {
+  "protocol": "perpetual-protocol",
+  "coingecko_id": "perpetual-protocol",
+  "perp": "PERP/USDT:USDT",
+  "day": "2024-12-14",
+  "share": 0.015079707022834985,
+  "kind": "step"
+ },
+ {
+  "protocol": "perpetual-protocol",
+  "coingecko_id": "perpetual-protocol",
+  "perp": "PERP/USDT:USDT",
+  "day": "2025-03-15",
+  "share": 0.014855687606112054,
+  "kind": "step"
+ },
+ {
+  "protocol": "perpetual-protocol",
+  "coingecko_id": "perpetual-protocol",
+  "perp": "PERP/USDT:USDT",
+  "day": "2025-06-14",
+  "share": 0.014638226683396068,
+  "kind": "step"
+ },
+ {
+  "protocol": "perpetual-protocol",
+  "coingecko_id": "perpetual-protocol",
+  "perp": "PERP/USDT:USDT",
+  "day": "2025-09-14",
+  "share": 0.014427040395713108,
+  "kind": "step"
+ },
+ {
+  "protocol": "perpetual-protocol",
+  "coingecko_id": "perpetual-protocol",
+  "perp": "PERP/USDT:USDT",
+  "day": "2025-12-14",
+  "share": 0.014221861032100772,
+  "kind": "step"
+ },
+ {
+  "protocol": "perpetual-protocol",
+  "coingecko_id": "perpetual-protocol",
+  "perp": "PERP/USDT:USDT",
+  "day": "2026-03-15",
+  "share": 0.014022435897435898,
+  "kind": "step"
+ },
+ {
+  "protocol": "perpetual-protocol",
+  "coingecko_id": "perpetual-protocol",
+  "perp": "PERP/USDT:USDT",
+  "day": "2026-06-15",
+  "share": 0.01382852627419992,
+  "kind": "step"
+ },
+ {
+  "protocol": "perpetual-protocol",
+  "coingecko_id": "perpetual-protocol",
+  "perp": "PERP/USDT:USDT",
+  "day": "2026-09-14",
+  "share": 0.013639906469212782,
+  "kind": "step"
+ },
+ {
+  "protocol": "plasma",
+  "coingecko_id": "plasma",
+  "perp": "XPL/USDT:USDT",
+  "day": "2026-09-25",
+  "share": 0.6000000000000001,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "pumpfun",
+  "coingecko_id": "pump-fun",
+  "perp": "PUMP/USDT:USDT",
+  "day": "2026-08-12",
+  "share": 0.013681592039800993,
+  "kind": "step"
+ },
+ {
+  "protocol": "pumpfun",
+  "coingecko_id": "pump-fun",
+  "perp": "PUMP/USDT:USDT",
+  "day": "2026-09-11",
+  "share": 0.013496932515337423,
+  "kind": "step"
+ },
+ {
+  "protocol": "pyth",
+  "coingecko_id": "pyth-network",
+  "perp": "PYTH/USDT:USDT",
+  "day": "2024-05-20",
+  "share": 0.3093645484949833,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "pyth",
+  "coingecko_id": "pyth-network",
+  "perp": "PYTH/USDT:USDT",
+  "day": "2025-05-20",
+  "share": 0.1277624309392265,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "pyth",
+  "coingecko_id": "pyth-network",
+  "perp": "PYTH/USDT:USDT",
+  "day": "2026-05-21",
+  "share": 0.08050478677110531,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "renzo",
+  "coingecko_id": "renzo",
+  "perp": "REZ/USDT:USDT",
+  "day": "2025-04-24",
+  "share": 0.13856291250638048,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "renzo",
+  "coingecko_id": "renzo",
+  "perp": "REZ/USDT:USDT",
+  "day": "2025-05-24",
+  "share": 0.12031879231745089,
+  "kind": "step"
+ },
+ {
+  "protocol": "renzo",
+  "coingecko_id": "renzo",
+  "perp": "REZ/USDT:USDT",
+  "day": "2025-06-24",
+  "share": 0.10497217556826442,
+  "kind": "step"
+ },
+ {
+  "protocol": "renzo",
+  "coingecko_id": "renzo",
+  "perp": "REZ/USDT:USDT",
+  "day": "2025-07-24",
+  "share": 0.09315778265535804,
+  "kind": "step"
+ },
+ {
+  "protocol": "renzo",
+  "coingecko_id": "renzo",
+  "perp": "REZ/USDT:USDT",
+  "day": "2025-08-23",
+  "share": 0.08373373105850866,
+  "kind": "step"
+ },
+ {
+  "protocol": "renzo",
+  "coingecko_id": "renzo",
+  "perp": "REZ/USDT:USDT",
+  "day": "2025-09-23",
+  "share": 0.07600113204395915,
+  "kind": "step"
+ },
+ {
+  "protocol": "renzo",
+  "coingecko_id": "renzo",
+  "perp": "REZ/USDT:USDT",
+  "day": "2025-10-23",
+  "share": 0.06960956902590222,
+  "kind": "step"
+ },
+ {
+  "protocol": "renzo",
+  "coingecko_id": "renzo",
+  "perp": "REZ/USDT:USDT",
+  "day": "2025-11-23",
+  "share": 0.06418105710058422,
+  "kind": "step"
+ },
+ {
+  "protocol": "renzo",
+  "coingecko_id": "renzo",
+  "perp": "REZ/USDT:USDT",
+  "day": "2025-12-23",
+  "share": 0.059562583536174656,
+  "kind": "step"
+ },
+ {
+  "protocol": "renzo",
+  "coingecko_id": "renzo",
+  "perp": "REZ/USDT:USDT",
+  "day": "2026-01-23",
+  "share": 0.055542768799862696,
+  "kind": "step"
+ },
+ {
+  "protocol": "renzo",
+  "coingecko_id": "renzo",
+  "perp": "REZ/USDT:USDT",
+  "day": "2026-02-22",
+  "share": 0.05205002645713085,
+  "kind": "step"
+ },
+ {
+  "protocol": "renzo",
+  "coingecko_id": "renzo",
+  "perp": "REZ/USDT:USDT",
+  "day": "2026-03-25",
+  "share": 0.04895393657033086,
+  "kind": "step"
+ },
+ {
+  "protocol": "renzo",
+  "coingecko_id": "renzo",
+  "perp": "REZ/USDT:USDT",
+  "day": "2026-04-24",
+  "share": 0.046220313822339654,
+  "kind": "step"
+ },
+ {
+  "protocol": "renzo",
+  "coingecko_id": "renzo",
+  "perp": "REZ/USDT:USDT",
+  "day": "2026-05-24",
+  "share": 0.011398770882820645,
+  "kind": "step"
+ },
+ {
+  "protocol": "renzo",
+  "coingecko_id": "renzo",
+  "perp": "REZ/USDT:USDT",
+  "day": "2026-06-24",
+  "share": 0.011166353372950213,
+  "kind": "step"
+ },
+ {
+  "protocol": "renzo",
+  "coingecko_id": "renzo",
+  "perp": "REZ/USDT:USDT",
+  "day": "2026-07-24",
+  "share": 0.01094641609854493,
+  "kind": "step"
+ },
+ {
+  "protocol": "renzo",
+  "coingecko_id": "renzo",
+  "perp": "REZ/USDT:USDT",
+  "day": "2026-08-24",
+  "share": 0.010731905747082882,
+  "kind": "step"
+ },
+ {
+  "protocol": "renzo",
+  "coingecko_id": "renzo",
+  "perp": "REZ/USDT:USDT",
+  "day": "2026-09-23",
+  "share": 0.010528593873724765,
+  "kind": "step"
+ },
+ {
+  "protocol": "resolv",
+  "coingecko_id": "resolv",
+  "perp": "RESOLV/USDT:USDT",
+  "day": "2026-07-10",
+  "share": 0.051433944522802075,
+  "kind": "step"
+ },
+ {
+  "protocol": "resolv",
+  "coingecko_id": "resolv",
+  "perp": "RESOLV/USDT:USDT",
+  "day": "2026-08-10",
+  "share": 0.047284593607503304,
+  "kind": "step"
+ },
+ {
+  "protocol": "resolv",
+  "coingecko_id": "resolv",
+  "perp": "RESOLV/USDT:USDT",
+  "day": "2026-09-09",
+  "share": 0.04375474943006839,
+  "kind": "step"
+ },
+ {
+  "protocol": "river",
+  "coingecko_id": "river",
+  "perp": "RIVER/USDT:USDT",
+  "day": "2026-01-22",
+  "share": 0.10429142369931414,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "safe",
+  "coingecko_id": "safe",
+  "perp": "SAFE/USDT:USDT",
+  "day": "2025-04-23",
+  "share": 0.06795997610472633,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "saga",
+  "coingecko_id": "saga-2",
+  "perp": "SAGA/USDT:USDT",
+  "day": "2025-04-09",
+  "share": 1.6666666666666667,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "solana",
+  "coingecko_id": "solana",
+  "perp": "SOL/USDT:USDT",
+  "day": "2020-12-22",
+  "share": 6.357668404886064,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "spark",
+  "coingecko_id": "spark-2",
+  "perp": "SPK/USDT:USDT",
+  "day": "2026-06-17",
+  "share": 0.7672634271099744,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "stakestone",
+  "coingecko_id": "stakestone",
+  "perp": "STO/USDT:USDT",
+  "day": "2026-05-03",
+  "share": 0.04275713479146022,
+  "kind": "step"
+ },
+ {
+  "protocol": "stakestone",
+  "coingecko_id": "stakestone",
+  "perp": "STO/USDT:USDT",
+  "day": "2026-06-03",
+  "share": 0.04005983582949385,
+  "kind": "step"
+ },
+ {
+  "protocol": "stakestone",
+  "coingecko_id": "stakestone",
+  "perp": "STO/USDT:USDT",
+  "day": "2026-07-03",
+  "share": 0.03768265620856653,
+  "kind": "step"
+ },
+ {
+  "protocol": "stakestone",
+  "coingecko_id": "stakestone",
+  "perp": "STO/USDT:USDT",
+  "day": "2026-08-02",
+  "share": 0.03557179988536282,
+  "kind": "step"
+ },
+ {
+  "protocol": "stakestone",
+  "coingecko_id": "stakestone",
+  "perp": "STO/USDT:USDT",
+  "day": "2026-09-02",
+  "share": 0.0336848853121442,
+  "kind": "step"
+ },
+ {
+  "protocol": "starknet",
+  "coingecko_id": "starknet",
+  "perp": "STRK/USDT:USDT",
+  "day": "2024-04-15",
+  "share": 0.45632080686433657,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "starknet",
+  "coingecko_id": "starknet",
+  "perp": "STRK/USDT:USDT",
+  "day": "2024-05-30",
+  "share": 0.02001809854182281,
+  "kind": "step"
+ },
+ {
+  "protocol": "starknet",
+  "coingecko_id": "starknet",
+  "perp": "STRK/USDT:USDT",
+  "day": "2024-06-29",
+  "share": 0.018516821608670204,
+  "kind": "step"
+ },
+ {
+  "protocol": "starknet",
+  "coingecko_id": "starknet",
+  "perp": "STRK/USDT:USDT",
+  "day": "2024-07-30",
+  "share": 0.017194901333414267,
+  "kind": "step"
+ },
+ {
+  "protocol": "starknet",
+  "coingecko_id": "starknet",
+  "perp": "STRK/USDT:USDT",
+  "day": "2024-08-29",
+  "share": 0.01607537973840995,
+  "kind": "step"
+ },
+ {
+  "protocol": "starknet",
+  "coingecko_id": "starknet",
+  "perp": "STRK/USDT:USDT",
+  "day": "2024-09-29",
+  "share": 0.015069601701808915,
+  "kind": "step"
+ },
+ {
+  "protocol": "starknet",
+  "coingecko_id": "starknet",
+  "perp": "STRK/USDT:USDT",
+  "day": "2024-10-29",
+  "share": 0.014202748200346555,
+  "kind": "step"
+ },
+ {
+  "protocol": "starknet",
+  "coingecko_id": "starknet",
+  "perp": "STRK/USDT:USDT",
+  "day": "2024-11-29",
+  "share": 0.013411885045378616,
+  "kind": "step"
+ },
+ {
+  "protocol": "starknet",
+  "coingecko_id": "starknet",
+  "perp": "STRK/USDT:USDT",
+  "day": "2024-12-29",
+  "share": 0.012720884065237314,
+  "kind": "step"
+ },
+ {
+  "protocol": "starknet",
+  "coingecko_id": "starknet",
+  "perp": "STRK/USDT:USDT",
+  "day": "2025-01-28",
+  "share": 0.01209759721874103,
+  "kind": "step"
+ },
+ {
+  "protocol": "starknet",
+  "coingecko_id": "starknet",
+  "perp": "STRK/USDT:USDT",
+  "day": "2025-02-28",
+  "share": 0.011519029568614206,
+  "kind": "step"
+ },
+ {
+  "protocol": "starknet",
+  "coingecko_id": "starknet",
+  "perp": "STRK/USDT:USDT",
+  "day": "2025-03-30",
+  "share": 0.011005577084329508,
+  "kind": "step"
+ },
+ {
+  "protocol": "starknet",
+  "coingecko_id": "starknet",
+  "perp": "STRK/USDT:USDT",
+  "day": "2025-04-30",
+  "share": 0.010524670777614716,
+  "kind": "step"
+ },
+ {
+  "protocol": "starknet",
+  "coingecko_id": "starknet",
+  "perp": "STRK/USDT:USDT",
+  "day": "2025-05-30",
+  "share": 0.010094382206941099,
+  "kind": "step"
+ },
+ {
+  "protocol": "stella",
+  "coingecko_id": "alpha-finance",
+  "perp": "ALPHA/USDT:USDT",
+  "day": "2021-01-29",
+  "share": 0.22216666666666668,
+  "kind": "step"
+ },
+ {
+  "protocol": "stella",
+  "coingecko_id": "alpha-finance",
+  "perp": "ALPHA/USDT:USDT",
+  "day": "2021-04-30",
+  "share": 0.13404843710718178,
+  "kind": "step"
+ },
+ {
+  "protocol": "stella",
+  "coingecko_id": "alpha-finance",
+  "perp": "ALPHA/USDT:USDT",
+  "day": "2021-07-30",
+  "share": 0.09597983919356774,
+  "kind": "step"
+ },
+ {
+  "protocol": "stella",
+  "coingecko_id": "alpha-finance",
+  "perp": "ALPHA/USDT:USDT",
+  "day": "2021-10-30",
+  "share": 0.07475115659610262,
+  "kind": "step"
+ },
+ {
+  "protocol": "sui",
+  "coingecko_id": "sui",
+  "perp": "SUI/USDT:USDT",
+  "day": "2024-05-02",
+  "share": 0.5746403864302628,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "sui",
+  "coingecko_id": "sui",
+  "perp": "SUI/USDT:USDT",
+  "day": "2024-06-01",
+  "share": 0.029123337436411836,
+  "kind": "step"
+ },
+ {
+  "protocol": "sui",
+  "coingecko_id": "sui",
+  "perp": "SUI/USDT:USDT",
+  "day": "2024-07-02",
+  "share": 0.02718069158975276,
+  "kind": "step"
+ },
+ {
+  "protocol": "sui",
+  "coingecko_id": "sui",
+  "perp": "SUI/USDT:USDT",
+  "day": "2024-08-01",
+  "share": 0.02585036381993524,
+  "kind": "step"
+ },
+ {
+  "protocol": "sui",
+  "coingecko_id": "sui",
+  "perp": "SUI/USDT:USDT",
+  "day": "2024-08-31",
+  "share": 0.024644182574156584,
+  "kind": "step"
+ },
+ {
+  "protocol": "sui",
+  "coingecko_id": "sui",
+  "perp": "SUI/USDT:USDT",
+  "day": "2024-10-01",
+  "share": 0.02354554448986692,
+  "kind": "step"
+ },
+ {
+  "protocol": "sui",
+  "coingecko_id": "sui",
+  "perp": "SUI/USDT:USDT",
+  "day": "2024-10-31",
+  "share": 0.022540680561584956,
+  "kind": "step"
+ },
+ {
+  "protocol": "sui",
+  "coingecko_id": "sui",
+  "perp": "SUI/USDT:USDT",
+  "day": "2024-12-01",
+  "share": 0.021618076080654244,
+  "kind": "step"
+ },
+ {
+  "protocol": "sui",
+  "coingecko_id": "sui",
+  "perp": "SUI/USDT:USDT",
+  "day": "2024-12-31",
+  "share": 0.020768027426982253,
+  "kind": "step"
+ },
+ {
+  "protocol": "sui",
+  "coingecko_id": "sui",
+  "perp": "SUI/USDT:USDT",
+  "day": "2025-01-31",
+  "share": 0.019982299469599223,
+  "kind": "step"
+ },
+ {
+  "protocol": "sui",
+  "coingecko_id": "sui",
+  "perp": "SUI/USDT:USDT",
+  "day": "2025-03-02",
+  "share": 0.019253857902639008,
+  "kind": "step"
+ },
+ {
+  "protocol": "sui",
+  "coingecko_id": "sui",
+  "perp": "SUI/USDT:USDT",
+  "day": "2025-04-02",
+  "share": 0.018576658067255544,
+  "kind": "step"
+ },
+ {
+  "protocol": "sui",
+  "coingecko_id": "sui",
+  "perp": "SUI/USDT:USDT",
+  "day": "2025-05-02",
+  "share": 0.017945476824871135,
+  "kind": "step"
+ },
+ {
+  "protocol": "sui",
+  "coingecko_id": "sui",
+  "perp": "SUI/USDT:USDT",
+  "day": "2025-06-01",
+  "share": 0.010401779155034927,
+  "kind": "step"
+ },
+ {
+  "protocol": "sui",
+  "coingecko_id": "sui",
+  "perp": "SUI/USDT:USDT",
+  "day": "2025-07-02",
+  "share": 0.010139109229616484,
+  "kind": "step"
+ },
+ {
+  "protocol": "tensor",
+  "coingecko_id": "tensor",
+  "perp": "TNSR/USDT:USDT",
+  "day": "2025-04-09",
+  "share": 0.20220789287512855,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "thegraph",
+  "coingecko_id": "the-graph",
+  "perp": "GRT/USDT:USDT",
+  "day": "2021-06-17",
+  "share": 1.3454666580931964,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "thegraph",
+  "coingecko_id": "the-graph",
+  "perp": "GRT/USDT:USDT",
+  "day": "2021-12-17",
+  "share": 0.46259803506498415,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "thena",
+  "coingecko_id": "thena",
+  "perp": "THE/USDT:USDT",
+  "day": "2024-12-12",
+  "share": 0.13171498637344048,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "tron",
+  "coingecko_id": "tron",
+  "perp": "TRX/USDT:USDT",
+  "day": "2020-01-01",
+  "share": 0.5068493150684932,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "truefi",
+  "coingecko_id": "truefi",
+  "perp": "TRU/USDT:USDT",
+  "day": "2021-02-20",
+  "share": 0.1300371387237416,
+  "kind": "step"
+ },
+ {
+  "protocol": "truefi",
+  "coingecko_id": "truefi",
+  "perp": "TRU/USDT:USDT",
+  "day": "2021-05-22",
+  "share": 0.11507333190005144,
+  "kind": "step"
+ },
+ {
+  "protocol": "truefi",
+  "coingecko_id": "truefi",
+  "perp": "TRU/USDT:USDT",
+  "day": "2021-08-22",
+  "share": 0.10319799479373247,
+  "kind": "step"
+ },
+ {
+  "protocol": "truefi",
+  "coingecko_id": "truefi",
+  "perp": "TRU/USDT:USDT",
+  "day": "2021-11-21",
+  "share": 0.15554265975805726,
+  "kind": "step"
+ },
+ {
+  "protocol": "truefi",
+  "coingecko_id": "truefi",
+  "perp": "TRU/USDT:USDT",
+  "day": "2022-02-20",
+  "share": 0.08095278826144751,
+  "kind": "step"
+ },
+ {
+  "protocol": "truefi",
+  "coingecko_id": "truefi",
+  "perp": "TRU/USDT:USDT",
+  "day": "2022-05-22",
+  "share": 0.07489021642809034,
+  "kind": "step"
+ },
+ {
+  "protocol": "truefi",
+  "coingecko_id": "truefi",
+  "perp": "TRU/USDT:USDT",
+  "day": "2022-08-22",
+  "share": 0.06967243285268143,
+  "kind": "step"
+ },
+ {
+  "protocol": "truefi",
+  "coingecko_id": "truefi",
+  "perp": "TRU/USDT:USDT",
+  "day": "2022-11-21",
+  "share": 0.10830335199965226,
+  "kind": "step"
+ },
+ {
+  "protocol": "truefi",
+  "coingecko_id": "truefi",
+  "perp": "TRU/USDT:USDT",
+  "day": "2023-11-21",
+  "share": 0.03895051713274758,
+  "kind": "step"
+ },
+ {
+  "protocol": "trump",
+  "coingecko_id": "official-trump",
+  "perp": "TRUMP/USDT:USDT",
+  "day": "2025-04-19",
+  "share": 0.2,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "trump",
+  "coingecko_id": "official-trump",
+  "perp": "TRUMP/USDT:USDT",
+  "day": "2025-07-19",
+  "share": 0.17553857929379255,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "trump",
+  "coingecko_id": "official-trump",
+  "perp": "TRUMP/USDT:USDT",
+  "day": "2026-01-17",
+  "share": 0.10826343575739976,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "vana",
+  "coingecko_id": "vana",
+  "perp": "VANA/USDT:USDT",
+  "day": "2024-10-14",
+  "share": 0.014619488452853276,
+  "kind": "step"
+ },
+ {
+  "protocol": "vana",
+  "coingecko_id": "vana",
+  "perp": "VANA/USDT:USDT",
+  "day": "2024-11-14",
+  "share": 0.013516515196627492,
+  "kind": "step"
+ },
+ {
+  "protocol": "vana",
+  "coingecko_id": "vana",
+  "perp": "VANA/USDT:USDT",
+  "day": "2024-12-14",
+  "share": 0.01256829506067762,
+  "kind": "step"
+ },
+ {
+  "protocol": "vana",
+  "coingecko_id": "vana",
+  "perp": "VANA/USDT:USDT",
+  "day": "2025-01-13",
+  "share": 0.011744394022941154,
+  "kind": "step"
+ },
+ {
+  "protocol": "vana",
+  "coingecko_id": "vana",
+  "perp": "VANA/USDT:USDT",
+  "day": "2025-02-13",
+  "share": 0.011021867384891627,
+  "kind": "step"
+ },
+ {
+  "protocol": "vana",
+  "coingecko_id": "vana",
+  "perp": "VANA/USDT:USDT",
+  "day": "2025-03-15",
+  "share": 0.010383089534034533,
+  "kind": "step"
+ },
+ {
+  "protocol": "walrus",
+  "coingecko_id": "walrus-2",
+  "perp": "WAL/USDT:USDT",
+  "day": "2026-03-27",
+  "share": 0.21895360870209846,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "wormhole",
+  "coingecko_id": "wormhole",
+  "perp": "W/USDT:USDT",
+  "day": "2024-04-02",
+  "share": 0.572854529569356,
+  "kind": "cliff+step"
+ },
+ {
+  "protocol": "wormhole",
+  "coingecko_id": "wormhole",
+  "perp": "W/USDT:USDT",
+  "day": "2025-04-02",
+  "share": 0.2687051007181417,
+  "kind": "cliff+step"
+ },
+ {
+  "protocol": "wormhole",
+  "coingecko_id": "wormhole",
+  "perp": "W/USDT:USDT",
+  "day": "2026-04-02",
+  "share": 0.1962660365724655,
+  "kind": "cliff+step"
+ },
+ {
+  "protocol": "y2k",
+  "coingecko_id": "lido-dao",
+  "perp": "LDO/USDT:USDT",
+  "day": "2023-06-18",
+  "share": 0.030184851718833974,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "y2k",
+  "coingecko_id": "lido-dao",
+  "perp": "LDO/USDT:USDT",
+  "day": "2023-10-09",
+  "share": 0.06357963376238979,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "zeta",
+  "coingecko_id": "zetachain",
+  "perp": "ZETA/USDT:USDT",
+  "day": "2024-05-19",
+  "share": 0.15591116376167863,
+  "kind": "step"
+ },
+ {
+  "protocol": "zeta",
+  "coingecko_id": "zetachain",
+  "perp": "ZETA/USDT:USDT",
+  "day": "2024-06-18",
+  "share": 0.12970860341495666,
+  "kind": "step"
+ },
+ {
+  "protocol": "zeta",
+  "coingecko_id": "zetachain",
+  "perp": "ZETA/USDT:USDT",
+  "day": "2024-07-18",
+  "share": 0.11104610268850727,
+  "kind": "step"
+ },
+ {
+  "protocol": "zeta",
+  "coingecko_id": "zetachain",
+  "perp": "ZETA/USDT:USDT",
+  "day": "2024-08-18",
+  "share": 0.09704828746122478,
+  "kind": "step"
+ },
+ {
+  "protocol": "zeta",
+  "coingecko_id": "zetachain",
+  "perp": "ZETA/USDT:USDT",
+  "day": "2024-09-17",
+  "share": 0.08620816894775075,
+  "kind": "step"
+ },
+ {
+  "protocol": "zeta",
+  "coingecko_id": "zetachain",
+  "perp": "ZETA/USDT:USDT",
+  "day": "2024-10-18",
+  "share": 0.07752713930321448,
+  "kind": "step"
+ },
+ {
+  "protocol": "zeta",
+  "coingecko_id": "zetachain",
+  "perp": "ZETA/USDT:USDT",
+  "day": "2024-11-17",
+  "share": 0.03522518697972116,
+  "kind": "step"
+ },
+ {
+  "protocol": "zeta",
+  "coingecko_id": "zetachain",
+  "perp": "ZETA/USDT:USDT",
+  "day": "2024-12-18",
+  "share": 0.032724690763909665,
+  "kind": "step"
+ },
+ {
+  "protocol": "zeta",
+  "coingecko_id": "zetachain",
+  "perp": "ZETA/USDT:USDT",
+  "day": "2025-01-17",
+  "share": 0.03056164216243934,
+  "kind": "step"
+ },
+ {
+  "protocol": "zeta",
+  "coingecko_id": "zetachain",
+  "perp": "ZETA/USDT:USDT",
+  "day": "2025-02-16",
+  "share": 0.028666812673897014,
+  "kind": "step"
+ },
+ {
+  "protocol": "zeta",
+  "coingecko_id": "zetachain",
+  "perp": "ZETA/USDT:USDT",
+  "day": "2025-03-19",
+  "share": 0.026988563212735208,
+  "kind": "step"
+ },
+ {
+  "protocol": "zeta",
+  "coingecko_id": "zetachain",
+  "perp": "ZETA/USDT:USDT",
+  "day": "2025-04-18",
+  "share": 0.025500107828029316,
+  "kind": "step"
+ },
+ {
+  "protocol": "zeta",
+  "coingecko_id": "zetachain",
+  "perp": "ZETA/USDT:USDT",
+  "day": "2025-05-19",
+  "share": 0.024163513997264168,
+  "kind": "step"
+ },
+ {
+  "protocol": "zeta",
+  "coingecko_id": "zetachain",
+  "perp": "ZETA/USDT:USDT",
+  "day": "2025-06-18",
+  "share": 0.022963431980660812,
+  "kind": "step"
+ },
+ {
+  "protocol": "zeta",
+  "coingecko_id": "zetachain",
+  "perp": "ZETA/USDT:USDT",
+  "day": "2025-07-19",
+  "share": 0.021873851299549222,
+  "kind": "step"
+ },
+ {
+  "protocol": "zeta",
+  "coingecko_id": "zetachain",
+  "perp": "ZETA/USDT:USDT",
+  "day": "2025-08-18",
+  "share": 0.020885776285469688,
+  "kind": "step"
+ },
+ {
+  "protocol": "zeta",
+  "coingecko_id": "zetachain",
+  "perp": "ZETA/USDT:USDT",
+  "day": "2025-09-18",
+  "share": 0.019980553494395727,
+  "kind": "step"
+ },
+ {
+  "protocol": "zeta",
+  "coingecko_id": "zetachain",
+  "perp": "ZETA/USDT:USDT",
+  "day": "2025-10-18",
+  "share": 0.019152886220560897,
+  "kind": "step"
+ },
+ {
+  "protocol": "zeta",
+  "coingecko_id": "zetachain",
+  "perp": "ZETA/USDT:USDT",
+  "day": "2025-11-17",
+  "share": 0.018391061492689736,
+  "kind": "step"
+ },
+ {
+  "protocol": "zeta",
+  "coingecko_id": "zetachain",
+  "perp": "ZETA/USDT:USDT",
+  "day": "2025-12-18",
+  "share": 0.017685520915648345,
+  "kind": "step"
+ },
+ {
+  "protocol": "zeta",
+  "coingecko_id": "zetachain",
+  "perp": "ZETA/USDT:USDT",
+  "day": "2026-01-17",
+  "share": 0.017033970845634173,
+  "kind": "step"
+ },
+ {
+  "protocol": "zeta",
+  "coingecko_id": "zetachain",
+  "perp": "ZETA/USDT:USDT",
+  "day": "2026-02-17",
+  "share": 0.016426995055337245,
+  "kind": "step"
+ },
+ {
+  "protocol": "zeta",
+  "coingecko_id": "zetachain",
+  "perp": "ZETA/USDT:USDT",
+  "day": "2026-03-19",
+  "share": 0.01586339841165426,
+  "kind": "step"
+ },
+ {
+  "protocol": "zeta",
+  "coingecko_id": "zetachain",
+  "perp": "ZETA/USDT:USDT",
+  "day": "2026-04-19",
+  "share": 0.015335686617977382,
+  "kind": "step"
+ },
+ {
+  "protocol": "zeta",
+  "coingecko_id": "zetachain",
+  "perp": "ZETA/USDT:USDT",
+  "day": "2026-05-19",
+  "share": 0.014843364203450997,
+  "kind": "step"
+ },
+ {
+  "protocol": "zeta",
+  "coingecko_id": "zetachain",
+  "perp": "ZETA/USDT:USDT",
+  "day": "2026-06-18",
+  "share": 0.01438166868070201,
+  "kind": "step"
+ },
+ {
+  "protocol": "zeta",
+  "coingecko_id": "zetachain",
+  "perp": "ZETA/USDT:USDT",
+  "day": "2026-07-19",
+  "share": 0.01394658334180726,
+  "kind": "step"
+ },
+ {
+  "protocol": "zeta",
+  "coingecko_id": "zetachain",
+  "perp": "ZETA/USDT:USDT",
+  "day": "2026-08-18",
+  "share": 0.013538223026267296,
+  "kind": "step"
+ },
+ {
+  "protocol": "zeta",
+  "coingecko_id": "zetachain",
+  "perp": "ZETA/USDT:USDT",
+  "day": "2026-09-18",
+  "share": 0.013151989075075397,
+  "kind": "step"
+ },
+ {
+  "protocol": "zk",
+  "coingecko_id": "zksync",
+  "perp": "ZK/USDT:USDT",
+  "day": "2025-06-17",
+  "share": 0.1631518694811096,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "zora",
+  "coingecko_id": "zora",
+  "perp": "ZORA/USDT:USDT",
+  "day": "2025-09-30",
+  "share": 0.20571428514285714,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "zora",
+  "coingecko_id": "zora",
+  "perp": "ZORA/USDT:USDT",
+  "day": "2025-10-30",
+  "share": 0.02818791969941294,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "zora",
+  "coingecko_id": "zora",
+  "perp": "ZORA/USDT:USDT",
+  "day": "2025-11-30",
+  "share": 0.027168835122140276,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "zora",
+  "coingecko_id": "zora",
+  "perp": "ZORA/USDT:USDT",
+  "day": "2025-12-30",
+  "share": 0.026220865909236838,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "zora",
+  "coingecko_id": "zora",
+  "perp": "ZORA/USDT:USDT",
+  "day": "2026-01-30",
+  "share": 0.02533681901253295,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "zora",
+  "coingecko_id": "zora",
+  "perp": "ZORA/USDT:USDT",
+  "day": "2026-03-02",
+  "share": 0.024510439810329115,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "zora",
+  "coingecko_id": "zora",
+  "perp": "ZORA/USDT:USDT",
+  "day": "2026-03-30",
+  "share": 0.023736263903779736,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "zora",
+  "coingecko_id": "zora",
+  "perp": "ZORA/USDT:USDT",
+  "day": "2026-04-30",
+  "share": 0.023009496139872722,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "zora",
+  "coingecko_id": "zora",
+  "perp": "ZORA/USDT:USDT",
+  "day": "2026-05-30",
+  "share": 0.022325911198915006,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "zora",
+  "coingecko_id": "zora",
+  "perp": "ZORA/USDT:USDT",
+  "day": "2026-06-30",
+  "share": 0.021681771391320062,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "zora",
+  "coingecko_id": "zora",
+  "perp": "ZORA/USDT:USDT",
+  "day": "2026-07-30",
+  "share": 0.021073758285543136,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "zora",
+  "coingecko_id": "zora",
+  "perp": "ZORA/USDT:USDT",
+  "day": "2026-08-30",
+  "share": 0.02049891552619506,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "zora",
+  "coingecko_id": "zora",
+  "perp": "ZORA/USDT:USDT",
+  "day": "2026-09-30",
+  "share": 0.01995460076237793,
+  "kind": "cliff"
+ },
+ {
+  "protocol": "zro",
+  "coingecko_id": "layerzero",
+  "perp": "ZRO/USDT:USDT",
+  "day": "2025-07-20",
+  "share": 0.09353005006780583,
+  "kind": "step"
+ },
+ {
+  "protocol": "zro",
+  "coingecko_id": "layerzero",
+  "perp": "ZRO/USDT:USDT",
+  "day": "2025-08-20",
+  "share": 0.08335330277684302,
+  "kind": "step"
+ },
+ {
+  "protocol": "zro",
+  "coingecko_id": "layerzero",
+  "perp": "ZRO/USDT:USDT",
+  "day": "2025-09-19",
+  "share": 0.07522955282439699,
+  "kind": "step"
+ },
+ {
+  "protocol": "zro",
+  "coingecko_id": "layerzero",
+  "perp": "ZRO/USDT:USDT",
+  "day": "2025-10-19",
+  "share": 0.06854868524126315,
+  "kind": "step"
+ },
+ {
+  "protocol": "zro",
+  "coingecko_id": "layerzero",
+  "perp": "ZRO/USDT:USDT",
+  "day": "2025-11-19",
+  "share": 0.06291862117658509,
+  "kind": "step"
+ },
+ {
+  "protocol": "zro",
+  "coingecko_id": "layerzero",
+  "perp": "ZRO/USDT:USDT",
+  "day": "2025-12-19",
+  "share": 0.05817650612512405,
+  "kind": "step"
+ },
+ {
+  "protocol": "zro",
+  "coingecko_id": "layerzero",
+  "perp": "ZRO/USDT:USDT",
+  "day": "2026-01-19",
+  "share": 0.05407029403572475,
+  "kind": "step"
+ },
+ {
+  "protocol": "zro",
+  "coingecko_id": "layerzero",
+  "perp": "ZRO/USDT:USDT",
+  "day": "2026-02-18",
+  "share": 0.050530655477210404,
+  "kind": "step"
+ },
+ {
+  "protocol": "zro",
+  "coingecko_id": "layerzero",
+  "perp": "ZRO/USDT:USDT",
+  "day": "2026-03-21",
+  "share": 0.04740383180697895,
+  "kind": "step"
+ },
+ {
+  "protocol": "zro",
+  "coingecko_id": "layerzero",
+  "perp": "ZRO/USDT:USDT",
+  "day": "2026-04-20",
+  "share": 0.04466107158716367,
+  "kind": "step"
+ },
+ {
+  "protocol": "zro",
+  "coingecko_id": "layerzero",
+  "perp": "ZRO/USDT:USDT",
+  "day": "2026-05-21",
+  "share": 0.042200790458129286,
+  "kind": "step"
+ },
+ {
+  "protocol": "zro",
+  "coingecko_id": "layerzero",
+  "perp": "ZRO/USDT:USDT",
+  "day": "2026-06-20",
+  "share": 0.04001318517318463,
+  "kind": "step"
+ },
+ {
+  "protocol": "zro",
+  "coingecko_id": "layerzero",
+  "perp": "ZRO/USDT:USDT",
+  "day": "2026-07-20",
+  "share": 0.03804120457134039,
+  "kind": "step"
+ },
+ {
+  "protocol": "zro",
+  "coingecko_id": "layerzero",
+  "perp": "ZRO/USDT:USDT",
+  "day": "2026-08-20",
+  "share": 0.036241522836654175,
+  "kind": "step"
+ },
+ {
+  "protocol": "zro",
+  "coingecko_id": "layerzero",
+  "perp": "ZRO/USDT:USDT",
+  "day": "2026-09-19",
+  "share": 0.034616230576249664,
+  "kind": "step"
+ }
+]

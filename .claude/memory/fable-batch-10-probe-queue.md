@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 4520e228-25b0-4c00-a3cd-6a323fb7630d
-  modified: 2026-10-08T19:15:53.747Z
+  modified: 2026-10-19T20:01:39.935Z
 ---
 
 Delivered by the user 2026-07-31 as the authorized batch under [[fuck-it-we-ball-mode]]. Ranked by EV
@@ -52,6 +52,8 @@ PASS: short-side net (taker RT 0.2% + funding paid) >= +0.5%/event, N>=80 events
 excludes zero, same sign in >=2 disjoint years. KILL: CI touches zero. Cert risk C1 (maybe only 100-200
 events) → ensemble across venues/years for N>=300. Confidence medium-high; open question is
 post-publication decay.
+**STATUS 2026-10-19: KILLED** (+1.08%/event, CI spans 0, no placebo beat; delisted ETL DONE) →
+[[f4-unlock-short-killed]].
 
 **5. Polymarket favorite-longshot calibration** — take the favorite side at 90-97c near resolution;
 separately buy already-decided-but-unresolved markets under 99c. Pays: retail lottery preference /

@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 2037ad27-4d88-4989-b811-caa6ea20fa15
-  modified: 2026-10-08T18:01:05.742Z
+  modified: 2026-10-19T19:01:47.026Z
 ---
 
 Idea 8 of [[fable-batch-10-probe-queue]], run 2026-10-04. Code `probes/f8_cascade_ladder_proxy.py`,
@@ -90,3 +90,17 @@ out at 60m, judged by the same frozen R1-R4 on the same 10 perps. The self-check
   - The SHORT ladder loses in both regimes, and worst in down markets (-0.94%).
   - A "bid only when the 30d trend >= 0" filter is a **POST-HOC idea** (seen in the data). It needs its
     own pre-registered, out-of-sample test before it touches the live book.
+
+**PARAM GRID (owner asked to "fine-tune limit + sell moments with GA", 2026-10-19): VERDICT KEEP 2.5/1.2/60.**
+Owner chose an exhaustive grid over lifting the GA ban, and chose no stop-loss knob. `probes/f8_param_grid.py`,
+log `runs/f8_param_grid.log`, 180 cells (depth 1.5-4% × TP 0.6-2% × hold 15-240m) on the 6 live coins.
+The replay follows the live bot: re-bid after exit, taker on the time-stop. Self-check reproduced the frozen
+row exactly (N=1338, +0.543%). The pick was made on train (2021 → 2024-09, median calendar-year account yield),
+and was 1.5%/2.0%/240m (BASE ranked 69/180). On the holdout (last 730d) the pick made +16.83%/yr vs BASE +10.03%;
+T1 diff +6.80%/yr, CI [−8.3, +22.6] FAILS; T2 plateau passes.
+- Post-hoc pattern, NOT a verdict: wider TP (1.6-2%) and longer holds (120-240m) top both train and
+  holdout; 15m holds and 0.6% TP are worst everywhere. Every cell's yield roughly halves train → holdout.
+- BASE under live conventions runs +10.03%/yr holdout (N=246) vs +7.12% under the F8 probe's (N=199):
+  re-bidding after the take-profit adds fills.
+- Any follow-up (e.g. walk-forward with more out-of-sample years) is designed AFTER seeing this result →
+  it must be declared post-hoc. More holdout power otherwise only comes from waiting.

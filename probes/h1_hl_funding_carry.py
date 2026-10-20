@@ -12,6 +12,13 @@ UNIVERSE  The 11 HL perps with a same-asset HL spot pair quoted in USDC and trad
 WINDOW    2024-10-20 -> 2026-10-20 (the hurdle's recent 24 months). A coin is LIVE from the first
           daily close at which both its spot pair and its perp have a full day of candles:
           point-in-time, because the hedge leg did not exist before its spot listing.
+          CORRECTED after the first run (2026-10-20): UBTC's spot closed at 6.97M and 7.98M
+          against a ~96k perp in its first 10 days (troll prints on an empty book), and the
+          equal-quantity book marked that as an 80x gain and a -99% day. A coin now goes live only
+          once its spot market has formed: 7 consecutive daily closes within 2% of the perp
+          (FORMED_DAYS, FORMED_GAP), checked point-in-time. Every coin starts 5-6 days later (the
+          rule needs a week of both legs); BTC starts 16 days later, past the troll prints. The
+          first run's log (KILL, account -47%/yr) is kept as runs/h1_hl_funding_carry_v1.log.
 BOOK      Per coin, its own capital E: q coins long spot, q coins short perp (equal QUANTITY),
           perp at L=2 isolated, so E = q*S + q*P/L. Funding is hourly on q * perp close (start of
           day); the short receives +rate. Equity = q*S + margin + q*(entry - P): price-neutral
@@ -45,9 +52,15 @@ DIAGNOSTICS (none affect the verdict)
       pinned at the 0.00125%/h interest baseline, rebalances, liquidations, net yield at L=2.
   D2  capital structure: L=1 (band 50%), L=2 (band 25%, frozen), L=3 (band 15%), and NOTIONAL
       (no margin modelled = the portfolio-margin upper bound, yield on hedged notional).
+      CORRECTED after the corrected run: NOTIONAL never re-sized, so a coin that rose 4x ran 4x
+      notional per unit of equity (HYPE printed +36%/yr on 19%/yr funding). It now re-sizes at
+      the same 25% band, so it is the yield on hedged notional it was declared to be.
   D3  account yield per calendar quarter.
   D4  HL vs Binance funding, same coins, same live days (Binance from the DB, to 2026-09-30).
   D5  W3's gate: hold only while the trailing-30d mean funding > 0, else flat (fees on switches).
+  D6  POST-HOC, added after the corrected run showed the L=2 losses are liquidations: per coin,
+      L=2 with liquidation on the day's CLOSE (a generous mark-price proxy, cf. F11 CLOSE-LIQ)
+      and NOTIONAL. Seen in the data; it can only motivate a new pre-registered test.
 
 LOAD      fundingHistory returns <= 500 hourly rows per call, weight ~45. The bot shares this IP's
           1,200/min REST weight (~440/min), so calls are paced at one per 6s (~450/min). About 320
@@ -77,6 +90,7 @@ H, D = 3_600_000, 86_400_000
 START = int(pd.Timestamp("2024-10-20", tz="UTC").timestamp() * 1000)
 END = int(pd.Timestamp("2026-10-20", tz="UTC").timestamp() * 1000)
 PACE_S = 6.0
+FORMED_DAYS, FORMED_GAP = 7, 0.02  # spot market formed: 7 closes in a row within 2% of the perp
 GATE_DAYS = 30  # D5 trailing window; funding is pulled this far before each coin's live start
 
 # perp coin -> (HL spot pair, perp maxLeverage on 2026-10-20)
@@ -87,7 +101,7 @@ UNIVERSE = {
 }
 F_PERP, F_SPOT = 0.00045, 0.00070
 L, BAND = 2, 0.25
-STRUCTURES = [(1, 0.50), (2, 0.25), (3, 0.15), (None, None)]  # D2; None = notional
+STRUCTURES = [(1, 0.50), (2, 0.25), (3, 0.15), (None, 0.25)]  # D2; None = notional
 BASELINE = 0.0000125  # 0.01% per 8h interest component, paid hourly
 HURDLE, MIN_COINS, MIN_SPAN = 0.05, 3, 365
 BLOCK, BOOT, SEED = 30, 2_000, 20261020
@@ -162,16 +176,22 @@ def pull() -> None:
 
 
 def live_start(candles: pd.DataFrame, coin: str) -> int:
-    """First daily close at which both legs have a full day of candles (and inside the window)."""
-    first = [candles[(candles.coin == coin) & (candles.leg == leg)]["t"].min()
-             for leg in ("perp", "spot")]
-    return int(max(START, max(first) + 2 * D))  # listing day is partial; its close + 1 day
+    """First daily close, inside the window, at which both legs have a full day of candles and
+    the spot market has formed (the last FORMED_DAYS closes within FORMED_GAP of the perp)."""
+    c = candles[candles.coin == coin]
+    first = max(c[c.leg == leg]["t"].min() for leg in ("perp", "spot")) + 2 * D
+    p = c[c.leg == "perp"].set_index("t")["c"]
+    s = c[c.leg == "spot"].set_index("t")["c"]
+    near = ((s / p - 1).abs() <= FORMED_GAP).dropna().sort_index()
+    formed = near.astype(int).rolling(FORMED_DAYS).sum() == FORMED_DAYS
+    ok = [t + D for t in formed[formed].index if t + D >= max(START, first)]
+    return int(ok[0])  # a candle t closes at t + D
 
 
 # --- the book ---
 
 def book(coin: str, candles: pd.DataFrame, fund: pd.DataFrame, lev: int | None, band: float | None,
-         gate: bool = False) -> tuple[pd.Series, dict]:
+         gate: bool = False, liq_on: str = "h") -> tuple[pd.Series, dict]:
     """Daily returns of one coin's carry book, indexed by close time (ms), plus counters."""
     perp = candles[(candles.coin == coin) & (candles.leg == "perp")].set_index("t")
     spot = candles[(candles.coin == coin) & (candles.leg == "spot")].set_index("t")
@@ -212,7 +232,7 @@ def book(coin: str, candles: pd.DataFrame, fund: pd.DataFrame, lev: int | None, 
         if holding:
             margin += day_sum.loc[prev + D:t].sum() * q * P0
             liq = (margin + q * entry) / (q * (1 + mm)) if lev else math.inf
-            if perp.at[t - D, "h"] >= liq:
+            if perp.at[t - D, liq_on] >= liq:
                 n_liq += 1
                 E = q * S  # perp leg lost; spot kept
                 E, q, entry, margin = open_(E, t)
@@ -223,7 +243,7 @@ def book(coin: str, candles: pd.DataFrame, fund: pd.DataFrame, lev: int | None, 
                     q2 = size(E, P, S)
                     E -= abs(q - q2) * (S * F_SPOT + P * F_PERP)
                     q, entry = size(E, P, S), P
-                    margin = q * P / lev
+                    margin = q * P / lev if lev else 0.0
         if gate and gate_on(t) != holding:
             n_sw += 1
             if holding:
@@ -331,7 +351,7 @@ def main() -> None:
               f"liquidations {liqs}")
 
     print("\nD3 account yield by quarter (annualized)")
-    q = acct.groupby(pd.to_datetime(acct.index, unit="ms", utc=True).to_period("Q"))
+    q = acct.groupby(pd.to_datetime(acct.index, unit="ms").to_period("Q"))
     for per, r in q:
         print(f"  {per}  {ann(r):+8.2%}/yr  ({len(r)} days)")
 
@@ -356,6 +376,18 @@ def main() -> None:
     print(f"  gated {ann(g):+.2%}/yr vs always-on {y_all:+.2%}/yr; last 365d "
           f"{ann(g.iloc[-365:]):+.2%} vs {y_last:+.2%}; switches "
           f"{sum(s['switches'] for _, s in gated.values())}")
+
+    print("\nD6 POST-HOC: per coin %/yr over its live span (not a verdict)")
+    print(f"  {'coin':<5} {'L=2 high-liq':>13} {'L=2 close-liq':>14} {'liq':>4} {'NOTIONAL':>9}")
+    rows = {}
+    for coin in UNIVERSE:
+        cl, cs = book(coin, candles, fund, L, BAND, liq_on="c")
+        nt, _ = book(coin, candles, fund, None, BAND)
+        rows[coin] = cl
+        print(f"  {coin:<5} {ann(books[coin]):>13.2%} {ann(cl):>14.2%} {cs['liquidations']:>4} "
+              f"{ann(nt):>9.2%}")
+    a = pd.DataFrame(rows).loc[acct.index].mean(axis=1)
+    print(f"  account, L=2 close-liq: {ann(a):+.2%}/yr, last 365d {ann(a.iloc[-365:]):+.2%}/yr")
 
 
 if __name__ == "__main__":

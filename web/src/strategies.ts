@@ -61,6 +61,14 @@ export const STANDING: Standing[] = [
 
 export const GRAVES: Grave[] = [
   {
+    id: "H1",
+    name: "Hyperliquid funding carry",
+    died: "2026-10-20",
+    what: "Long HL spot, short the same coin's HL perp at 2x isolated, collect the funding; managed daily.",
+    cause: "−32.6%/yr on the account: 44 wick liquidations of the short leg (PURR alone 35). The funding is real, though: +13%/yr on hedged notional, 3-9pp/yr above Binance.",
+    epitaph: "The funding was real. The wicks came first.",
+  },
+  {
     id: "F4",
     name: "Token-unlock shorts",
     died: "2026-10-19",

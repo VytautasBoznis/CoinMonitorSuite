@@ -1,0 +1,74 @@
+funding pull: ~255 calls at 6s = ~26 min
+  HYPE: 16406 hourly rows
+  BTC: 15648 hourly rows
+  ZEC: 6072 hourly rows
+  ETH: 14424 hourly rows
+  XMR: 6663 hourly rows
+  NEAR: 1368 hourly rows
+  SOL: 13344 hourly rows
+  PUMP: 11204 hourly rows
+  PURR: 17150 hourly rows
+  XPL: 10032 hourly rows
+  ENA: 8592 hourly rows
+
+H1 Hyperliquid funding carry, window 2024-10-20 -> 2026-10-20, L=2 band 25%, taker perp 0.045% / spot 0.070%
+
+D1 per coin (L=2 book; funding stats over the coin's live span)
+  coin  live from    days fund %/yr  neg h  pinned  cover  reb  liq  net %/yr
+  HYPE  2024-12-07    682    20.01%   6.7%   66.8% 100.0%   24    1     5.08%
+  BTC   2025-02-05    622     7.80%  15.3%   55.2% 100.0%    6    0   -89.13%
+  ZEC   2026-03-11    223     7.98%  11.8%   71.9% 100.0%    8    2     6.70%
+  ETH   2025-03-28    571     7.39%  17.2%   52.7% 100.0%   12    0     4.85%
+  XMR   2025-12-20    304    27.38%   3.6%   62.2%  91.3%    6    1    -4.07%
+  NEAR  2026-09-23     27    12.48%   3.2%   79.6% 100.0%    1    0    24.44%
+  SOL   2025-05-12    526     3.27%  29.3%   42.5% 100.0%    5    0     2.01%
+  PUMP  2025-07-16    461    12.78%   6.3%   75.6% 100.0%   22    3    -4.83%
+  PURR  2024-11-06    713    36.89%   1.7%   77.4% 100.0%   23   36   -96.92%
+  XPL   2025-09-27    388    10.58%   6.5%   81.0% 100.0%   22    2   -23.49%
+  ENA   2025-11-26    328     5.94%  20.2%   64.7% 100.0%   12    0     4.99%
+
+ACCOUNT  evaluation span 2025-02-06 -> 2026-10-20 (622 days, 3+ coins live; 11 at the end)
+  PASS  R0 span >= 365 days                      622 days
+  FAIL  R1 account yield >= 5%/yr                -47.44%/yr
+  FAIL  R2 last 365 days >= 5%/yr                -18.25%/yr
+  FAIL  R3 95% CI of mean daily return ex-zero   [-101.52%, -22.82%]/yr (simple)
+  FAIL  R4 >= 8/11 coins positive                6/11
+  FAIL  R5 top coin <= 60% of return             n/a
+
+H1 VERDICT: KILL
+
+D2 capital structure (account yield, same span; band = rebalance trigger)
+  L=1 band 50%                        -16.52%/yr  last 365d   +0.47%/yr  liquidations 4
+  L=2 band 25%                        -47.44%/yr  last 365d  -18.25%/yr  liquidations 45
+  L=3 band 15%                        -70.89%/yr  last 365d  -51.16%/yr  liquidations 136
+  NOTIONAL (portfolio-margin bound)    -8.33%/yr  last 365d   +8.92%/yr  liquidations 0
+
+D3 account yield by quarter (annualized)
+C:\Dev\CoinMonitorSuite\probes\h1_hl_funding_carry.py:334: UserWarning: Converting to PeriodArray/Index representation will drop timezone information.
+  q = acct.groupby(pd.to_datetime(acct.index, unit="ms", utc=True).to_period("Q"))
+  2025Q1   -97.32%/yr  (54 days)
+  2025Q2   -62.05%/yr  (91 days)
+  2025Q3   -35.52%/yr  (92 days)
+  2025Q4    -6.94%/yr  (92 days)
+  2026Q1   -19.55%/yr  (90 days)
+  2026Q2   -35.83%/yr  (91 days)
+  2026Q3   -10.67%/yr  (92 days)
+  2026Q4    +4.55%/yr  (20 days)
+
+D4 HL vs Binance funding, same coin, same live days to 2026-09-30 (%/yr)
+Traceback (most recent call last):
+  File "C:\Dev\CoinMonitorSuite\probes\h1_hl_funding_carry.py", line 362, in <module>
+    main()
+    ~~~~^^
+  File "C:\Dev\CoinMonitorSuite\probes\h1_hl_funding_carry.py", line 340, in main
+    with db.connect() as conn:
+         ~~~~~~~~~~^^
+  File "C:\Dev\CoinMonitorSuite\src\coinmon\data\db.py", line 18, in connect
+    return psycopg.connect(dsn or settings.db_dsn)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Dev\CoinMonitorSuite\.venv\Lib\site-packages\psycopg\connection.py", line 130, in connect
+    raise new_ex.with_traceback(None)
+psycopg.OperationalError: connection failed: connection to server at "127.0.0.1", port 5432 failed: FATAL:  role "coinmon" does not exist
+Multiple connection attempts failed. All failures were:
+- host: 'localhost', port: '5432', hostaddr: '::1': connection failed: connection to server at "::1", port 5432 failed: FATAL:  role "coinmon" does not exist
+- host: 'localhost', port: '5432', hostaddr: '127.0.0.1': connection failed: connection to server at "127.0.0.1", port 5432 failed: FATAL:  role "coinmon" does not exist

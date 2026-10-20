@@ -12,7 +12,7 @@ This file indexes all memory files. One line per file; detail lives in each topi
 - [bybit-dropped-no-eu-leverage](bybit-dropped-no-eu-leverage.md) — **2026-10-09: Bybit dropped (EU = spot-only); execution venue LOCKED = HYPERLIQUID**
 - [bybit-only-leverage-doctrine](bybit-only-leverage-doctrine.md) — (venue superseded) leverage-class caps still reusable; MiCA/USDC-only universe conflict
 - [cursed-100-eur-live-ladder](cursed-100-eur-live-ladder.md) — **the cursed 100 EUR → F8 cascade ladder live, data-gathering not deployment; owner's leverage call, don't re-litigate**
-- [live-bot-dashboard-plan](live-bot-dashboard-plan.md) — **F8 bot + web dashboard LIVE on Hyperliquid mainnet since 2026-10-13; budget fix deployed (~300 actions/day, buffer out ~mid-Nov). Owed: agent-can't-withdraw proof, PANIC w/ position, death alert**
+- [live-bot-dashboard-plan](live-bot-dashboard-plan.md) — **F8 bot + web dashboard LIVE on Hyperliquid mainnet since 2026-10-13; budget fix deployed (~200-300 actions/day, buffer out ~mid-Nov). Burn meter + ☠ graveyard built 2026-10-20 (add a grave per probe in web/src/strategies.ts). Owed: agent-can't-withdraw proof, PANIC w/ position, death alert**
 - [ui-trader-terminal-look](ui-trader-terminal-look.md) — **owner's UI bar: pro trader-terminal web app (Streamlit rejected); screenshot-check before done**
 - [no-strategy-preference](no-strategy-preference.md) — ZERO strategy preference; only "certified/winnable" matters
 - [no-more-rsi-ema-permutations](no-more-rsi-ema-permutations.md) — price-transform indicator strategies exhausted; baseline/control only
@@ -24,6 +24,7 @@ This file indexes all memory files. One line per file; detail lives in each topi
 - [session-build-loop](session-build-loop.md) — session shape: read memory → next chunk → ask blockers → commit message
 
 ## Current status & results (still 0 deployable winners)
+- [h1-hl-funding-carry-killed](h1-hl-funding-carry-killed.md) — **H1 HL carry KILLED 2026-10-20 (2x iso: 44 wick liqs); but HL funding NOT decayed: +13%/yr hedged notional, 3-9pp > Binance; post-hoc lead = portfolio margin**
 - [f8-cascade-ladder-result](f8-cascade-ladder-result.md) — **F8 PASS 4/4 spot+perp; recent hurdle clear rests on touch-fills. F8S short mirror KILLED. Param grid 2026-10-19: KEEP 2.5/1.2/60 (train pick +6.8%/yr on holdout, CI spans 0)**
 - [f4-unlock-short-killed](f4-unlock-short-killed.md) — **F4 unlock short KILLED 2026-10-19 (+1.08%/event, CI spans 0, no placebo beat); post-hoc cliff-only +4.3% needs forward data. Z2: DB has ALL Binance USDT-M perps incl. delisted (1d + funding)**
 - [f11-post-listing-drift-killed](f11-post-listing-drift-killed.md) — F11 post-listing drift short KILLED 2026-10-15 (~26% of listings double → 1x short liquidated)

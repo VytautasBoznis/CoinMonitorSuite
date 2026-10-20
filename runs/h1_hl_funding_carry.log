@@ -1,2 +1,74 @@
-funding pull: ~255 calls at 6s = ~26 min
-  HYPE: 16406 hourly rows
+funding pull: ~249 calls at 6s = ~25 min
+
+H1 Hyperliquid funding carry, window 2024-10-20 -> 2026-10-20, L=2 band 25%, taker perp 0.045% / spot 0.070%
+
+D1 per coin (L=2 book; funding stats over the coin's live span)
+  coin  live from    days fund %/yr  neg h  pinned  cover  reb  liq  net %/yr
+  HYPE  2024-12-12    677    19.25%   6.7%   67.2% 100.0%   22    2     4.04%
+  BTC   2025-02-21    606     7.72%  15.6%   54.2% 100.0%    6    0     5.14%
+  ZEC   2026-03-16    218     8.03%  11.7%   72.0% 100.0%    9    1    16.43%
+  ETH   2025-04-03    565     7.46%  16.9%   53.0% 100.0%   10    0     4.92%
+  XMR   2025-12-25    299    27.38%   3.6%   62.2%  92.9%    6    1    -3.57%
+  NEAR  2026-09-28     22    10.97%   4.0%   83.9% 100.0%    0    0     3.30%
+  SOL   2025-05-17    521     3.14%  29.6%   42.3% 100.0%    5    0     2.06%
+  PUMP  2025-07-21    456    12.06%   6.4%   76.3% 100.0%   21    3    -5.32%
+  PURR  2024-11-11    708    36.25%   1.7%   77.7% 100.0%   23   35   -96.67%
+  XPL   2025-10-02    383    10.21%   6.5%   81.5% 100.0%   19    2   -23.93%
+  ENA   2025-12-02    322     6.21%  19.6%   65.4% 100.0%   10    0     5.36%
+
+ACCOUNT  evaluation span 2025-02-22 -> 2026-10-20 (606 days, 3+ coins live; 11 at the end)
+  PASS  R0 span >= 365 days                      606 days
+  FAIL  R1 account yield >= 5%/yr                -32.57%/yr
+  FAIL  R2 last 365 days >= 5%/yr                -17.84%/yr
+  FAIL  R3 95% CI of mean daily return ex-zero   [-60.24%, -19.87%]/yr (simple)
+  FAIL  R4 >= 8/11 coins positive                7/11
+  FAIL  R5 top coin <= 60% of return             n/a
+
+H1 VERDICT: KILL
+
+D2 capital structure (account yield, same span; band = rebalance trigger)
+  L=1 band 50%                         +2.36%/yr  last 365d   +0.67%/yr  liquidations 5
+  L=2 band 25%                        -32.57%/yr  last 365d  -17.84%/yr  liquidations 44
+  L=3 band 15%                        -64.98%/yr  last 365d  -50.99%/yr  liquidations 132
+  NOTIONAL (portfolio-margin bound)   +12.98%/yr  last 365d  +10.91%/yr  liquidations 0
+
+D3 account yield by quarter (annualized)
+  2025Q1   -55.97%/yr  (38 days)
+  2025Q2   -61.91%/yr  (91 days)
+  2025Q3   -38.57%/yr  (92 days)
+  2025Q4    -7.26%/yr  (92 days)
+  2026Q1   -19.40%/yr  (90 days)
+  2026Q2   -34.66%/yr  (91 days)
+  2026Q3   -11.06%/yr  (92 days)
+  2026Q4    +4.52%/yr  (20 days)
+
+D4 HL vs Binance funding, same coin, same live days to 2026-09-30 (%/yr)
+  HYPE  HL  +12.25%   Binance   +8.41%   (488 days)
+  BTC   HL   +7.71%   Binance   +3.93%   (587 days)
+  ZEC   HL   +7.65%   Binance   -1.28%   (199 days)
+  ETH   HL   +7.47%   Binance   +3.41%   (546 days)
+  XMR   HL  +26.31%   Binance  +17.55%   (280 days)
+  NEAR  HL  +11.51%   Binance   +8.18%   (3 days)
+  SOL   HL   +3.03%   Binance   -0.09%   (502 days)
+  PUMP  HL  +12.11%   Binance   +8.09%   (437 days)
+  PURR  no Binance funding in the DB
+  XPL   HL  +10.28%   Binance   +6.58%   (364 days)
+  ENA   HL   +5.99%   Binance   +1.91%   (303 days)
+
+D5 W3 gate (hold while trailing-30d mean funding > 0), L=2 band 25%
+  gated -32.58%/yr vs always-on -32.57%/yr; last 365d -17.84% vs -17.84%; switches 24
+
+D6 POST-HOC: per coin %/yr over its live span (not a verdict)
+  coin   L=2 high-liq  L=2 close-liq  liq  NOTIONAL
+  HYPE          4.04%         12.36%    1    19.82%
+  BTC           5.14%          5.14%    0     7.77%
+  ZEC          16.43%         16.43%    1     9.03%
+  ETH           4.92%          4.92%    0     7.45%
+  XMR          -3.57%         18.19%    0    28.05%
+  NEAR          3.30%          3.30%    0     4.98%
+  SOL           2.06%          2.06%    0     3.09%
+  PUMP         -5.32%          0.33%    2    11.94%
+  PURR        -96.67%        -36.83%   16    38.40%
+  XPL         -23.93%          6.60%    0    10.05%
+  ENA           5.36%          5.36%    0     8.08%
+  account, L=2 close-liq: -5.41%/yr, last 365d +4.07%/yr

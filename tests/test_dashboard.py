@@ -99,6 +99,14 @@ ORDERS = [{"coin": "BTC", "oid": 7, "side": "A", "limitPx": "80960", "sz": "0.00
            "reduceOnly": True, "timestamp": 1}]
 SPOT = {"balances": [{"coin": "USDC", "total": "999.0", "hold": "12.5"},
                      {"coin": "HORSE", "total": "0.0", "hold": "0.0"}]}
+# As served for a unified account: the day window restarts PnL at its own start, and the perp
+# window counts the move of margin from spot to perps as a loss.
+PORTFOLIO = [
+    ["day", {"accountValueHistory": [[3_000, "99.5"]], "pnlHistory": [[3_000, "0.0"]]}],
+    ["allTime", {"accountValueHistory": [[1_000, "0.0"], [2_000, "100.0"], [3_000, "99.5"]],
+                 "pnlHistory": [[1_000, "0.0"], [2_000, "0.0"], [3_000, "-0.5"]]}],
+    ["perpAllTime", {"accountValueHistory": [[3_000, "4.8"]], "pnlHistory": [[3_000, "-15.8"]]}],
+]
 
 
 def _market(mode: str = "default") -> tuple[Market, list[dict]]:
@@ -109,7 +117,7 @@ def _market(mode: str = "default") -> tuple[Market, list[dict]]:
         sent.append(body)
         data = {"metaAndAssetCtxs": [META, CTXS], "clearinghouseState": STATE,
                 "frontendOpenOrders": ORDERS, "userAbstraction": mode,
-                "spotClearinghouseState": SPOT,
+                "spotClearinghouseState": SPOT, "portfolio": PORTFOLIO,
                 "candleSnapshot": [{"t": 0, "o": "1", "h": "2", "l": "0.5", "c": "1.5",
                                     "v": "3"}]}[body["type"]]
         return httpx.Response(200, json=data)
@@ -142,6 +150,14 @@ def test_market_account_reads_a_unified_account_from_its_usdc_balance():
     assert acct["unified"]
     assert (acct["equity"], acct["margin_used"], acct["withdrawable"]) == (999.0, 12.5, 986.5)
     assert acct["notional"] == 12.0  # from the positions
+
+
+def test_market_portfolio_is_the_all_time_account_history():
+    assert _market("unifiedAccount")[0].portfolio("0xmaster") == [
+        {"time": 1_000, "equity": 0.0, "pnl": 0.0},
+        {"time": 2_000, "equity": 100.0, "pnl": 0.0},
+        {"time": 3_000, "equity": 99.5, "pnl": -0.5},
+    ]
 
 
 def test_market_candle_requests_within_10s_share_the_cache():
@@ -241,8 +257,10 @@ def test_reads(api, monkeypatch):
     assert api.get("/api/candles", params={"coin": "BTC"}).json()[0]["close"] == 1.5
     assert api.get("/api/account").json()["equity"] == 98.5
     assert api.get("/api/trades").json()["summary"]["wins"] == 1
+    assert api.get("/api/burn").json()["points"][-1] == {"time": 3_000, "equity": 99.5, "pnl": -0.5}
     monkeypatch.setattr(settings, "hl_address", "")
     assert api.get("/api/account").json() == {"configured": False}
+    assert api.get("/api/burn").json() == {"configured": False}
 
 
 def test_serves_the_built_frontend_beside_the_api(tmp_path):

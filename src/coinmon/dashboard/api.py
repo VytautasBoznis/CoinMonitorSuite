@@ -121,6 +121,14 @@ def create_app(store: Store | None = None, market: Market | None = None,
             return {"configured": False}
         return {"configured": True} | from_venue(market.account, settings.hl_address)
 
+    @app.get("/api/burn")
+    def burn():
+        """The account's equity and PnL since it opened: the burn meter."""
+        if not settings.hl_address:
+            return {"configured": False}
+        return {"configured": True,
+                "points": from_venue(market.portfolio, settings.hl_address)}
+
     @app.get("/api/trades")
     def trades(limit: int = Query(200, ge=1, le=1000)):
         rows = views.ledger_rows(store.trades(venue, limit=limit))

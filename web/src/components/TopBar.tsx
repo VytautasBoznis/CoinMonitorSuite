@@ -77,12 +77,14 @@ export function TopBar({
   now,
   feeds,
   onWarRoom,
+  onScoreboard,
 }: {
   config: Config;
   state?: BotState;
   now: number;
   feeds: { label: string; status: SocketStatus }[];
   onWarRoom: () => void;
+  onScoreboard: () => void;
 }) {
   return (
     <header className="flex h-12 shrink-0 items-center gap-4 border-b border-line bg-panel px-4">
@@ -97,6 +99,13 @@ export function TopBar({
       </Chip>
       <button onClick={onWarRoom} className="wr-enter ml-2" title="the same bot, turned up to eleven">
         ⚡ WAR ROOM
+      </button>
+      <button
+        onClick={onScoreboard}
+        className="rounded-[3px] border border-line px-2 py-[5px] text-[10px] font-semibold tracking-[0.12em] text-ink-2 hover:bg-panel-2 hover:text-ink"
+        title="every strategy tried: what is still standing, what died and why"
+      >
+        ☠ GRAVEYARD
       </button>
       <div className="flex-1" />
       <ModePill state={state} now={now} />

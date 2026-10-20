@@ -1,5 +1,6 @@
-import type { Account, Trades } from "../api";
+import type { Account, Burn, Trades } from "../api";
 import { fmtUsd, tone } from "../format";
+import { EquityBurn } from "./EquityBurn";
 import { Panel, Stat } from "./Panel";
 
 export function AccountPanel({
@@ -7,11 +8,13 @@ export function AccountPanel({
   error,
   address,
   summary,
+  burn,
 }: {
   account?: Account;
   error?: string;
   address: string | null;
   summary?: Trades["summary"];
+  burn?: Burn;
 }) {
   const short = address ? `${address.slice(0, 6)}…${address.slice(-4)}` : null;
   return (
@@ -35,18 +38,25 @@ export function AccountPanel({
           orders and equity are public by address, no key needed.
         </div>
       ) : (
-        <AccountBody account={account} summary={summary} />
+        <AccountBody account={account} summary={summary} burn={burn} />
       )}
     </Panel>
   );
 }
 
-function AccountBody({ account, summary }: { account: Extract<Account, { configured: true }>; summary?: Trades["summary"] }) {
+function AccountBody({
+  account,
+  summary,
+  burn,
+}: {
+  account: Extract<Account, { configured: true }>;
+  summary?: Trades["summary"];
+  burn?: Burn;
+}) {
   const upnl = account.positions.reduce((s, p) => s + p.upnl, 0);
   return (
     <div className="p-3">
-      <div className="label">Equity</div>
-      <div className="num mt-1 text-[26px] font-medium leading-none">{fmtUsd(account.equity)}</div>
+      <EquityBurn equity={account.equity} points={burn?.configured ? burn.points : undefined} />
       <div className="mt-4 grid grid-cols-3 gap-x-3 gap-y-3">
         <Stat label="uPnL">
           <span className={tone(upnl)}>{fmtUsd(upnl, 2, true)}</span>

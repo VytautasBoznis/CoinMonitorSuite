@@ -2,7 +2,7 @@
 by master address. No key, so nothing here can trade.
 
 The venue meters REST per IP (1200 weight/min) and the bot shares that IP, at ~440/min. Every
-read is cached server-side, so any number of open tabs costs a fixed budget: about 200/min with
+read is cached server-side, so any number of open tabs costs a fixed budget: about 220/min with
 the TTLs below. Live prices reach the browser over the public websocket instead (``WS``).
 """
 
@@ -72,6 +72,16 @@ class Market:
              "low": float(c["l"]), "close": float(c["c"]), "volume": float(c["v"])}
             for c in rows
         ]
+
+    def portfolio(self, address: str) -> list[dict]:
+        """``address``'s equity and all-time PnL (fees and funding included) over time, as the
+        venue records them; equity minus PnL is the net money put in. Only the account-wide
+        all-time window is read: the shorter windows restart PnL at their own start, and in a
+        unified account the perp windows count margin moved over from spot as PnL."""
+        history = dict(self._info({"type": "portfolio", "user": address}, ttl_s=60))["allTime"]
+        pnl = dict(history["pnlHistory"])
+        return [{"time": int(t), "equity": float(v), "pnl": float(pnl[t])}
+                for t, v in history["accountValueHistory"] if t in pnl]
 
     def account(self, address: str) -> dict:
         """Equity, margin, positions and resting orders of ``address`` as the venue reports them."""

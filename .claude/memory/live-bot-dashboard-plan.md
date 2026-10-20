@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: f655be08-d28b-48b8-91b6-b4b28bbce97c
-  modified: 2026-10-19T20:03:06.246Z
+  modified: 2026-10-20T16:37:44.172Z
 ---
 
 Owner, in a 2026-10-09 conversation with Fable (pasted into Claude Code): a bot running headless on the
@@ -91,8 +91,20 @@ ladder, kill switch), and below the chart the fills ledger and a live liquidatio
   is no login.
 - Colors: up `#12b076` / down `#ea3943`, validated on `#0b0e11`. Their CVD separation is in the 6–8 band,
   so direction always also has arrows, hollow candles, or position.
-- Not built yet: account-value history (a burn chart over time needs the bot to snapshot equity into the
-  DB) and scoreboard + graveyard.
+- **Burn meter + scoreboard/graveyard BUILT 2026-10-20** (screens 2 and 5).
+  - **Burn:** a sparkline beside Equity in the Account panel, with a plain-English line under it
+    ("Up $0.01 on $99.62 put in").
+    - **No bot snapshot was needed.** HL's public `portfolio` info call serves account value plus
+      all-time PnL by address (`Market.portfolio`, `/api/burn`).
+    - Only the `allTime` window is read. The day/week/month windows restart PnL at their own start,
+      and in unified mode the `perp*` windows count spot→perp margin moves as PnL (they showed −$15.80).
+    - The PnL includes unrealized PnL: the ADA hold on 10-14 dipped to −$0.063 before closing green.
+    - It went inside the Account panel because, at 1080p, a separate panel would push DRAIN below the
+      fold. At 1366×768 the kill switch was already below the fold before this change.
+  - **Scoreboard/graveyard:** the ☠ GRAVEYARD button in the top bar (or `/#graveyard`) opens a full-screen
+    overlay. Data is static in `web/src/strategies.ts`: 4 standing (F8 live vs backtest from the ledger,
+    F1, W3, B20) and 17 graves, each with its kill number and an epitaph.
+    - **Add a row there whenever a probe reports.**
 - **Intent layer (owner, 2026-10-09: "I just want to see the bot doing trades and its intentions"):** on 1m,
   a dashed blue "bid trail" (prior 1m close −2.5%) that hides while a position is open, plus a plain-English
   INTENT sentence (waiting / holding / not running). The owner does not want to learn the screens. Keep the

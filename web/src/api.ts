@@ -64,6 +64,10 @@ export type Account =
       orders: Order[];
     };
 
+/** The venue's record of the account: equity and all-time PnL (fees and funding included). */
+export type BurnPoint = { time: number; equity: number; pnl: number };
+export type Burn = { configured: false } | { configured: true; points: BurnPoint[] };
+
 export type TradeRow = {
   coin: string;
   entry_oid: number;
@@ -130,6 +134,7 @@ export const api = {
   candles: (coin: string, interval: string, limit = 500) =>
     req<Candle[]>(`/api/candles?coin=${coin}&interval=${interval}&limit=${limit}`),
   account: () => req<Account>("/api/account"),
+  burn: () => req<Burn>("/api/burn"),
   trades: () => req<Trades>("/api/trades?limit=200"),
   liquidations: (coin: string, interval: string, startMs: number, endMs: number) =>
     req<Liquidations>(`/api/liquidations?coin=${coin}&interval=${interval}&start_ms=${startMs}&end_ms=${endMs}`),

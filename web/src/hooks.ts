@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 
 /** Calls ``fn`` now and every ``ms`` after the previous call settles. Keeps the last good data
- *  through errors, so a blip shows as an error badge, not an empty screen. */
+ *  through errors, so a blip shows as an error badge, not an empty screen. A new ``fn`` (e.g.
+ *  another bot's) has no data until its own first answer: never the old one's under its name. */
 export function usePoll<T>(fn: () => Promise<T>, ms: number) {
-  const [data, setData] = useState<T>();
+  const [got, setGot] = useState<{ fn: () => Promise<T>; data: T }>();
   const [error, setError] = useState<string>();
   const [tick, setTick] = useState(0);
   useEffect(() => {
@@ -13,7 +14,7 @@ export function usePoll<T>(fn: () => Promise<T>, ms: number) {
       try {
         const d = await fn();
         if (alive) {
-          setData(d);
+          setGot({ fn, data: d });
           setError(undefined);
         }
       } catch (e) {
@@ -28,7 +29,7 @@ export function usePoll<T>(fn: () => Promise<T>, ms: number) {
       window.clearTimeout(timer);
     };
   }, [fn, ms, tick]);
-  return { data, error, refresh: () => setTick((t) => t + 1) };
+  return { data: got?.fn === fn ? got.data : undefined, error, refresh: () => setTick((t) => t + 1) };
 }
 
 /** A press that fires only after being held for ``holdMs`` (pointer, Space or Enter); letting go

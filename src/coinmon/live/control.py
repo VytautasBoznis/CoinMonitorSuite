@@ -6,6 +6,8 @@ from __future__ import annotations
 import time
 from dataclasses import asdict, dataclass, fields
 
+from psycopg.types.json import Jsonb
+
 from coinmon.data import db
 
 RUN, DRAIN, HALT = "RUN", "DRAIN", "HALT"
@@ -30,6 +32,8 @@ class Control:
     deadline_ms: int | None
     updated_ms: int
     heartbeat_ms: int | None
+    started_ms: int | None = None  # the first heartbeat
+    book: list[dict] | None = None  # a paper bot's resting orders
 
 
 @dataclass
@@ -80,8 +84,8 @@ class Store:
                 (self.bot, self.initial, "initial", now_ms()),
             )
             row = conn.execute(
-                "SELECT mode, reason, deadline_ms, updated_ms, heartbeat_ms FROM bot_control"
-                " WHERE bot = %s",
+                "SELECT mode, reason, deadline_ms, updated_ms, heartbeat_ms, started_ms, book"
+                " FROM bot_control WHERE bot = %s",
                 (self.bot,),
             ).fetchone()
         return Control(*row)
@@ -99,8 +103,15 @@ class Store:
     def heartbeat(self, ts_ms: int) -> None:
         with db.connect(self._dsn) as conn:
             conn.execute(
-                "UPDATE bot_control SET heartbeat_ms = %s WHERE bot = %s", (ts_ms, self.bot)
+                "UPDATE bot_control SET heartbeat_ms = %s, started_ms = COALESCE(started_ms, %s)"
+                " WHERE bot = %s",
+                (ts_ms, ts_ms, self.bot),
             )
+
+    def save_book(self, orders: list[dict]) -> None:
+        with db.connect(self._dsn) as conn:
+            conn.execute("UPDATE bot_control SET book = %s WHERE bot = %s",
+                         (Jsonb(orders), self.bot))
 
     def save_trade(self, t: Trade) -> None:
         cols = ", ".join(_COLS)

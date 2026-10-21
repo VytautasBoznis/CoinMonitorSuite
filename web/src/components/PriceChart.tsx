@@ -290,8 +290,9 @@ export function PriceChart({
         if (p.liq_px) add(p.liq_px, C.down, "LIQ", LineStyle.Dotted);
       }
     }
-    // Nothing on the venue: show where the frozen rule would rest the bid right now.
-    if (!busy && lastClosed && interval === "1m")
+    // Nothing on the venue: show where the rule would rest the bid right now (a trend-gated rule
+    // with nothing resting has its gate closed: it would rest nothing).
+    if (!busy && lastClosed && interval === "1m" && !rule.trend_ms)
       add(lastClosed * (1 - rule.drop), C.accent, `BUY −${(rule.drop * 100).toFixed(1)}%`, LineStyle.Dotted);
   }, [account, coin, interval, lastClosed, rule]);
 
@@ -428,6 +429,11 @@ function describeIntent(
   const bid = account?.configured
     ? account.orders.find((o) => o.coin === coin && o.side === "B" && !o.reduce_only)
     : undefined;
+  if (!bid && rule.trend_ms)
+    return {
+      kind: "off",
+      text: `No bid: the trend gate is closed, ${coin} is below its price ${rule.trend_ms / 86_400_000} days ago. It bids again once it is back above.`,
+    };
   const px = bid ? fmtPx(bid.px) : level;
   // The bot re-pegs a bid only past a band (venue action budget), so a real bid can sit off the rule.
   const under = bid && lastClosed != null ? `${((1 - bid.px / lastClosed) * 100).toFixed(1)}%` : drop;

@@ -13,8 +13,9 @@ from coinmon.config import settings
 from coinmon.dashboard import views
 from coinmon.dashboard.api import create_app
 from coinmon.dashboard.market import Market
-from coinmon.live import stop
+from coinmon.live import stop, swarm
 from coinmon.live.control import DRAIN, HALT, RUN, Control, Trade, now_ms
+from coinmon.live.paper import PAPER
 
 MIN = 60_000
 
@@ -175,6 +176,7 @@ class FakeStore:
     def __init__(self, ctl: Control | None) -> None:
         self.ctl = ctl
         self.modes: list[tuple] = []
+        self.venues: list[str] = []
 
     def read(self) -> Control:
         if self.ctl is None:
@@ -187,12 +189,19 @@ class FakeStore:
             self.ctl = Control(mode, reason, deadline_ms, now_ms(), self.ctl.heartbeat_ms)
 
     def trades(self, venue, open_only=False, limit=1000):
+        self.venues.append(venue)
         return [_trade(exit_px=101.2, exit_ms=30 * MIN, exit_fee=0.02, exit_reason="tp")]
+
+
+BOOK = [{"coin": "BTC", "oid": 9, "side": "B", "px": 97.5, "sz": 0.12, "reduce_only": False,
+         "time": 0}]
 
 
 @pytest.fixture
 def api(monkeypatch, tmp_path):
     store = FakeStore(Control(RUN, "resume", None, 0, now_ms()))
+    papers = {s.name: FakeStore(Control(RUN, "initial", None, 0, now_ms(), now_ms() - MIN, BOOK))
+              for s in swarm.BOTS}
     panics: list[str] = []
 
     def fake_panic(hl, st, reason):
@@ -204,8 +213,8 @@ def api(monkeypatch, tmp_path):
     monkeypatch.setattr(settings, "hl_address", "0xmaster")
     monkeypatch.setattr(settings, "hl_agent_key", "0xagent")
     client = TestClient(create_app(store=store, market=_market()[0], venue_client=object,
-                                   dist=tmp_path / "no-dist"))
-    client.store, client.panics = store, panics
+                                   dist=tmp_path / "no-dist", paper_store=papers.__getitem__))
+    client.store, client.papers, client.panics = store, papers, panics
     return client
 
 
@@ -227,6 +236,7 @@ def test_panic_needs_json_confirm_and_a_key(api, monkeypatch):
     r = api.post("/api/panic", json={"confirm": True})
     assert r.json() == {"flat": True}
     assert api.panics == ["dashboard panic"] and api.store.ctl.mode == HALT
+    assert all(not p.modes and p.ctl.mode == RUN for p in api.papers.values())  # live bot only
 
     monkeypatch.setattr(settings, "hl_agent_key", "")
     assert api.post("/api/panic", json={"confirm": True}).status_code == 409
@@ -261,6 +271,36 @@ def test_reads(api, monkeypatch):
     monkeypatch.setattr(settings, "hl_address", "")
     assert api.get("/api/account").json() == {"configured": False}
     assert api.get("/api/burn").json() == {"configured": False}
+
+
+def test_bots_lists_the_live_bot_then_the_paper_bots_with_their_frozen_backtests(api):
+    bots = api.get("/api/bots").json()
+    assert [b["id"] for b in bots] == ["f8-ladder", *(s.name for s in swarm.BOTS)]
+    live, *paper = bots
+    assert live["paper"] is False and live["state"]["mode"] == RUN
+    assert live["baseline"]["mean"] == swarm.F8_BASELINE.mean
+    assert all(b["paper"] and b["state"]["book"] == BOOK for b in paper)
+    trend = next(b for b in paper if b["id"] == "f8-trend")
+    assert trend["rule"]["trend_ms"] == 30 * swarm.DAY and trend["bar"] == swarm.PROMOTION
+
+
+def test_trades_reads_the_chosen_bots_ledger_on_its_venue(api):
+    api.get("/api/trades")
+    api.get("/api/trades", params={"bot": "f8-wide"})
+    assert api.store.venues == ["hyperliquid-testnet" if settings.hl_testnet else "hyperliquid"]
+    assert api.papers["f8-wide"].venues == [PAPER]
+    assert api.get("/api/trades", params={"bot": "f8-moon"}).status_code == 422
+
+
+def test_scoreboard_scores_every_bot_against_its_own_backtest(api):
+    cards = {c["id"]: c for c in api.get("/api/scoreboard").json()}
+    assert list(cards) == ["f8-ladder", *(s.name for s in swarm.BOTS)]
+    assert cards["f8-ladder"]["n"] == 1 and cards["f8-ladder"]["vs_backtest"] == "too early"
+    assert "bar" not in cards["f8-twin"] and "capture" in cards["f8-twin"]
+    assert cards["f8-wide"]["bar"]["status"] == "too early"  # started a minute ago
+    assert "capture" not in cards["f8-wide"]
+    api.store.ctl = None
+    assert api.get("/api/scoreboard").status_code == 503
 
 
 def test_serves_the_built_frontend_beside_the_api(tmp_path):

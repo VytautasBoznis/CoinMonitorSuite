@@ -29,12 +29,14 @@ export function Controls({
   now,
   onPanic,
   onDrain,
+  paper,
 }: {
-  state?: BotState;
+  state?: BotState; // the live bot's, always: the stops act on it
   keyed: boolean;
   now: number;
   onPanic: () => Promise<void>;
   onDrain: (minutes: number) => Promise<void>;
+  paper?: string; // the paper bot on screen, if one is
 }) {
   const [minutes, setMinutes] = useState(90);
   const [busy, setBusy] = useState(false);
@@ -42,8 +44,13 @@ export function Controls({
   const canDrain = live?.mode === "RUN";
 
   return (
-    <Panel title="Kill switch" className="flex-1">
+    <Panel title={paper ? "Kill switch · live bot" : "Kill switch"} className="flex-1">
       <div className="space-y-4 p-3">
+        {paper && (
+          <p className="rounded-[3px] bg-accent/10 px-2 py-1.5 text-[11px] leading-snug text-accent">
+            These act on the live bot, not on {paper}: a paper bot holds no money to flatten.
+          </p>
+        )}
         <div>
           <PanicButton enabled={keyed} onFire={onPanic} />
           <p className="mt-1.5 text-[11px] leading-snug text-ink-3">

@@ -1109,6 +1109,10 @@ def _dashboard(args: argparse.Namespace) -> None:
 
     from coinmon.dashboard.api import create_app
 
+    try:  # the bots' columns, in case no bot has started on this DB since they were added
+        _store().init()
+    except Exception as e:  # PANIC must still work with the DB down
+        print(f"schema not checked, DB unreachable: {e}")
     uvicorn.run(create_app(), host=args.host, port=args.port)
 
 

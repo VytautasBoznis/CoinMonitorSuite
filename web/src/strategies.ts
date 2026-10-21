@@ -9,7 +9,6 @@ export type Standing = {
   what: string;
   evidence: string;
   blocker: string;
-  backtest?: { perEvent: number; targetHit: number }; // the live book is scored against these
 };
 
 export type Grave = { id: string; name: string; died: string; what: string; cause: string; epitaph: string };
@@ -28,7 +27,6 @@ export const STANDING: Standing[] = [
     evidence: "Backtest +0.51%/event (N 2,261, 2021-26), positive in 6 of 6 years, target hit 86.3%.",
     blocker:
       "The last 24 months clear 5%/yr only if every touch fills, and that is what this live book measures. It needs ~190 fills (~1.5 years at the backtest's pace) before the live mean can tell +0.5% from zero.",
-    backtest: { perEvent: 0.0051, targetHit: 0.863 },
   },
   {
     id: "F1",

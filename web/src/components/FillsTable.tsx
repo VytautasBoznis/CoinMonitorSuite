@@ -4,8 +4,19 @@ import { Chip, Panel } from "./Panel";
 
 const HEAD = ["Filled (UTC)", "Coin", "Size", "Notional", "Lev", "Anchor", "Fill", "Drop", "Exit", "Reason", "Hold", "Net", "Net $"];
 
-/** The ledger: what the frozen rule assumed (anchor, -2.5% drop, 60m hold) next to what happened. */
-export function FillsTable({ trades, rule, now }: { trades?: Trades; rule: Config["rule"]; now: number }) {
+/** The ledger: what the rule assumed (anchor, drop, hold) next to what happened. ``backtest`` is
+ *  the bot's frozen net per round trip. */
+export function FillsTable({
+  trades,
+  rule,
+  backtest,
+  now,
+}: {
+  trades?: Trades;
+  rule: Config["rule"];
+  backtest?: number;
+  now: number;
+}) {
   const s = trades?.summary;
   return (
     <Panel
@@ -14,7 +25,8 @@ export function FillsTable({ trades, rule, now }: { trades?: Trades; rule: Confi
         s && (
           <span className="num text-[11px] text-ink-3">
             {s.closed} closed · {s.wins} won · realized{" "}
-            <span className={tone(s.realized_usd)}>{fmtUsd(s.realized_usd, 2, true)}</span> · backtest +0.51%/event
+            <span className={tone(s.realized_usd)}>{fmtUsd(s.realized_usd, 2, true)}</span>
+            {backtest != null && ` · backtest ${fmtPct(backtest)}/trip`}
           </span>
         )
       }

@@ -213,6 +213,19 @@ def test_the_candle_still_forming_is_never_settled():
     assert venue.positions()["BTC"].entry_px == 97.5
 
 
+def test_the_book_is_what_rests_for_the_dashboard():
+    x, market = flat_market()
+    x.low[10] = 90.0
+    x.now = T0 + 10 * MIN + 3_000
+    venue = PaperVenue(market, [], clock=lambda: x.now)
+    oid = venue.place("BTC", "buy", 0.1, 97.5, post_only=True)
+    assert venue.book() == [{"coin": "BTC", "oid": oid, "side": "B", "px": 97.5, "sz": 0.1,
+                             "reduce_only": False, "time": T0 + 10 * MIN}]
+    x.now = T0 + 11 * MIN + CLOSE_GRACE_MS
+    venue.positions()  # settles candle 10: the bid fills
+    assert venue.book() == []
+
+
 def test_each_bot_has_its_own_id_and_paper_never_shares_the_live_row():
     ids = {bot_on(PAPER, b.name) for b in swarm.BOTS}
     assert len(ids) == len(swarm.BOTS)

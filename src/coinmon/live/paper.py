@@ -205,6 +205,12 @@ class PaperVenue:
     def write_wait_s(self) -> float:
         return 0.0  # paper spends no venue actions
 
+    def book(self) -> list[dict]:
+        """The resting orders, for the dashboard (as of the last settle; no venue read)."""
+        return [{"coin": o.coin, "oid": o.oid, "side": o.side, "px": o.px, "sz": o.sz,
+                 "reduce_only": o.reduce_only, "time": self._rests[o.oid]}
+                for o in self._orders.values()]
+
     # --- the venue's writes ---
 
     def place(self, coin: str, side: str, sz: float, px: float, *, post_only: bool = False,

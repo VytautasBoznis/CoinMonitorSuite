@@ -36,11 +36,28 @@ PROMOTION = (
 
 
 @dataclass(frozen=True)
+class Baseline:
+    """A bot's own backtest, frozen before its first run: the scoreboard's reference
+    (``probes/swarm_baselines.py`` -> runs/swarm_baselines.log). The paper venue's replay on the
+    six coins over the F8 grid's holdout, 2024-09-30 -> 2026-09-30, at Hyperliquid fees."""
+
+    per_year: float  # round trips per year
+    mean: float  # net per round trip
+    ci: tuple[float, float]  # 95%, bootstrap over UTC days
+    tp_hit: float
+    yield_yr: float  # sum of net / coins / years, 1x
+
+
+F8_BASELINE = Baseline(123.1, 0.00500, (0.00147, 0.00831), 0.858, 0.1026)
+
+
+@dataclass(frozen=True)
 class PaperBot:
     name: str
     rule: Rule
     question: str
     bar: str
+    baseline: Baseline
 
 
 BOTS = (
@@ -50,6 +67,7 @@ BOTS = (
                  " rule on the same coins and minutes: the fills the live bot missed (queue,"
                  " post-only rejects) and the net per fill, live vs paper.",
         bar="None: a measurement, never promoted (F8 already trades live).",
+        baseline=F8_BASELINE,
     ),
     PaperBot(
         "f8-wide", Rule(0.015, 0.020, 240 * MIN),
@@ -57,6 +75,7 @@ BOTS = (
                  " forward? Holdout +16.8%/yr vs F8 +10.0%/yr, difference CI [-8.3, +22.6]"
                  " (runs/f8_param_grid.log).",
         bar=PROMOTION,
+        baseline=Baseline(333.2, 0.00315, (0.00018, 0.00596), 0.592, 0.1751),
     ),
     PaperBot(
         "f8-trend", Rule(F8.drop, F8.target, F8.hold_ms, trend_ms=30 * DAY),
@@ -64,6 +83,8 @@ BOTS = (
                  " Post-hoc from F8S Q1: +0.684%/event in up markets vs +0.267% in down"
                  " (runs/f8s_squeeze_ladder_proxy.log); this run is its out-of-sample test.",
         bar=PROMOTION,
+        # Below plain F8 and under the bar's 5%/yr over these two years: the gate halved N.
+        baseline=Baseline(62.0, 0.00454, (-0.00041, 0.00849), 0.815, 0.0469),
     ),
 )
 
@@ -79,11 +100,15 @@ def run(rung_usd: float) -> None:
         venue = PaperVenue(market, store.trades(PAPER, open_only=True))
         bots.append(LadderBot(venue, store, rung_usd, coins, spec.rule))
         log.info("%s: %s on %s, %s USDC per rung", store.bot, spec.rule, coins, rung_usd)
+    books: dict[str, list[dict] | None] = {}  # bot -> the book last written
     while True:
         started = time.monotonic()
         for bot in bots:
             try:
                 bot.cycle(now_ms())
+                if (book := bot.hl.book()) != books.get(bot.store.bot):
+                    bot.store.save_book(book)  # the dashboard's only view of a paper bot's orders
+                    books[bot.store.bot] = book
             except Exception:
                 bot.log.exception("cycle failed")
         time.sleep(max(0.0, POLL_S - (time.monotonic() - started)))

@@ -42,6 +42,10 @@ export function fmtClock(ms: number, seconds = true): string {
   return new Date(ms).toISOString().slice(11, seconds ? 19 : 16);
 }
 
+export function fmtDate(ms: number): string {
+  return new Date(ms).toISOString().slice(0, 10);
+}
+
 export function fmtDateTime(ms: number): string {
   const iso = new Date(ms).toISOString();
   return `${iso.slice(5, 10)} ${iso.slice(11, 19)}`;
@@ -53,6 +57,12 @@ export function fmtDur(ms: number): string {
   const m = Math.floor((s % 3600) / 60);
   const ss = String(s % 60).padStart(2, "0");
   return h ? `${h}:${String(m).padStart(2, "0")}:${ss}` : `${m}:${ss}`;
+}
+
+/** A ladder rule as "−2.5% · TP +1.2% · 60m", plus its trend gate if it has one. */
+export function fmtRule(r: { drop: number; target: number; hold_ms: number; trend_ms?: number | null }): string {
+  const gate = r.trend_ms ? ` · ${r.trend_ms / 86_400_000}d trend` : "";
+  return `${MINUS}${(r.drop * 100).toFixed(1)}% · TP +${(r.target * 100).toFixed(1)}% · ${r.hold_ms / 60_000}m${gate}`;
 }
 
 /** Venue leverage text ("isolated 5") as "5× iso". */

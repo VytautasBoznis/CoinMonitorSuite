@@ -1,10 +1,11 @@
 """The live-bot dashboard (``coinmon dashboard``): a JSON API, plus the built web frontend at ``/``.
 
-Reads the bot's DB rows (mode, heartbeat, ledger), the liquidation collector's prints, and public
-Hyperliquid data (``market.py``: no key). Its only writes are the two stops
-([[live-bot-dashboard-plan]]). DRAIN sets the mode and the running bot works it. PANIC calls the
-same ``stop.panic`` as ``coinmon stop --now``, so it works with the bot dead or the DB down, but
-needs the agent key in this process's env. Resume stays CLI-only.
+Reads the bots' DB rows (mode, heartbeat, ledger; the live bot and the swarm's paper bots), the
+liquidation collector's prints, and public Hyperliquid data (``market.py``: no key). Its only
+writes are the two stops ([[live-bot-dashboard-plan]]), and they act on the live bot only: paper
+bots hold no money. DRAIN sets the mode and the running bot works it. PANIC calls the same
+``stop.panic`` as ``coinmon stop --now``, so it works with the bot dead or the DB down, but needs
+the agent key in this process's env. Resume stays CLI-only.
 
 No login: anyone who can reach the port can PANIC or DRAIN (flatten only, never open risk). Both
 POSTs take a JSON body, so another site cannot fire them from a visitor's browser: FastAPI rejects
@@ -14,6 +15,7 @@ non-JSON bodies, and cross-origin JSON needs a CORS preflight this app never gra
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import asdict
 from pathlib import Path
 from typing import Literal
 
@@ -26,13 +28,31 @@ from coinmon.config import settings
 from coinmon.dashboard import views
 from coinmon.dashboard.market import INTERVAL_MS, WS, Market
 from coinmon.data import db
-from coinmon.live import stop
-from coinmon.live.control import DRAIN, RUN, Store, bot_on, now_ms
+from coinmon.live import score, stop, swarm
+from coinmon.live.control import BOT, DRAIN, RUN, Store, bot_on, now_ms
 from coinmon.live.hyperliquid import Hyperliquid, venue_name
-from coinmon.live.ladder import COINS, DROP, HOLD_MS, TARGET
+from coinmon.live.ladder import COINS, DROP, F8, HOLD_MS, TARGET, Rule
+from coinmon.live.paper import PAPER
 
 LIQ_EXCHANGE = "bybit"  # the collector's venue; its symbols are ccxt's, e.g. BTC/USDT:USDT
 TAPE_LOOKBACK_MS = 24 * 3_600_000
+SCORE_LIMIT = 100_000  # round trips read per bot for the scoreboard: all of them
+LIVE_QUESTION = ("What the venue really pays for F8's touch-fills: the frozen rule with real money"
+                 " (queue position, post-only rejects, partial fills).")
+LIVE_BAR = ("None: micro-live data gathering, never a deployment; real capital still needs"
+            " 5%/yr forward.")
+
+
+def _paper_store(name: str) -> Store:
+    return Store(bot_on(PAPER, name), initial=RUN)
+
+
+def _bot(bot: str, paper: bool, rule: Rule, question: str, bar: str, baseline: swarm.Baseline,
+         state: dict) -> dict:
+    return {"id": bot, "paper": paper, "question": question, "bar": bar,
+            "rule": {"drop": rule.drop, "target": rule.target, "hold_ms": rule.hold_ms,
+                     "trend_ms": rule.trend_ms},
+            "baseline": asdict(baseline), "state": state}
 
 
 class PanicRequest(BaseModel):
@@ -54,12 +74,35 @@ def _venue_client() -> Hyperliquid:
 
 def create_app(store: Store | None = None, market: Market | None = None,
                venue_client: Callable[[], Hyperliquid] = _venue_client,
-               dist: Path | None = None) -> FastAPI:
+               dist: Path | None = None,
+               paper_store: Callable[[str], Store] = _paper_store) -> FastAPI:
     venue = venue_name(settings.hl_testnet)
     store = store or Store(bot_on(venue))
+    papers = {s.name: (s, paper_store(s.name)) for s in swarm.BOTS}
     market = market or Market(settings.hl_testnet)
     dist = settings.dashboard_dist if dist is None else dist
     app = FastAPI(title="coinmon dashboard", docs_url=None, redoc_url=None, openapi_url=None)
+
+    def ledger(bot: str) -> tuple[Store, str]:
+        """``bot``'s store and the venue its ledger rows are under."""
+        if bot == BOT:
+            return store, venue
+        if bot in papers:
+            return papers[bot][1], PAPER
+        raise HTTPException(422, f"bot is one of {[BOT, *papers]}")
+
+    def state_of(st: Store) -> dict:
+        ts = now_ms()
+        try:
+            c = st.read()
+        except Exception as e:
+            return {"now": ts, "db": False, "error": str(e)}
+        return {
+            "now": ts, "db": True, "mode": c.mode, "reason": c.reason,
+            "deadline_ms": c.deadline_ms, "updated_ms": c.updated_ms,
+            "heartbeat_ms": c.heartbeat_ms, "heartbeat": views.heartbeat_state(c.heartbeat_ms, ts),
+            "started_ms": c.started_ms, "book": c.book,
+        }
 
     def keyed() -> bool:
         return bool(settings.hl_address and settings.hl_agent_key)
@@ -95,16 +138,38 @@ def create_app(store: Store | None = None, market: Market | None = None,
 
     @app.get("/api/state")
     def state():
+        """The live bot's: the stops act on it."""
+        return state_of(store)
+
+    @app.get("/api/bots")
+    def bots():
+        """The live bot, then the swarm's paper bots: rule, frozen backtest, and state (a paper
+        bot's state carries its book, the resting simulated orders)."""
+        live = _bot(BOT, False, F8, LIVE_QUESTION, LIVE_BAR, swarm.F8_BASELINE, state_of(store))
+        return [live] + [_bot(s.name, True, s.rule, s.question, s.bar, s.baseline, state_of(st))
+                         for s, st in papers.values()]
+
+    @app.get("/api/scoreboard")
+    def scoreboard():
+        """Each bot's forward record against its own frozen backtest; a paper bot with a bar gets
+        the bar's verdict, the twin its live-capture measurement."""
         ts = now_ms()
         try:
-            c = store.read()
+            live = store.trades(venue, limit=SCORE_LIMIT)
+            cards = [{"id": BOT, **score.card(live, store.read().started_ms, ts, len(listed()),
+                                              swarm.F8_BASELINE)}]
+            for s, st in papers.values():
+                started = st.read().started_ms
+                trades = st.trades(PAPER, limit=SCORE_LIMIT)
+                c = {"id": s.name, **score.card(trades, started, ts, len(COINS), s.baseline)}
+                if s.bar == swarm.PROMOTION:
+                    c["bar"] = score.judge(trades, started, ts, len(COINS))
+                if s.rule == F8:
+                    c["capture"] = score.capture(trades, live, started)
+                cards.append(c)
         except Exception as e:
-            return {"now": ts, "db": False, "error": str(e)}
-        return {
-            "now": ts, "db": True, "mode": c.mode, "reason": c.reason,
-            "deadline_ms": c.deadline_ms, "updated_ms": c.updated_ms,
-            "heartbeat_ms": c.heartbeat_ms, "heartbeat": views.heartbeat_state(c.heartbeat_ms, ts),
-        }
+            raise HTTPException(503, f"control store unreachable: {e}") from e
+        return cards
 
     @app.get("/api/market")
     def market_contexts():
@@ -130,8 +195,9 @@ def create_app(store: Store | None = None, market: Market | None = None,
                 "points": from_venue(market.portfolio, settings.hl_address)}
 
     @app.get("/api/trades")
-    def trades(limit: int = Query(200, ge=1, le=1000)):
-        rows = views.ledger_rows(store.trades(venue, limit=limit))
+    def trades(bot: str = BOT, limit: int = Query(200, ge=1, le=1000)):
+        st, v = ledger(bot)
+        rows = views.ledger_rows(st.trades(v, limit=limit))
         return {"rows": rows, "summary": views.ledger_summary(rows)}
 
     @app.get("/api/liquidations")

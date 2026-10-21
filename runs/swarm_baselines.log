@@ -1,0 +1,16 @@
+  BTC/USDT:USDT: 3,022,560 bars (15s)
+  ETH/USDT:USDT: 3,022,560 bars (15s)
+  SOL/USDT:USDT: 3,015,360 bars (14s)
+  DOGE/USDT:USDT: 3,022,560 bars (13s)
+  XRP/USDT:USDT: 3,015,360 bars (15s)
+  ADA/USDT:USDT: 3,022,560 bars (16s)
+
+holdout 2024-09-30 -> 2026-09-30 (730 days), 6 coins
+self-check at the grid's fees, 2.5% / 1.2% / 60m: N=246 mean +0.489%  (grid: N=246 +0.489%) OK
+self-check at the grid's fees, 1.5% / 2.0% / 240m: N=666 mean +0.303%  (grid: N=666 +0.303%) OK
+
+BASELINES at Hyperliquid fees (maker 0.015%, taker 0.045%):
+bot       rule                           N   N/yr     mean     95% CI (UTC days)  TP hit  yield/yr
+f8-twin   2.5% / 1.2% / 60m            246  123.1  +0.500%  [+0.147%, +0.831%]   85.8%   +10.26%
+f8-wide   1.5% / 2.0% / 240m           666  333.2  +0.315%  [+0.018%, +0.596%]   59.2%   +17.51%
+f8-trend  2.5% / 1.2% / 60m +30d gate   124   62.0  +0.454%  [-0.041%, +0.849%]   81.5%    +4.69%

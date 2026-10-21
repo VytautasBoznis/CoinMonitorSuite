@@ -1,6 +1,7 @@
-import type { BotState, Config } from "../api";
+import type { Bot, BotState, Config } from "../api";
 import { fmtAgo, fmtClock, fmtDur } from "../format";
 import type { SocketStatus } from "../hooks";
+import { BotSwitch } from "./BotSwitch";
 import { Chip, Dot } from "./Panel";
 
 function Logo() {
@@ -73,6 +74,9 @@ function Feed({ label, status }: { label: string; status: SocketStatus }) {
 
 export function TopBar({
   config,
+  bots,
+  bot,
+  onBot,
   state,
   now,
   feeds,
@@ -80,6 +84,9 @@ export function TopBar({
   onScoreboard,
 }: {
   config: Config;
+  bots?: Bot[];
+  bot?: Bot; // the one on screen; undefined until the bot list loads (then it is the live bot)
+  onBot: (id: string) => void;
   state?: BotState;
   now: number;
   feeds: { label: string; status: SocketStatus }[];
@@ -93,10 +100,18 @@ export function TopBar({
         <span className="text-[13px] font-bold tracking-[0.2em]">COINMON</span>
       </div>
       <span className="h-5 w-px bg-line" />
-      <span className="text-[13px] text-ink-2">F8 Cascade Ladder</span>
-      <Chip className={config.testnet ? "bg-warn/15 text-warn" : "bg-down/15 text-down"}>
-        {config.testnet ? "TESTNET" : "MAINNET · REAL MONEY"}
-      </Chip>
+      {bots && bot ? (
+        <BotSwitch bots={bots} selected={bot} onSelect={onBot} />
+      ) : (
+        <span className="text-[13px] text-ink-2">F8 Cascade Ladder</span>
+      )}
+      {bot?.paper ? (
+        <Chip className="bg-accent/15 text-accent">PAPER · NO MONEY</Chip>
+      ) : (
+        <Chip className={config.testnet ? "bg-warn/15 text-warn" : "bg-down/15 text-down"}>
+          {config.testnet ? "TESTNET" : "MAINNET · REAL MONEY"}
+        </Chip>
+      )}
       <button onClick={onWarRoom} className="wr-enter ml-2" title="the same bot, turned up to eleven">
         ⚡ WAR ROOM
       </button>

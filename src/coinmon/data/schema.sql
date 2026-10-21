@@ -123,6 +123,11 @@ CREATE TABLE IF NOT EXISTS bot_control (
     updated_ms   BIGINT NOT NULL,
     heartbeat_ms BIGINT
 );
+-- Added for the swarm. started_ms is the bot's first good cycle: a paper bot's bar is judged from
+-- it. book is a paper bot's resting simulated orders, written when they change (a live bot's
+-- orders are on the venue, so its book stays NULL).
+ALTER TABLE bot_control ADD COLUMN IF NOT EXISTS started_ms BIGINT;
+ALTER TABLE bot_control ADD COLUMN IF NOT EXISTS book JSONB;
 
 -- One row per live round trip. Entry columns are written when the position appears, exit columns
 -- when it is gone; fills and fees are the venue's own. anchor_close is the 1m close the resting

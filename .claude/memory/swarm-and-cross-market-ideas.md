@@ -1,11 +1,11 @@
 ---
 name: swarm-and-cross-market-ideas
-description: "Owner ideas 2026-10-20 (swarm, cross-market cascades, multi-market runs), phase order A/B/C and owner decisions. Phase A KILLED both; phase B step 1 (paper venue + 3 paper bots, approved bar) BUILT 2026-10-21, not deployed; next = dashboard switcher + scoreboard"
+description: "Owner ideas 2026-10-20 (swarm, cross-market cascades, multi-market runs), phase order A/B/C and owner decisions. Phase A KILLED both; phase B steps 1+2 (paper venue + 3 paper bots + frozen baselines + dashboard switcher/scoreboard) BUILT 2026-10-21, not deployed"
 metadata:
   node_type: memory
   type: project
   originSessionId: b07cd4d1-531d-4981-a504-2599f052cef5
-  modified: 2026-10-21T17:49:15.273Z
+  modified: 2026-10-21T18:51:39.343Z
 ---
 
 Owner, 2026-10-20, added to the "what's next" plan:
@@ -75,8 +75,24 @@ Owner, 2026-10-20, added to the "what's next" plan:
   **On deploy, write the first-run date HERE** (the judging clock starts then).
 - Smoke run on real mainnet data 2026-10-21: twin bids at ~-2.5%, wide at ~-1.5%. **f8-trend sits idle**: all 6
   coins are below their price 30 days ago. Owner: keep it anyway.
-- **NEXT = step 2:** a dashboard bot switcher + scoreboard (each bot vs its own backtest: N, CI, "too early").
-  The swarm deployment can go live before it.
+**PHASE B STEP 2 BUILT 2026-10-21 (code + tests + screenshots; NOT deployed).**
+- **Frozen baselines** (`probes/swarm_baselines.py` → `runs/swarm_baselines.log`, in `swarm.Baseline`). Paper's
+  own replay at HL fees on the grid's holdout (2024-09-30 → 2026-09-30, 6 coins); the self-check reproduces the
+  grid's rows. Results: F8/twin 123 trips/yr, +0.500% [+0.147, +0.831], TP 85.8%, +10.3%/yr. Wide 333/yr,
+  +0.315% [+0.018, +0.596], TP 59.2%, +17.5%/yr. **Trend 62/yr, +0.454% [−0.041, +0.849], +4.7%/yr.**
+  So over the recent two years the trend gate is BELOW plain F8 and under the bar's 5%/yr. Expect ~31 trips at
+  6 months, so a likely 12-month extension. The owner kept it; its bar is unchanged.
+- **Scoring** = `src/coinmon/live/score.py`: UTC-day bootstrap CI; `card` (forward vs backtest; "too early"
+  below N 50); `judge` (the bar as written: calendar 6 months from `started_ms`, only trips closed by then, one
+  12-month look if N < 50, else pass/fail); `capture` (twin vs live, same coin within one candle).
+- **Judging clock** = new `bot_control.started_ms`, set at a bot's first heartbeat. **Deploy steps 1+2 together**:
+  if step 1 runs first, the clock starts late. Also new: `bot_control.book` (JSONB), the paper bot's resting
+  orders, written on change. The dashboard never invents a bid.
+- **Dashboard:** bot dropdown in the top bar (`#bot=<id>` deep link). Paper view = simulated account from the
+  ledger + book + live mids. The kill switch ALWAYS acts on the live bot and says so. Scoreboard overlay gets a
+  "Forward tests" section, one card per bot; it replaced the old F8 LiveScore widget.
+- **NEXT:** owner deploys (flip `swarm.enabled`), then record the first-run date here. After that: phase B
+  step 3 (shared feed) with the phase-C collector.
 
 DB note: the local Timescale is on port **5433**, so set
 `COINMON_DB_DSN=postgresql://coinmon:coinmon@localhost:5433/coinmon` (the default DSN in config.py is 5432,

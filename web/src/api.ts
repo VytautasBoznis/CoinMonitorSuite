@@ -2,6 +2,9 @@
 
 export type Mode = "RUN" | "DRAIN" | "HALT";
 
+/** A ladder's knobs; ``trend_ms`` gates bids to a coin up over that span (null: no gate). */
+export type Rule = { drop: number; target: number; hold_ms: number; trend_ms?: number | null };
+
 export type Config = {
   venue: string;
   testnet: boolean;
@@ -12,7 +15,7 @@ export type Config = {
   address: string | null;
   keyed: boolean;
   stale_s: number;
-  rule: { drop: number; target: number; hold_ms: number };
+  rule: Rule; // the live bot's
 };
 
 export type BotState =
@@ -25,8 +28,50 @@ export type BotState =
       updated_ms: number;
       heartbeat_ms: number | null;
       heartbeat: "alive" | "stale" | "never";
+      started_ms: number | null; // first heartbeat: a paper bot's bar is judged from it
+      book: Order[] | null; // a paper bot's resting simulated orders (the live bot's are on the venue)
     }
   | { now: number; db: false; error: string };
+
+/** A bot's own backtest, frozen before its first run (runs/swarm_baselines.log). */
+export type Baseline = { per_year: number; mean: number; ci: [number, number]; tp_hit: number; yield_yr: number };
+
+/** The live bot first, then the swarm's paper bots. */
+export type Bot = {
+  id: string;
+  paper: boolean;
+  question: string;
+  bar: string;
+  rule: Rule;
+  baseline: Baseline;
+  state: BotState;
+};
+
+/** The promotion bar's verdict, applied as written (src/coinmon/live/score.py). */
+export type Verdict = {
+  status: "not started" | "too early" | "extended" | "pass" | "fail";
+  at_ms: number | null; // the judging date
+  n?: number;
+  ci?: [number, number] | null;
+  yield_yr?: number | null;
+};
+
+/** A bot's forward record next to its backtest. */
+export type Card = {
+  id: string;
+  n: number;
+  mean: number | null;
+  ci: [number, number] | null; // 95%, bootstrap over UTC days
+  yield_yr: number | null;
+  since_ms: number | null;
+  open: number;
+  expected_n: number; // at the backtest's pace
+  tp_hit: number | null;
+  net_usd: number;
+  vs_backtest: "too early" | "below" | "above" | "in line";
+  bar?: Verdict;
+  capture?: { twin: number; caught: number; live_only: number; gap: number | null; n_gap: number };
+};
 
 export type Ctx = {
   mark: number;
@@ -135,7 +180,9 @@ export const api = {
     req<Candle[]>(`/api/candles?coin=${coin}&interval=${interval}&limit=${limit}`),
   account: () => req<Account>("/api/account"),
   burn: () => req<Burn>("/api/burn"),
-  trades: () => req<Trades>("/api/trades?limit=200"),
+  bots: () => req<Bot[]>("/api/bots"),
+  scoreboard: () => req<Card[]>("/api/scoreboard"),
+  trades: (bot?: string) => req<Trades>(`/api/trades?limit=200${bot ? `&bot=${bot}` : ""}`),
   liquidations: (coin: string, interval: string, startMs: number, endMs: number) =>
     req<Liquidations>(`/api/liquidations?coin=${coin}&interval=${interval}&start_ms=${startMs}&end_ms=${endMs}`),
   recentPrints: () => req<Print[]>("/api/liquidations/recent?limit=120"),

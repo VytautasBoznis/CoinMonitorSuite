@@ -1,5 +1,5 @@
 import type { Account, Config, TradeRow } from "../api";
-import { fmtDur, fmtLev, fmtPct, fmtPx, fmtUsd, tone } from "../format";
+import { fmtDur, fmtLev, fmtPct, fmtPx, fmtRule, fmtUsd, tone } from "../format";
 import { Chip, Panel } from "./Panel";
 
 /** One row per coin: what the ladder has on the venue right now. */
@@ -25,11 +25,7 @@ export function LadderPanel({
   return (
     <Panel
       title="Ladder"
-      right={
-        <span className="num text-[11px] text-ink-3">
-          −{(rule.drop * 100).toFixed(1)}% · TP +{(rule.target * 100).toFixed(1)}% · {rule.hold_ms / 60_000}m
-        </span>
-      }
+      right={<span className="num text-[11px] text-ink-3">{fmtRule(rule)}</span>}
     >
       <div className="divide-y divide-line">
         {coins.map((coin) => (

@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: f655be08-d28b-48b8-91b6-b4b28bbce97c
-  modified: 2026-10-20T16:37:44.172Z
+  modified: 2026-10-21T18:52:22.345Z
 ---
 
 Owner, in a 2026-10-09 conversation with Fable (pasted into Claude Code): a bot running headless on the
@@ -105,6 +105,8 @@ ladder, kill switch), and below the chart the fills ledger and a live liquidatio
     overlay. Data is static in `web/src/strategies.ts`: 4 standing (F8 live vs backtest from the ledger,
     F1, W3, B20) and 17 graves, each with its kill number and an epitaph.
     - **Add a row there whenever a probe reports.**
+  - **2026-10-21:** the F8 card's LiveScore was replaced by the overlay's "Forward tests" section (every bot vs
+    its frozen baseline, from `/api/scoreboard`). The terminal now switches bots; see [[swarm-and-cross-market-ideas]].
 - **Intent layer (owner, 2026-10-09: "I just want to see the bot doing trades and its intentions"):** on 1m,
   a dashed blue "bid trail" (prior 1m close −2.5%) that hides while a position is open, plus a plain-English
   INTENT sentence (waiting / holding / not running). The owner does not want to learn the screens. Keep the

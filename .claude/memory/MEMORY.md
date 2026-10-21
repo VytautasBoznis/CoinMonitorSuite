@@ -13,7 +13,7 @@ This file indexes all memory files. One line per file; detail lives in each topi
 - [bybit-only-leverage-doctrine](bybit-only-leverage-doctrine.md) — (venue superseded) leverage-class caps still reusable; MiCA/USDC-only universe conflict
 - [cursed-100-eur-live-ladder](cursed-100-eur-live-ladder.md) — **the cursed 100 EUR → F8 cascade ladder live, data-gathering not deployment; owner's leverage call, don't re-litigate**
 - [live-bot-dashboard-plan](live-bot-dashboard-plan.md) — **F8 bot + web dashboard LIVE on Hyperliquid mainnet since 2026-10-13; budget fix deployed (~200-300 actions/day, buffer out ~mid-Nov). Burn meter + ☠ graveyard built 2026-10-20 (add a grave per probe in web/src/strategies.ts). Owed: agent-can't-withdraw proof, PANIC w/ position, death alert**
-- [swarm-and-cross-market-ideas](swarm-and-cross-market-ideas.md) — **2026-10-20 owner ideas: bot swarm (own wallets, shared collector, scoreboard), cross-market cascades, multi-market runs; proposed A/B/C order, decisions open**
+- [swarm-and-cross-market-ideas](swarm-and-cross-market-ideas.md) — **swarm: phase A KILLED both; phase B step 1 BUILT 2026-10-21 (paper venue = backtest fills, 3 paper bots, bar APPROVED, not deployed). NEXT: dashboard switcher + scoreboard; record first-run date on deploy**
 - [hl-venue-limits-multibot](hl-venue-limits-multibot.md) — HL facts: fees 0.045/0.015, sub-accounts need $100k volume, per-address action limits, per-IP caps, PM needs $10k, oracle = CEX median every 3s
 - [ui-trader-terminal-look](ui-trader-terminal-look.md) — **owner's UI bar: pro trader-terminal web app (Streamlit rejected); screenshot-check before done**
 - [no-strategy-preference](no-strategy-preference.md) — ZERO strategy preference; only "certified/winnable" matters

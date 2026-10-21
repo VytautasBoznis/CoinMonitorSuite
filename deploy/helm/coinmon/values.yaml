@@ -56,6 +56,15 @@ bot:
     requests: { cpu: 50m, memory: 192Mi }
     limits: { memory: 512Mi }
 
+# Paper bots (`coinmon swarm run`, src/coinmon/live/swarm.py): F8 and its variants on live
+# Hyperliquid mainnet prices, filled like the backtests. No key, no real orders, no Secret needed.
+# Paper bots start RUN. Rungs are sized like the bot's (bot.rungUsd) so dollars compare.
+swarm:
+  enabled: false
+  resources:
+    requests: { cpu: 50m, memory: 192Mi }
+    limits: { memory: 512Mi }
+
 dashboard:
   enabled: true
   service:

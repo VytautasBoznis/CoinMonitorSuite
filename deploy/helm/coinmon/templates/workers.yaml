@@ -67,6 +67,41 @@ spec:
             {{- toYaml .Values.bot.resources | nindent 12 }}
 ---
 {{- end }}
+{{- if .Values.swarm.enabled }}
+{{- $labels := dict "ctx" . "component" "swarm" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fullname }}-swarm
+  labels:
+    {{- include "coinmon.labels" $labels | nindent 4 }}
+spec:
+  # One copy: two would each trade the same paper bots and write their round trips twice.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "coinmon.selector" $labels | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "coinmon.labels" $labels | nindent 8 }}
+    spec:
+      {{- include "coinmon.podCommon" . | nindent 6 }}
+      {{- include "coinmon.waitForDb" (dict "ctx" . "name" "coinmon-scraper") | nindent 6 }}
+      containers:
+        - name: swarm
+          {{- include "coinmon.image" (dict "ctx" . "name" "coinmon-scraper") | nindent 10 }}
+          command: ["coinmon", "swarm", "run"]
+          env:
+            {{- include "coinmon.dbEnv" . | nindent 12 }}
+            - name: COINMON_BOT_RUNG_USD
+              value: {{ .Values.bot.rungUsd | quote }}
+          resources:
+            {{- toYaml .Values.swarm.resources | nindent 12 }}
+---
+{{- end }}
 {{- if .Values.scraper.enabled }}
 {{- $labels := dict "ctx" . "component" "scraper" }}
 apiVersion: apps/v1

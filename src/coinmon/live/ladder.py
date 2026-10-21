@@ -27,6 +27,7 @@ from __future__ import annotations
 import logging
 import signal
 import time
+from dataclasses import dataclass
 
 import ccxt
 
@@ -54,13 +55,30 @@ SETTLE_MS = 10_000
 STARTUP_RETRY_MAX_S = 60.0
 
 
+@dataclass(frozen=True)
+class Rule:
+    """A ladder's knobs: the rung below the prior 1m close, the take-profit from the fill, the
+    time-stop, and an optional trend gate: bid only while the prior close is at or above the
+    close ``trend_ms`` earlier (``close_before`` on the venue)."""
+
+    drop: float
+    target: float
+    hold_ms: int
+    trend_ms: int | None = None
+
+
+F8 = Rule(DROP, TARGET, HOLD_MS)
+
+
 class LadderBot:
     def __init__(self, hl: Hyperliquid, store: Store, rung_usd: float,
-                 coins: tuple[str, ...] = COINS) -> None:
+                 coins: tuple[str, ...] = COINS, rule: Rule = F8) -> None:
         self.hl = hl
         self.store = store
         self.rung_usd = rung_usd
         self.coins = coins
+        self.rule = rule
+        self.log = logging.getLogger(f"{log.name}.{store.bot}")
         self.trades: dict[str, Trade] = {t.coin: t for t in store.trades(hl.venue, open_only=True)}
         self.anchor: dict[str, tuple[int, float]] = {}  # coin -> (minute, prior 1m close)
         self.pegged: dict[str, float] = {}  # coin -> close its resting bid was pegged from
@@ -90,13 +108,13 @@ class LadderBot:
                 " use an API wallet's key"
             )
         if hl.agent not in hl.approved_agents():
-            log.warning("API wallet %s is not among the named API wallets of %s on %s; orders"
-                        " will be rejected unless it is approved there",
-                        hl.agent, hl.address, hl.venue)
+            self.log.warning("API wallet %s is not among the named API wallets of %s on %s;"
+                             " orders will be rejected unless it is approved there",
+                             hl.agent, hl.address, hl.venue)
         if hl.account_value() <= 0:
-            log.warning("%s has no USDC margin on %s, so bids will be rejected (testnet: claim"
-                        " the faucet; a non-unified account: move USDC from Spot to Perps)",
-                        hl.address, hl.venue)
+            self.log.warning("%s has no USDC margin on %s, so bids will be rejected (testnet:"
+                             " claim the faucet; a non-unified account: move USDC from Spot to"
+                             " Perps)", hl.address, hl.venue)
         lev = {c: self.hl.leverage(c) for c in self.coins}
         cross = {c: v for c, v in lev.items() if not v.startswith("isolated")}
         if cross:
@@ -107,7 +125,7 @@ class LadderBot:
         try:
             ctl = self.store.read()
         except Exception:
-            log.exception("control store unreachable: no new risk this cycle")
+            self.log.exception("control store unreachable: no new risk this cycle")
             ctl = None
         mode = ctl.mode if ctl else None
         positions = self.hl.positions()
@@ -119,7 +137,7 @@ class LadderBot:
                 self._manage(coin, ts_ms, mode, positions.get(coin),
                              [o for o in orders if o.coin == coin])
             except Exception:
-                log.exception("%s: step failed", coin)
+                self.log.exception("%s: step failed", coin)
         if mode == DRAIN:
             stop.drain_step(self.hl, self.store, ctl.deadline_ms, ts_ms)
         if ctl is not None:
@@ -130,7 +148,8 @@ class LadderBot:
         bids = [o for o in orders if o.side == "B" and not o.reduce_only]
         exits = [o for o in orders if o.side == "A" and o.reduce_only]
         if pos is not None and pos.szi < 0:
-            log.warning("%s: short %s on the venue is not this bot's, left alone", coin, pos.szi)
+            self.log.warning("%s: short %s on the venue is not this bot's, left alone", coin,
+                             pos.szi)
             return
         if pos is not None:
             for b in bids:  # one position per coin; also drops the rest of a partial fill
@@ -154,7 +173,7 @@ class LadderBot:
         """Keep a take-profit resting; at the time-stop, swap it for a market close."""
         if ts_ms - self.exit_wrote.get(coin, -SETTLE_MS) < SETTLE_MS:
             return  # the read may not show the exit order just sent
-        due = ts_ms >= trade.fill_ms + HOLD_MS
+        due = ts_ms >= trade.fill_ms + self.rule.hold_ms
         if (exits and not due) or self.hl.write_wait_s() > 0:
             return
         if due:
@@ -164,7 +183,7 @@ class LadderBot:
             self.exit_wrote[coin] = ts_ms
             self.store.save_trade(trade)
         else:
-            trade.tp_px = self.hl.round_px(coin, trade.fill_px * (1 + TARGET))
+            trade.tp_px = self.hl.round_px(coin, trade.fill_px * (1 + self.rule.target))
             trade.tp_oid = self.hl.place(coin, "sell", pos.szi, trade.tp_px, reduce_only=True)
             self.exit_wrote[coin] = ts_ms
             self.store.save_trade(trade)
@@ -183,8 +202,8 @@ class LadderBot:
         )
         self.trades[coin] = trade
         self.store.save_trade(trade)
-        log.info("%s: filled %s @ %s (%s, liq %s)", coin, sz, trade.fill_px, pos.leverage,
-                 pos.liq_px)
+        self.log.info("%s: filled %s @ %s (%s, liq %s)", coin, sz, trade.fill_px, pos.leverage,
+                      pos.liq_px)
         return trade
 
     def _exit(self, coin: str, ts_ms: int) -> None:
@@ -210,10 +229,18 @@ class LadderBot:
             trade.exit_ms, trade.exit_reason, trade.exit_dir = ts_ms, "other", "no fill"
         self.store.save_trade(trade)
         del self.trades[coin]
-        log.info("%s: exit %s @ %s", coin, trade.exit_reason, trade.exit_px)
+        self.log.info("%s: exit %s @ %s", coin, trade.exit_reason, trade.exit_px)
+
+    def _trend_up(self, coin: str, minute: int, close: float) -> bool:
+        """The rule's trend gate (always open without one). No reference close means no bid."""
+        if self.rule.trend_ms is None:
+            return True
+        then = self.hl.close_before(coin, minute - self.rule.trend_ms)
+        return then is not None and close >= then
 
     def _peg(self, coin: str, ts_ms: int, bids: list[Order]) -> None:
-        """Rest one post-only bid at the prior 1m close -DROP, re-pegged past the REPEG bands."""
+        """Rest one post-only bid at the prior 1m close -drop, re-pegged past the REPEG bands,
+        while the trend gate is open."""
         minute = ts_ms // 60_000 * 60_000
         if self.failed.get(coin) == minute:
             return
@@ -225,7 +252,11 @@ class LadderBot:
                 return
             self.anchor[coin] = (minute, close)
         close = self.anchor[coin][1]
-        rung = self.hl.round_px(coin, close * (1 - DROP))
+        if not self._trend_up(coin, minute, close):
+            for b in bids:
+                self.hl.cancel(coin, b.oid)
+            return
+        rung = self.hl.round_px(coin, close * (1 - self.rule.drop))
         sz = self.rung_usd / rung
         for b in bids[1:]:
             self.hl.cancel(coin, b.oid)
@@ -240,7 +271,7 @@ class LadderBot:
                 self.hl.modify(bids[0].oid, coin, sz, rung)
         except ccxt.ExchangeError as e:
             self.failed[coin] = minute
-            log.warning("%s: bid at %s rejected, retrying next minute: %s", coin, rung, e)
+            self.log.warning("%s: bid at %s rejected, retrying next minute: %s", coin, rung, e)
             return
         self.bid_wrote[coin] = ts_ms
         self.pegged[coin] = close

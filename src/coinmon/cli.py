@@ -29,9 +29,10 @@ from coinmon.data.candles import load_candles
 from coinmon.data.discovery import rank_spot, summarize_coverage
 from coinmon.data.surrogate import surrogate_legs
 from coinmon.feed import BarView, CostModel
-from coinmon.live import control, ladder, stop
+from coinmon.live import control, ladder, stop, swarm
 from coinmon.live.feed import LiveFeed
 from coinmon.live.hyperliquid import venue_name
+from coinmon.live.paper import PAPER
 from coinmon.live.runner import ForwardRunner
 from coinmon.scraper import service
 from coinmon.search.ensemble import certify_ensemble
@@ -1081,6 +1082,28 @@ def _stop(args: argparse.Namespace) -> None:
     print("FLAT, mode HALT")
 
 
+def _swarm(args: argparse.Namespace) -> None:
+    if args.action == "run":
+        _log_to_stdout()
+        swarm.run(settings.bot_rung_usd)
+        return
+    for spec in swarm.BOTS:
+        store = control.Store(control.bot_on(PAPER, spec.name), initial=control.RUN)
+        ctl = store.read()
+        r = spec.rule
+        gate = f" + {r.trend_ms // swarm.DAY}d trend gate" if r.trend_ms else ""
+        print(f"{store.bot}  mode {ctl.mode}  heartbeat {_ago(ctl.heartbeat_ms)}"
+              f"  rule {r.drop:.1%} / {r.target:.1%} / {r.hold_ms // 60_000}m{gate}")
+        trades = store.trades(PAPER)
+        closed = [t for t in trades if t.exit_px is not None]
+        usds = [(t.exit_px - t.fill_px) * t.sz - t.entry_fee - t.exit_fee for t in closed]
+        nets = [u / (t.fill_px * t.sz) for u, t in zip(usds, closed, strict=True)]
+        usd = sum(usds)
+        mean = f", mean net {sum(nets) / len(nets):+.3%}/trip" if nets else ""
+        print(f"  open {sum(t.exit_ms is None for t in trades)}, closed {len(closed)}"
+              f" ({sum(t.exit_reason == 'tp' for t in closed)} tp){mean}, net ${usd:+.2f}")
+
+
 def _dashboard(args: argparse.Namespace) -> None:
     import uvicorn
 
@@ -1744,6 +1767,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="DRAIN deadline, e.g. 90m or 2h (default 90m; F8 holds at most 60m)",
     )
     p_stop.set_defaults(func=_stop)
+
+    p_swarm = sub.add_parser(
+        "swarm", help="Paper bots on live Hyperliquid mainnet data (no key, no real orders)"
+    )
+    p_swarm.add_argument(
+        "action", choices=["run", "status"],
+        help="run: every paper bot in one loop (they start RUN); status: mode, heartbeat, results",
+    )
+    p_swarm.set_defaults(func=_swarm)
 
     p_dash = sub.add_parser(
         "dashboard", help="Live-bot dashboard: web UI + API (PANIC/DRAIN have no login)"

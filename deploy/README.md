@@ -115,6 +115,12 @@ kubectl -n coinmon exec deploy/coinmon-bot -- coinmon bot resume
 
 The bot keeps its mode across restarts and upgrades. HALT stays HALT; RUN goes back to hunting.
 
+**Paper bots (the swarm):** they trade on paper against live mainnet prices and need no Secret.
+```
+helm upgrade coinmon oci://ghcr.io/vytautasboznis/charts/coinmon -n coinmon --reuse-values --set swarm.enabled=true
+kubectl -n coinmon exec deploy/coinmon-swarm -- coinmon swarm status
+```
+
 ## 7. Updating
 
 Push to `main`, wait for the green run, then:

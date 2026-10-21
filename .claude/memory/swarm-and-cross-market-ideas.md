@@ -1,11 +1,11 @@
 ---
 name: swarm-and-cross-market-ideas
-description: "Owner ideas 2026-10-20: (1) multi-bot swarm, own wallets, one shared collector, one dashboard, scoring; (2) cross-market cascade contagion, prep on another venue; (3) multi-market monitoring + runs in the swarm. Claude's framing + proposed phase order; awaiting owner's pick"
+description: "Owner ideas 2026-10-20 (swarm, cross-market cascades, multi-market runs), phase order A/B/C and owner decisions. Phase A KILLED both; phase B step 1 (paper venue + 3 paper bots, approved bar) BUILT 2026-10-21, not deployed; next = dashboard switcher + scoreboard"
 metadata:
   node_type: memory
   type: project
   originSessionId: b07cd4d1-531d-4981-a504-2599f052cef5
-  modified: 2026-10-21T17:09:36.372Z
+  modified: 2026-10-21T17:49:15.273Z
 ---
 
 Owner, 2026-10-20, added to the "what's next" plan:
@@ -56,6 +56,27 @@ Owner, 2026-10-20, added to the "what's next" plan:
 - **A unique HL wallet per live bot:** yes.
 - **Portfolio-margin carry ($10k+): not now.** "Might in the future if this shit would be profitable." Do not
   build or probe it until the owner reopens it. A free paper tracker in the swarm is fine.
+
+**PHASE B STEP 1 BUILT 2026-10-21 (code + tests; NOT deployed: the owner flips `swarm.enabled`).**
+- Paper = `src/coinmon/live/paper.py` `PaperVenue`. It offers LadderBot the venue's calls, so paper bots run the
+  live bot's exact code. Fills are settled on closed HL MAINNET 1m candles exactly like `f8_param_grid.simulate`.
+  `tests/test_paper.py` proves trade-for-trade equality (F8: 38 trips, wide: 15; nets to 1e-12), and a planted
+  lookahead mutant fails 3 tests.
+- So the chain decomposes cleanly: backtest → paper (forward regime only) → live (execution: queue, post-only
+  rejects, partials). The **f8-twin** paper bot measures that last gap against the live bot.
+- One process `coinmon swarm run`, one shared `HLMarket`, ~120 IP weight/min for any number of bots. No key.
+  Ledger venue `hyperliquid-paper`, ids `<name>@hyperliquid-paper`, paper bots start RUN
+  (`Store(initial=RUN)`). Restart restores open rows and settles the missed candles.
+- Tenants in `swarm.BOTS`: f8-twin (measurement, never promoted), f8-wide (1.5/2.0/240, the grid's train pick),
+  f8-trend (F8 + bid only if prior close ≥ the 1h close 30d earlier).
+- **Bar APPROVED by the owner 2026-10-21, before any first run:** judged ONCE, 6 months after the first run
+  (once more at 12 months if N < 50, then retired). Pass = N ≥ 50 AND mean net CI (UTC-day bootstrap) ex-zero
+  AND paper yield ≥ 5%/yr at 1x. A pass earns F8-sized micro-live in its own wallet.
+  **On deploy, write the first-run date HERE** (the judging clock starts then).
+- Smoke run on real mainnet data 2026-10-21: twin bids at ~-2.5%, wide at ~-1.5%. **f8-trend sits idle**: all 6
+  coins are below their price 30 days ago. Owner: keep it anyway.
+- **NEXT = step 2:** a dashboard bot switcher + scoreboard (each bot vs its own backtest: N, CI, "too early").
+  The swarm deployment can go live before it.
 
 DB note: the local Timescale is on port **5433**, so set
 `COINMON_DB_DSN=postgresql://coinmon:coinmon@localhost:5433/coinmon` (the default DSN in config.py is 5432,

@@ -12,10 +12,11 @@ RUN, DRAIN, HALT = "RUN", "DRAIN", "HALT"
 BOT = "f8-ladder"
 
 
-def bot_on(venue: str) -> str:
-    """This bot's control row on ``venue``. One RUN/HALT switch per network, so arming testnet can
-    never arm mainnet: a network the bot has not been resumed on starts HALT."""
-    return f"{BOT}@{venue}"
+def bot_on(venue: str, name: str = BOT) -> str:
+    """Bot ``name``'s id on ``venue``: its control row and its ledger rows. One RUN/HALT switch
+    per bot per network, so arming testnet can never arm mainnet: a network the bot has not been
+    resumed on starts HALT."""
+    return f"{name}@{venue}"
 
 
 def now_ms() -> int:
@@ -58,23 +59,25 @@ _COLS = [f.name for f in fields(Trade)]
 
 
 class Store:
-    """One bot's rows. A fresh connection per call, so a DB restart heals on the next cycle."""
+    """One bot's rows. A fresh connection per call, so a DB restart heals on the next cycle.
+    ``initial`` is the mode of a bot seen for the first time: HALT for real money, RUN for paper."""
 
-    def __init__(self, bot: str = BOT, dsn: str | None = None) -> None:
+    def __init__(self, bot: str = BOT, dsn: str | None = None, initial: str = HALT) -> None:
         self.bot = bot
         self._dsn = dsn
+        self.initial = initial
 
     def init(self) -> None:
         with db.connect(self._dsn) as conn:
             db.init_schema(conn)
 
     def read(self) -> Control:
-        """The current mode; a bot with no row yet is created HALT."""
+        """The current mode; a bot with no row yet is created in mode ``initial``."""
         with db.connect(self._dsn) as conn:
             conn.execute(
                 "INSERT INTO bot_control (bot, mode, reason, updated_ms) VALUES (%s, %s, %s, %s)"
                 " ON CONFLICT (bot) DO NOTHING",
-                (self.bot, HALT, "initial", now_ms()),
+                (self.bot, self.initial, "initial", now_ms()),
             )
             row = conn.execute(
                 "SELECT mode, reason, deadline_ms, updated_ms, heartbeat_ms FROM bot_control"

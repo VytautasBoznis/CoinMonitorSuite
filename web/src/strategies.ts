@@ -48,18 +48,25 @@ export const STANDING: Standing[] = [
     evidence: "The project's only certificate: +2.23%/yr out of sample, t 4.08, 12× its null.",
     blocker: "The recent half earns ~+0.18%/yr. It waits for funding to come back.",
   },
-  {
-    id: "B20",
-    name: "US-close hour (21-23 UTC)",
-    status: "LEAD",
-    since: "2026-07-18",
-    what: "Long the majors from 21:00 to 23:00 UTC, flat the rest of the day.",
-    evidence: "+16%/yr median at maker fees, all 5 majors positive; out-of-asset ETH t 4.7, BNB t 6.0.",
-    blocker: "At taker fees it loses 30-52%/yr: 52-90% of entries must fill as maker. Only live fills settle that.",
-  },
 ];
 
 export const GRAVES: Grave[] = [
+  {
+    id: "C1",
+    name: "Cross-coin cascade contagion",
+    died: "2026-10-21",
+    what: "When one coin crashes or pumps 2.5% in a minute, trade the coins that haven't moved yet.",
+    cause: "Crashes do spread: the other coins become 31× likelier to cascade within 15 minutes. But on average they don't follow far enough to pay: shorting them loses 0.11%/event after fees, buying after pumps 0.07%, and F8 fills after another coin's crash are no better than isolated ones.",
+    epitaph: "The crowd panics at once, not in turn.",
+  },
+  {
+    id: "B20",
+    name: "US-close hour (21-23 UTC)",
+    died: "2026-10-21",
+    what: "Long the majors from 21:00 to 23:00 UTC, flat the rest of the day.",
+    cause: "Re-priced at Hyperliquid's fees (maker in, taker out) it makes +10.4%/yr over 2019-26, but only +2.0%/yr over the last two years (2025 +3.9%, 2026 −0.6%), and −24.9%/yr on the 81 days no earlier test had seen.",
+    epitaph: "The fees came down. So did the hour.",
+  },
   {
     id: "H1",
     name: "Hyperliquid funding carry",

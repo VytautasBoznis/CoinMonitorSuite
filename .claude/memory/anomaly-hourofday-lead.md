@@ -5,8 +5,20 @@ metadata:
   node_type: memory
   type: project
   originSessionId: SESSION_2026_07_18
-  modified: 2026-07-18T14:42:20.525Z
+  modified: 2026-10-21T17:01:11.046Z
 ---
+
+**STATUS 2026-10-21: KILLED by B24** (`probes/b24_hourofday_hl_fees.py`, log `runs/b24_hourofday_hl_fees.log`).
+- **What B24 changed:** B20 had been priced with Binance SPOT fees. B24 re-priced it at Hyperliquid perp fees
+  plus baseline funding. The primary book is maker in (strict trade-through), taker out.
+- **Results:** full sample +10.4%/yr median. **Last 730d +2.0%/yr → G1 FAIL.** Year medians: 2025 +3.9%,
+  2026 −0.6%. Forward 2026-08-01 → 10-20 (unseen by every hour-of-day probe; B21-23 data ended 07-31):
+  basket −24.9%/yr, t −0.83.
+- **Why it died:** cheaper fees didn't save it, because the effect itself faded.
+- **Venue check:** HL's window tracks Binance 1:1 (corr 1.000 on 101 overlapping days).
+- **Fill-rule sensitivity:** strict trade-through vs touch fills cost ~4pp/yr. This is adverse selection on
+  the days the 20:00 price is never revisited.
+- B22 (alt basket) FAIL and B23 (US-close mechanism) REFUTED were run 2026-07-31.
 
 **The pivot (user, 2026-07-18):** "I accept there might not be an actual edge, but I'd expect
 ANOMALIES — focus on that." Bar chosen = **"path to the deploy hurdle"** (an anomaly counts only with a

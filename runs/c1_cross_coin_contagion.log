@@ -1,0 +1,43 @@
+C1 cross-coin cascade contagion — Binance USDT-M perp 1m, F8's 10 coins
+
+  loaded BTC/USDT:USDT: 3,022,560 bars
+  loaded ETH/USDT:USDT: 3,022,560 bars
+  loaded SOL/USDT:USDT: 3,015,360 bars
+  loaded DOGE/USDT:USDT: 3,022,560 bars
+  loaded AVAX/USDT:USDT: 3,022,560 bars
+  loaded NEAR/USDT:USDT: 3,015,360 bars
+  loaded LINK/USDT:USDT: 3,022,560 bars
+  loaded 1000SHIB/USDT:USDT: 2,835,743 bars
+  loaded ADA/USDT:USDT: 3,022,560 bars
+  loaded XRP/USDT:USDT: 3,015,360 bars
+  grid 2021-01-01 00:00:00 -> 2026-09-30 23:59:00 (3,022,560 minutes)
+
+DIAGNOSTIC — P(laggard triggers within 15m after an episode) vs P(any 15m window)
+  down: episodes 920 | after-episode 4.9% (387/7824) | any window 0.161% -> lift x31
+    up: episodes 969 | after-episode 2.3% (200/8515) | any window 0.137% -> lift x17
+
+T1-DOWN — short laggards, open t+1 -> close t+15, HL taker RT 0.09%
+  episodes 920, laggard-events 7,566
+  mean net -0.109%/event (gross -0.019%), 98.33% CI [-0.198%, -0.019%]
+  halves: -0.183% / -0.031%
+  BTC-led +0.641% (N 161) | alt-led -0.125% (N 7,405)
+  horizons (net): 1m -0.059%, 5m -0.075%, 30m -0.111%, 60m -0.204%
+  -> T1-DOWN FAIL
+
+T1-UP — long laggards, open t+1 -> close t+15, HL taker RT 0.09%
+  episodes 969, laggard-events 8,258
+  mean net -0.072%/event (gross +0.018%), 98.33% CI [-0.170%, +0.022%]
+  halves: -0.148% / +0.003%
+  BTC-led +0.067% (N 200) | alt-led -0.075% (N 8,058)
+  horizons (net): 1m -0.075%, 5m -0.088%, 30m -0.013%, 60m +0.053%
+  -> T1-UP FAIL
+
+T2 — F8 fills after another coin's cascade vs isolated fills (F8 frozen economics)
+  self-check: N 2,261, mean +0.509% (F8 perp log: N 2261, +0.509%)
+               LED: N   636  mean +0.658%  TP-ish share 92.3%
+          ISOLATED: N   970  mean +0.596%  TP-ish share 89.9%
+  same-minute only: N   655  mean +0.234%  TP-ish share 79.7%
+  LED - ISOLATED +0.062%, 98.33% CI [-0.286%, +0.387%]  -> T2 FAIL
+
+C1 VERDICT: T1-DOWN FAIL | T1-UP FAIL | T2 FAIL
+exit 0

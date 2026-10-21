@@ -6,13 +6,15 @@ This file indexes all memory files. One line per file; detail lives in each topi
 - [mission-find-edge-ship-ui](mission-find-edge-ship-ui.md) — **THE MISSION: ≥3 winner strategies → UI → confirmed/auto trading; ~$10 micro-live OK for the first promising one**
 - [live-yield-hurdle](live-yield-hurdle.md) — **USER GATE: certified ≠ deploy; real capital needs FORWARD net yield ≥5%/yr (recent regime weighted)**
 - [riskier-strategies-allowed](riskier-strategies-allowed.md) — **2026-07-18: riskier OK (drawdown/variance only); ≥5%/yr floor + honesty stand; anomaly-first hunting**
-- [anomaly-hourofday-lead](anomaly-hourofday-lead.md) — 21-23 UTC session-close effect: B20 OOS pass but maker-fee-only → maker-execution bet, needs live paper
+- [anomaly-hourofday-lead](anomaly-hourofday-lead.md) — 21-23 UTC window: **KILLED 2026-10-21 by B24** (HL fees; last-730d +2.0%/yr, forward −25%/yr)
 - [fuck-it-we-ball-mode](fuck-it-we-ball-mode.md) — **2026-07-31: EXTREME strategies authorized for Fable-approved ideas; exotic venues/plumbing in scope**
 - [fable-batch-10-probe-queue](fable-batch-10-probe-queue.md) — **THE QUEUE: Fable's 10 ideas w/ pre-registered PASS/KILL; per-idea STATUS lines inside (most KILLED)**
 - [bybit-dropped-no-eu-leverage](bybit-dropped-no-eu-leverage.md) — **2026-10-09: Bybit dropped (EU = spot-only); execution venue LOCKED = HYPERLIQUID**
 - [bybit-only-leverage-doctrine](bybit-only-leverage-doctrine.md) — (venue superseded) leverage-class caps still reusable; MiCA/USDC-only universe conflict
 - [cursed-100-eur-live-ladder](cursed-100-eur-live-ladder.md) — **the cursed 100 EUR → F8 cascade ladder live, data-gathering not deployment; owner's leverage call, don't re-litigate**
 - [live-bot-dashboard-plan](live-bot-dashboard-plan.md) — **F8 bot + web dashboard LIVE on Hyperliquid mainnet since 2026-10-13; budget fix deployed (~200-300 actions/day, buffer out ~mid-Nov). Burn meter + ☠ graveyard built 2026-10-20 (add a grave per probe in web/src/strategies.ts). Owed: agent-can't-withdraw proof, PANIC w/ position, death alert**
+- [swarm-and-cross-market-ideas](swarm-and-cross-market-ideas.md) — **2026-10-20 owner ideas: bot swarm (own wallets, shared collector, scoreboard), cross-market cascades, multi-market runs; proposed A/B/C order, decisions open**
+- [hl-venue-limits-multibot](hl-venue-limits-multibot.md) — HL facts: fees 0.045/0.015, sub-accounts need $100k volume, per-address action limits, per-IP caps, PM needs $10k, oracle = CEX median every 3s
 - [ui-trader-terminal-look](ui-trader-terminal-look.md) — **owner's UI bar: pro trader-terminal web app (Streamlit rejected); screenshot-check before done**
 - [no-strategy-preference](no-strategy-preference.md) — ZERO strategy preference; only "certified/winnable" matters
 - [no-more-rsi-ema-permutations](no-more-rsi-ema-permutations.md) — price-transform indicator strategies exhausted; baseline/control only
@@ -24,6 +26,7 @@ This file indexes all memory files. One line per file; detail lives in each topi
 - [session-build-loop](session-build-loop.md) — session shape: read memory → next chunk → ask blockers → commit message
 
 ## Current status & results (still 0 deployable winners)
+- [c1-cross-coin-contagion-killed](c1-cross-coin-contagion-killed.md) — **C1 KILLED 2026-10-21: cascades spread (x31) but laggards don't follow; same-minute crash fills are F8's worst (post-hoc)**
 - [h1-hl-funding-carry-killed](h1-hl-funding-carry-killed.md) — **H1 HL carry KILLED 2026-10-20 (2x iso: 44 wick liqs); but HL funding NOT decayed: +13%/yr hedged notional, 3-9pp > Binance; post-hoc lead = portfolio margin**
 - [f8-cascade-ladder-result](f8-cascade-ladder-result.md) — **F8 PASS 4/4 spot+perp; recent hurdle clear rests on touch-fills. F8S short mirror KILLED. Param grid 2026-10-19: KEEP 2.5/1.2/60 (train pick +6.8%/yr on holdout, CI spans 0)**
 - [f4-unlock-short-killed](f4-unlock-short-killed.md) — **F4 unlock short KILLED 2026-10-19 (+1.08%/event, CI spans 0, no placebo beat); post-hoc cliff-only +4.3% needs forward data. Z2: DB has ALL Binance USDT-M perps incl. delisted (1d + funding)**

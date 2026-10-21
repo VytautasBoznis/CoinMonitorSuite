@@ -1,0 +1,42 @@
+B24 hour-of-day window at Hyperliquid perp fees — taker 0.045% / maker 0.015%, baseline funding 0.00125%/h
+
+BINANCE SPOT 1h (long sample) — net %/yr per book; gross = B20's 21:00->23:00 before costs
+     coin    gross       TT       MT       MM  fill_in   MT_730d  MT_drop1%      N    last day
+----------------------------------------------------------------------------------------------
+ BTC/USDT  +30.7%   -3.0%  +11.2%  +15.3%   98.2%    +2.0%     -8.0%   2743  2026-07-05
+ ETH/USDT  +37.3%   +3.5%  +16.6%  +21.9%   97.9%   +14.9%     -0.6%   2743  2026-07-05
+ BNB/USDT  +42.5%   +8.8%  +10.4%  +12.5%   97.0%    +5.1%     -6.5%   2743  2026-07-05
+ XRP/USDT  +29.4%   -4.4%   +3.4%   +1.5%   97.4%   -31.4%    -56.8%   2743  2026-07-05
+ SOL/USDT  +20.6%  -13.2%  -17.5%  -17.0%   97.2%    +1.1%    -12.8%   2155  2026-07-05
+
+MT net %/yr by calendar year (Binance)
+  year      BTC      ETH      BNB      XRP      SOL   median
+  2019   +9.3%  +19.3%  +39.1%  +19.9%        -  +19.6%
+  2020  +56.1%  +50.8%  +45.0%  +27.7% -129.5%  +45.0%
+  2021   +5.2%  +28.7%  +26.6%  +35.6%  -11.5%  +26.6%
+  2022   -8.3%  -14.7%  -36.2%  +46.0%  -79.8%  -14.7%
+  2023   +8.4%  -13.3%  -27.6%  -29.9%   +5.8%  -13.3%
+  2024   +9.8%  +31.7%  +27.4%   -8.9%  +49.7%  +27.4%
+  2025   +3.9%  +20.4%   +6.1%  -62.1%  -18.9%   +3.9%
+  2026   -0.6%   +3.2%   -4.4%   -5.4%   +4.1%   -0.6%
+
+HYPERLIQUID PERP 1h — 2026-03-27 -> 2026-10-20
+
+HL vs BINANCE on overlapping days (diagnostic: does the venue's window track Binance's?)
+     coin  days  corr gross  HL gross  BN gross
+ BTC/USDT   101       1.000    -3.5%    -3.3%
+ ETH/USDT   101       1.000    +4.2%    +3.9%
+ BNB/USDT   101       0.998    -5.9%    -7.2%
+ XRP/USDT   101       1.000    +0.2%    -0.8%
+ SOL/USDT   101       1.000   -15.6%   -14.2%
+
+FORWARD (unseen by every earlier hour-of-day probe) 2026-08-01 -> 2026-10-20:
+  per coin MT net %/yr: BTC -29.4%, ETH -29.8%, BNB -24.1%, XRP -46.4%, SOL +5.1%
+  basket MT net -24.9%/yr, SE 29.9%/yr, t -0.83, N 81 days
+
+G1 recent-730d median MT +2.04%/yr (>= +5%)  -> FAIL
+G2 recent-730d MT positive on 4/5 (>= 4)  -> PASS
+G3 full-sample median MT +10.41%/yr (>= +5%)  -> PASS
+G4 forward basket t -0.83 (KILL iff <= -2.0)  -> PASS
+
+B24 VERDICT: KILL

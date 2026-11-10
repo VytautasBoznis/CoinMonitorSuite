@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: b07cd4d1-531d-4981-a504-2599f052cef5
-  modified: 2026-10-21T18:51:39.343Z
+  modified: 2026-11-10T17:16:09.893Z
 ---
 
 Owner, 2026-10-20, added to the "what's next" plan:
@@ -91,8 +91,18 @@ Owner, 2026-10-20, added to the "what's next" plan:
 - **Dashboard:** bot dropdown in the top bar (`#bot=<id>` deep link). Paper view = simulated account from the
   ledger + book + live mids. The kill switch ALWAYS acts on the live bot and says so. Scoreboard overlay gets a
   "Forward tests" section, one card per bot; it replaced the old F8 LiveScore widget.
-- **NEXT:** owner deploys (flip `swarm.enabled`), then record the first-run date here. After that: phase B
-  step 3 (shared feed) with the phase-C collector.
+- **DEPLOYED. FIRST RUN = 2026-10-21 19:06 UTC** (`bot_control.started_ms`, read 2026-11-10; build
+  `sha-31167ef`). **The bar is judged once on 2027-04-21.**
+- **Snapshot 2026-11-10** (20 days in; all P&L from 4 V-bounce UTC days, so it proves nothing yet): live 8 trips
+  +$1.06; twin 5 trips, live caught 5/5 at the same price; wide 12 trips, 11 TP (+1.86%/trip vs baseline +0.32%);
+  trend 0 trips (all coins below their 30d-ago price). Review + proposals R1-R6 with pre-registered PASS/KILL:
+  `docs/strategy-review-2026-11-10.md`.
+- **R1 PASSED 2026-11-10** ([[f8-cascade-ladder-result]]) → two more tenants BUILT in `swarm.BOTS`, **NOT deployed**:
+  **f8-tp20** (2.5/2.0/60; baseline 116/yr, +0.883% [+0.490, +1.252], TP 72.8%, +17.1%/yr) and **f8-tp20-240**
+  (2.5/2.0/240; 112/yr, +1.040% [+0.638, +1.384], TP 78.5%, +19.3%/yr). Same PROMOTION bar. Their clock starts
+  at their own first heartbeat. **On deploy, write THEIR first-run date here** (judged 6 months later).
+- **NEXT:** owner commits + deploys; then phase B step 3 (shared feed) with the phase-C collector, and R5/R6
+  collectors from the review doc.
 
 DB note: the local Timescale is on port **5433**, so set
 `COINMON_DB_DSN=postgresql://coinmon:coinmon@localhost:5433/coinmon` (the default DSN in config.py is 5432,

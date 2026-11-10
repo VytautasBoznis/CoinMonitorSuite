@@ -1,0 +1,31 @@
+self-check, holdout 2024-09-30 -> 2026-09-30:
+  1.2% TP: N=246 mean +0.489%  (grid: N=246 +0.489%) OK
+  2.0% TP: N=232 mean +0.872%  (grid: N=232 +0.872%) OK
+
+WIDE 2.5/2.0/60 - BASE 2.5/1.2/60, paired by UTC day:
+  train    wide +55.68%/yr  base +41.22%/yr  diff +14.46%/yr  95% CI [+7.15%, +22.90%]  (347 days)  ex-zero
+  holdout  wide +16.84%/yr  base +10.02%/yr  diff  +6.82%/yr  95% CI [+3.41%, +10.52%]  (70 days)  ex-zero
+
+account yield by calendar year (1x):
+  year    base    wide  wide-240m
+  2021  +99.52% +130.16%  +123.63%
+  2022  +17.06% +30.18%  +34.69%
+  2023  +26.24% +30.57%  +38.99%
+  2024  +20.99% +30.91%  +44.25%
+  2025   +8.07% +15.94%  +20.34%
+  2026   +3.52%  +6.10%   +2.52%
+  worst year: base +3.52%  wide +6.10%
+
+R1a train CI ex-zero     : PASS
+R1b holdout CI ex-zero   : PASS
+R1c worst year not worse : PASS
+
+VERDICT: PASS (paper bots only; post-hoc)
+
+diagnostics (not the verdict):
+  rule              N   TP hit    mean   MAE med  MAE 5th  breach 3x / 10x / 20x
+  base 1.2/60    2074   89.3%  +0.505%  -1.30%  -11.83%   0.5% / 7.6% / 18.3%
+  wide 2.0/60    1845   77.2%  +0.788%  -1.79%  -13.42%   0.5% / 9.4% / 23.8%
+  wide 2.0/240   1647   83.3%  +0.961%  -1.85%  -14.91%   0.8% / 10.3% / 25.1%
+  240 train wide +60.21%/yr  base +41.22%/yr  diff +18.98%/yr  95% CI [+9.30%, +29.50%]  (347 days)  ex-zero
+  240 hold wide +19.11%/yr  base +10.02%/yr  diff  +9.08%/yr  95% CI [+3.98%, +14.96%]  (70 days)  ex-zero

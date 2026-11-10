@@ -86,6 +86,23 @@ BOTS = (
         # Below plain F8 and under the bar's 5%/yr over these two years: the gate halved N.
         baseline=Baseline(62.0, 0.00454, (-0.00041, 0.00849), 0.815, 0.0469),
     ),
+    PaperBot(
+        "f8-tp20", Rule(F8.drop, 0.020, F8.hold_ms),
+        question="Does the live bot sell too early? F8's bids and hold with the take-profit at"
+                 " +2.0% instead of +1.2%. R1 passed 3/3 (holdout +6.8%/yr over F8, CI"
+                 " [+3.4, +10.5]; runs/r1_f8_wide_exit.log) but was designed after the holdout"
+                 " was seen; this run is its out-of-sample test.",
+        bar=PROMOTION,
+        baseline=Baseline(116.1, 0.00883, (0.00490, 0.01252), 0.728, 0.1709),
+    ),
+    PaperBot(
+        "f8-tp20-240", Rule(F8.drop, 0.020, 240 * MIN),
+        question="Does waiting longer for the +2.0% take-profit pay? f8-tp20 with a 240m hold:"
+                 " R1's diagnostic row (holdout +9.1%/yr over F8, CI [+4.0, +15.0], but the"
+                 " weakest 2026 of the three; runs/r1_f8_wide_exit.log).",
+        bar=PROMOTION,
+        baseline=Baseline(111.6, 0.01040, (0.00638, 0.01384), 0.785, 0.1934),
+    ),
 )
 
 

@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 2037ad27-4d88-4989-b811-caa6ea20fa15
-  modified: 2026-10-19T19:01:47.026Z
+  modified: 2026-11-10T17:32:12.257Z
 ---
 
 Idea 8 of [[fable-batch-10-probe-queue]], run 2026-10-04. Code `probes/f8_cascade_ladder_proxy.py`,
@@ -102,5 +102,12 @@ T1 diff +6.80%/yr, CI [−8.3, +22.6] FAILS; T2 plateau passes.
   holdout; 15m holds and 0.6% TP are worst everywhere. Every cell's yield roughly halves train → holdout.
 - BASE under live conventions runs +10.03%/yr holdout (N=246) vs +7.12% under the F8 probe's (N=199):
   re-bidding after the take-profit adds fills.
+- **R1 WIDE EXIT: PASS 3/3, 2026-11-10 (DECLARED POST-HOC).** Owner asked if live sells too early.
+  `probes/r1_f8_wide_exit.py`, log `runs/r1_f8_wide_exit.log`; rules pre-written in
+  `docs/strategy-review-2026-11-10.md`. Same bids and 60m hold, TP 2.0% vs 1.2%, paired by UTC day:
+  train +14.5%/yr CI [+7.2, +22.9]; holdout +6.8%/yr CI [+3.4, +10.5] (16.8 vs 10.0); wide wins all 6 years
+  (2026: +6.1% vs +3.5%). 2.0/240 diagnostic: holdout +9.1%/yr CI [+4.0, +15.0] but 2026 only +2.5%.
+  Cost: TP hit 89% → 77%; 20x liq-breach share 18.3% → 23.8%. **Licenses paper bots f8-tp20 / f8-tp20-240
+  with frozen HL-fee baselines ONLY; live rule unchanged** (holdout was already seen). Bots built 2026-11-10, not deployed ([[swarm-and-cross-market-ideas]]).
 - Any follow-up (e.g. walk-forward with more out-of-sample years) is designed AFTER seeing this result →
   it must be declared post-hoc. More holdout power otherwise only comes from waiting.

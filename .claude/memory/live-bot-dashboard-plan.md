@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: f655be08-d28b-48b8-91b6-b4b28bbce97c
-  modified: 2026-10-21T18:52:22.345Z
+  modified: 2026-11-10T17:16:09.988Z
 ---
 
 Owner, in a 2026-10-09 conversation with Fable (pasted into Claude Code): a bot running headless on the
@@ -230,6 +230,18 @@ Claude sets up and verifies read-only.
   - **Deployed (checked 2026-10-19 via public `userRateLimit`):** 3,060 of 10,023 used, ~300/day since
     10-14, so the old churn is gone. The buffer runs out around mid-November. Live so far: ONE round trip
     (ADA 10-14, +$0.01).
+  - **Checked 2026-11-10:** 8,721 of 10,193 used (~257/day), so the buffer runs out ~2026-11-16. Throttled
+    capacity (8,640/day) far exceeds use; it only bites in the cascade minute.
+  - **Live fill facts, 2026-11-10 (8 round trips, 7 TP, +$1.06):**
+    - HL `userFillsByTime` tags fills with a `liquidation` field: 6 of 8 entries were fills against
+      liquidations. Not stored in `bot_trades` yet.
+    - Two SOL fills on 11-10 (82.181, 82.538) printed BELOW HL's own 1m candle low (82.578); both were
+      liquidation fills. Hypothesis (N=2): HL candles omit some liquidation prints, so candle-based paper
+      fills undercount. The twin missed both.
+    - The live bot re-bids inside the same minute after a TP (SOL re-filled 5s later); the backtest only
+      re-bids next bar. Unpriced by any probe.
+    - Owner asked 2026-11-10 why live "pussies out at 1.95%": the live TP is +1.2%; no 1.95% found anywhere
+      (my guess: f8-wide's +1.97% net, or the Ladder panel's "% from mid"). Owner's concern = TP too tight.
   - **Still unknown (watch after exhaustion):**
     - Does a throttled or rejected request still count in `nRequestsUsed`? If it does, the ~10k
       cancel headroom erodes too.

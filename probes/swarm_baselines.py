@@ -110,14 +110,14 @@ def main() -> None:
         return
 
     print("\nBASELINES at Hyperliquid fees (maker 0.015%, taker 0.045%):")
-    print(f"{'bot':<9} {'rule':<26} {'N':>5} {'N/yr':>6} {'mean':>8} {'95% CI (UTC days)':>21}"
+    print(f"{'bot':<11} {'rule':<26} {'N':>5} {'N/yr':>6} {'mean':>8} {'95% CI (UTC days)':>21}"
           f" {'TP hit':>7} {'yield/yr':>9}")
     for spec in swarm.BOTS:
         r = spec.rule
         ev = holdout(r)
         lo, hi = day_ci(ev["net"], ev["day"])
         gate = " +30d gate" if r.trend_ms else ""
-        print(f"{spec.name:<9} {f'{r.drop:.1%} / {r.target:.1%} / {r.hold_ms // MIN}m{gate}':<26}"
+        print(f"{spec.name:<11} {f'{r.drop:.1%} / {r.target:.1%} / {r.hold_ms // MIN}m{gate}':<26}"
               f" {len(ev):>5} {len(ev) / years:>6.1f} {ev['net'].mean() * 100:>+7.3f}%"
               f"  [{lo * 100:+.3f}%, {hi * 100:+.3f}%] {ev['tp'].mean() * 100:>6.1f}%"
               f" {ev['net'].sum() / k / years * 100:>+8.2f}%")
